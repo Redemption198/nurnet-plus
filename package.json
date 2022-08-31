@@ -1,0 +1,33 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^0.26.0",
+    "@kevinmarrec/nuxt-pwa": "^0.4.2",
+    "@nuxtjs/tailwindcss": "^5.3.1",
+    "@tailwindcss/forms": "^0.5.2",
+    "@vueuse/core": "^9.1.1",
+    "@vueuse/nuxt": "^9.1.1",
+    "eslint": "^8.21.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-vue": "^9.3.0",
+    "nuxt": "^3.0.0-rc.8",
+    "prettier": "^2.7.1",
+    "prettier-plugin-tailwindcss": "^0.1.13",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "@vueuse/gesture": "^2.0.0-beta.1",
+    "@vueuse/integrations": "^9.1.1",
+    "@vueuse/motion": "^2.0.0-beta.12",
+    "fuse.js": "^6.6.2",
+    "ol": "^7.0.0"
+  }
+}
