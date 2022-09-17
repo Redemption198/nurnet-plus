@@ -2,19 +2,27 @@
 const NuxtPage = resolveComponent("NuxtPage");
 const SearchResults = resolveComponent("SearchResults");
 
-const { data: mapData } = await useAsyncData("nurnet-dump", () =>
-  $fetch("http://localhost:3000/nurnet-data.json")
-);
+const { data: mapData, pending } = useLazyFetch("/nurnet-data.json", {
+  // baseURL: "https://redemption198.github.io/nurnet-plus",
+  server: false,
+});
 </script>
 
 <template>
   <div class="h-screen w-screen bg-slate-200">
-    <TheMap :pois="mapData" />
+    <TheMap v-if="!pending && mapData" :pois="mapData" />
     <TheDrawer>
       <component
         :is="$route.path === '/' ? SearchResults : NuxtPage"
+        v-if="mapData"
         :map-data="mapData"
       ></component>
+      <div
+        v-else
+        class="flex h-5/6 w-full items-center justify-center text-sm font-bold text-slate-700"
+      >
+        Caricando
+      </div>
     </TheDrawer>
   </div>
 </template>

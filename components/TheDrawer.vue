@@ -1,10 +1,14 @@
 <script setup>
 import { useMotionProperties, useSpring } from "@vueuse/motion";
 import { useGesture } from "@vueuse/gesture";
+import { breakpointsTailwind } from "@vueuse/core";
 
 const drawer = ref();
 const drawerContent = useState("drawer-content", () => null);
 const drawerState = useDrawerState();
+
+const breakpoints = useBreakpoints(breakpointsTailwind);
+const lgAndGreater = breakpoints.greaterOrEqual("lg");
 
 const { motionProperties } = useMotionProperties(drawer, {
   cursor: "grab",
@@ -13,8 +17,8 @@ const { motionProperties } = useMotionProperties(drawer, {
 });
 
 const { set } = useSpring(motionProperties, {
-  damping: 30,
-  stiffness: 250,
+  damping: 35,
+  stiffness: 400,
 });
 
 function setDrawerOnTop() {
@@ -34,6 +38,10 @@ function setDrawerOnBottom() {
 }
 
 watch(drawerState.value, () => {
+  if (lgAndGreater.value) {
+    drawerState.value.setPosition = "";
+    return;
+  }
   if (drawerState.value.setPosition === "SET_DRAWER_ON_TOP_SCREEN")
     setDrawerOnTop();
   else if (drawerState.value.setPosition === "SET_DRAWER_ON_MIDDLE_SCREEN")
@@ -44,17 +52,35 @@ watch(drawerState.value, () => {
   drawerState.value.setPosition = "";
 });
 
+watch(lgAndGreater, () => {
+  if (lgAndGreater.value) {
+    set({ y: 0, cursor: "pointer" });
+  }
+});
+
 const { y: drawerContentY } = useScroll(drawerContent);
 
 useGesture(
   {
-    onDrag: ({ movement: [x, y] }) => {
+    onDrag: ({ movement: [x, y], cancel }) => {
+      const drawerTop = drawer.value.getBoundingClientRect().top;
+      if (
+        drawerTop <= 0 ||
+        drawerTop >= window.innerHeight ||
+        lgAndGreater.value
+      )
+        cancel();
       set({
         cursor: "grabbing",
         y,
       });
     },
     onDragEnd: ({ swipe, velocity }) => {
+      // Keep drawer on top on large screens
+      if (lgAndGreater.value) {
+        setDrawerOnTop();
+        return;
+      }
       // Swipe Up
       if (swipe[0] === 0 && swipe[1] === -1) {
         if (drawerState.value.currentPosition === "DRAWER_ON_BOTTOM_SCREEN") {
@@ -146,8 +172,9 @@ onDeactivated(() => {
 <template>
   <div
     ref="drawer"
-    class="absolute -bottom-12 z-[2] h-full w-full select-none rounded-t-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
-    style="box-shadow: 0 0 8px 0 rgb(0 0 0 / 0.15)"
+    class="absolute z-[2] select-none rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
+    style="box-shadow: 8px rgb(0 0 0 / 0.15)"
+    :class="lgAndGreater ? 'inset-4 w-1/3' : '-bottom-12 h-full w-full'"
   >
     <DrawerHandle />
 

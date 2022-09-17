@@ -3,13 +3,15 @@ import Map from "ol/Map.js";
 import View from "ol/View.js";
 import WebGLTileLayer from "ol/layer/WebGLTile.js";
 import OSM from "ol/source/OSM.js";
-import { Vector } from "ol/source.js";
 import WebGLPointsLayer from "ol/layer/WebGLPoints.js";
+import { Vector } from "ol/source.js";
 import GeoJSON from "ol/format/GeoJSON.js";
+import { onBeforeRouteUpdate } from "vue-router";
 
 const props = defineProps({
   pois: {
     type: Object,
+    default: () => {},
   },
 });
 
@@ -17,105 +19,11 @@ const router = useRouter();
 
 const currentPOI = useCurrentPOI();
 const drawerState = useDrawerState();
-const { coords, error: locationError, isSupported } = useGeolocation();
 
 const map = ref();
 const olMap = ref();
 
-function centerMapToUserLocation() {
-  olMap.value.getView().animate({
-    center: [coords.value.latitude, coords.value.longitude],
-    zoom: 8,
-    duration: 250,
-  });
-}
-
 onMounted(() => {
-  const vectorSource = new Vector({
-    features: new GeoJSON().readFeatures(props.pois),
-  });
-
-  const pointsLayer = new WebGLPointsLayer({
-    source: vectorSource,
-    style: {
-      variables: {
-        selectedMarker: "",
-      },
-      symbol: {
-        symbolType: "circle",
-        color: [
-          "match",
-          ["get", "category"],
-          // Menhir
-          "70",
-          [254, 133, 53],
-          "71",
-          [254, 133, 53],
-          "72",
-          [254, 133, 53],
-          "73",
-          [254, 133, 53],
-          // Domus de janas
-          "30",
-          [188, 123, 119],
-          // Tombe dei giganti
-          "60",
-          [169, 111, 71],
-          "61",
-          [169, 111, 71],
-          "62",
-          [169, 111, 71],
-          "63",
-          [169, 111, 71],
-          // Dolmen
-          "20",
-          [168, 158, 70],
-          "21",
-          [168, 158, 70],
-          // Villaggi
-          "40",
-          [251, 206, 2],
-          "41",
-          [251, 206, 2],
-          // Culto dell'acqua
-          "50",
-          [77, 143, 195],
-          "51",
-          [77, 143, 195],
-          "52",
-          [77, 143, 195],
-          // Altro - Unicum e Grotte Tafoni
-          "101",
-          [170, 171, 168],
-          "110",
-          [170, 171, 168],
-          // Nuraghe
-          "10",
-          [49, 37, 40],
-          "11",
-          [49, 37, 40],
-          "12",
-          [49, 37, 40],
-          "13",
-          [49, 37, 40],
-          // Default
-          [255, 0, 0],
-        ],
-        // size: 10,
-        size: [
-          "case",
-          ["==", ["var", "selectedMarker"], ["get", "content_id"]],
-          ["*", ["zoom"], 3],
-          ["*", ["zoom"], 1.8],
-        ],
-        opacity: 0.85,
-        rotateWithView: false,
-      },
-    },
-  });
-
-  // olMap.value.on("moveend", () => console.log("map move ended"));
-
   let userFeatureClick = false;
 
   olMap.value = new Map({
@@ -124,7 +32,6 @@ onMounted(() => {
       new WebGLTileLayer({
         source: new OSM(),
       }),
-      pointsLayer,
     ],
     view: new View({
       center: [8.9, 39.9],
@@ -172,9 +79,100 @@ onMounted(() => {
     );
   });
 
+  const vectorSource = new Vector({
+    features: new GeoJSON().readFeatures(props.pois),
+  });
+
+  const pointsLayer = new WebGLPointsLayer({
+    source: vectorSource,
+    style: {
+      variables: {
+        selectedMarker: "",
+      },
+      symbol: {
+        symbolType: "image",
+        src: "/nurnet-plus/icons-tileset.png",
+        textureCoord: [
+          "match",
+          ["get", "category_id"],
+          // Menhir
+          "70",
+          [0.375, 0, 0.5, 1],
+          "71",
+          [0.375, 0, 0.5, 1],
+          "72",
+          [0.375, 0, 0.5, 1],
+          "73",
+          [0.375, 0, 0.5, 1],
+          // Domus de janas
+          "30",
+          [0.125, 0, 0.25, 1],
+          // Tombe dei giganti
+          "60",
+          [0.25, 0, 0.375, 1],
+          "61",
+          [0.25, 0, 0.375, 1],
+          "62",
+          [0.25, 0, 0.375, 1],
+          "63",
+          [0.25, 0, 0.375, 1],
+          // Dolmen
+          "20",
+          [0, 0, 0.125, 1],
+          "21",
+          [0, 0, 0.125, 1],
+          // Villaggi
+          "40",
+          [0.5, 0, 0.625, 1],
+          "41",
+          [0.5, 0, 0.625, 1],
+          // Culto dell'acqua
+          "50",
+          [0.625, 0, 0.75, 1],
+          "51",
+          [0.625, 0, 0.75, 1],
+          "52",
+          [0.625, 0, 0.75, 1],
+          // Altro - Unicum e Grotte Tafoni
+          // "101",
+          // [170, 171, 168],
+          // "110",
+          // [170, 171, 168],
+          // Nuraghe
+          "10",
+          [0.75, 0, 0.875, 1],
+          "11",
+          [0.75, 0, 0.875, 1],
+          "12",
+          [0.75, 0, 0.875, 1],
+          "13",
+          [0.75, 0, 0.875, 1],
+          // Default
+          [0.875, 0, 1, 1],
+        ],
+        size: [
+          "case",
+          ["==", ["var", "selectedMarker"], ["get", "content_id"]],
+          ["*", ["zoom"], 3],
+          ["*", ["zoom"], 1.8],
+        ],
+        opacity: 1,
+        rotateWithView: false,
+      },
+    },
+  });
+
+  olMap.value.addLayer(pointsLayer);
+
+  onBeforeRouteUpdate(() => {
+    pointsLayer.styleVariables_.selectedMarker = "";
+    pointsLayer.dispatchEvent("change");
+  });
+
   watch(currentPOI, () => {
     pointsLayer.styleVariables_.selectedMarker =
       currentPOI.value.values_.content_id;
+    pointsLayer.dispatchEvent("change");
 
     olMap.value.getView().animate({
       center: [
@@ -199,7 +197,8 @@ onMounted(() => {
   >
     <MapControlsButton
       class="p-3"
-      @click="
+      aria-label="Zoom In"
+      @click.prevent="
         olMap.getView().animate({
           zoom: olMap.getView().getZoom() + 1,
           duration: 250,
@@ -211,7 +210,8 @@ onMounted(() => {
 
     <MapControlsButton
       class="p-3"
-      @click="
+      aria-label="Zoom Out"
+      @click.prevent="
         olMap.getView().animate({
           zoom: olMap.getView().getZoom() - 1,
           duration: 250,
@@ -219,18 +219,6 @@ onMounted(() => {
       "
     >
       <IconMinus class="h-6 w-6" />
-    </MapControlsButton>
-
-    <MapControlsButton
-      v-if="!locationError && isSupported"
-      class="p-4"
-      @click="centerMapToUserLocation()"
-    >
-      <IconDirection class="h-4 w-4" />
-    </MapControlsButton>
-
-    <MapControlsButton v-else class="p-4" disabled>
-      <IconDirection class="h-4 w-4" />
     </MapControlsButton>
   </div>
 </template>

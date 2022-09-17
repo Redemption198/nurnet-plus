@@ -4,6 +4,7 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "generate-pwa-assets": "npx pwa-asset-generator ./assets/nurnet-plus.svg ./public/pwa -b 'linear-gradient(to right bottom, #fe8702ff, #d87401ff, #b26100ff)'",
     "preview": "nuxt preview",
     "lint": "eslint ."
   },
@@ -18,7 +19,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-vue": "^9.3.0",
-    "nuxt": "^3.0.0-rc.8",
+    "nuxt": "^3.0.0-rc.10",
     "prettier": "^2.7.1",
     "prettier-plugin-tailwindcss": "^0.1.13",
     "typescript": "^4.7.4"

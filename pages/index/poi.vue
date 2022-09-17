@@ -1,144 +1,88 @@
 <script setup>
 const currentPOI = useCurrentPOI();
 
-function getCategoryName(category) {
-  if (category >= 10 && category <= 13) 
-return "Nuraghe";
-  if (category === 20 || category === 21) 
-return "Dolmen";
-  if (category === 30) 
-return "Domus de janas";
-  if (category === 40 || category === 41) 
-return "Villaggi";
-  if (category >= 50 && category <= 52) 
-return "Culto dell'acqua";
-  if (category >= 60 && category <= 63) 
-return "Tombe dei giganti";
-  if (category >= 70 && category <= 73) 
-return "Menhir";
-  if (category === 110 || category === 101) 
-return "Unicum e Grotte Tafoni";
-  return "Sconosciuto";
+const router = useRouter();
+
+function isURL(url) {
+  try {
+    const testURL = new URL(url);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
-function getCategoryColor(category) {
-  if (category >= 10 && category <= 13) 
-return "bg-[#312528]";
-  if (category === 20 || category === 21) 
-return "bg-[#a89e46]";
-  if (category === 30) 
-return "bg-[#bc7b77]";
-  if (category === 40 || category === 41) 
-return "bg-[#fbce02]";
-  if (category >= 50 && category <= 52) 
-return "bg-[#4d8fc3]";
-  if (category >= 60 && category <= 63) 
-return "bg-[#a96f47]";
-  if (category >= 70 && category <= 73) 
-return "bg-[#fe8535]";
-  if (category === 110 || category === 101) 
-return "bg-[#aaaba8]";
-  return "bg-red-500";
-}
+if (!currentPOI.value.values_) 
+router.push("/");
 </script>
 
 <template>
-  <div v-if="currentPOI?.values_" class="m-4 flex flex-col gap-y-2">
-    <div class="flex justify-between">
+  <div v-if="currentPOI.values_" class="flex flex-col gap-y-2 pb-64">
+    <div class="mx-4 flex items-center justify-between">
       <p class="text-xl font-bold">{{ currentPOI.values_.name }}</p>
       <NuxtLink
-        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-400 text-sm text-white"
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-400/75 fill-white"
         to="/"
       >
-        X
+        <IconCancel class="h-4 w-4" />
       </NuxtLink>
     </div>
 
-    <div
-      v-if="!currentPOI.values_.validato"
-      class="flex items-center justify-between gap-x-2 rounded-lg bg-amber-300 p-1.5"
+    <LazyPOIUnverifiedBanner v-if="!currentPOI.values_.verified" class="mx-4" />
+
+    <div class="mx-4 flex gap-x-2">
+      <POITypeCard />
+
+      <POIStatusCard />
+    </div>
+
+    <p
+      v-if="currentPOI.values_.comune"
+      class="mx-4 flex flex-col text-lg font-semibold"
     >
-      <p
-        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-amber-300"
-      >
-        !
-      </p>
-      <p class="text-xs text-amber-900">
-        Non verificato. Le informazioni potrebbero non essere accurate.
-      </p>
-    </div>
+      <span class="text-sm text-slate-700">Comune</span
+      >{{ currentPOI.values_.comune }}
+    </p>
 
-    <div class="flex gap-x-2">
-      <div
-        class="flex w-full items-center gap-x-2 rounded-lg px-2 py-4 text-gray-100"
-        :class="getCategoryColor(Number(currentPOI.values_.category))"
-      >
-        <p
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/50 text-2xl font-bold mix-blend-lighten"
-        >
-          <IconChecked class="h-5 w-5 fill-gray-100" />
-        </p>
-        <p class="flex flex-col text-xs font-semibold">
-          Tipo
-          <span class="text-sm">{{
-            getCategoryName(Number(currentPOI.values_.category))
-          }}</span>
-        </p>
-      </div>
+    <p
+      v-if="currentPOI.values_.localita"
+      class="mx-4 flex flex-col text-lg font-semibold"
+    >
+      <span class="text-sm text-slate-700">Localita</span
+      >{{ currentPOI.values_.localita }}
+    </p>
 
-      <div
-        class="flex w-full items-center gap-x-2 rounded-lg bg-slate-500 fill-gray-100 p-2 text-gray-100"
-      >
-        <p
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-400 text-2xl font-bold"
-        >
-          <IconHidden
-            v-if="currentPOI.values_.stato.toLowerCase() === 'non visibile'"
-            class="h-5 w-5"
-          />
-          <IconChecked
-            v-else-if="
-              currentPOI.values_.stato.toLowerCase() === 'manutenuto' ||
-              currentPOI.values_.stato.toLowerCase() === 'mantenuto' ||
-              currentPOI.values_.stato.toLowerCase() === 'buono'
-            "
-            class="h-5 w-5"
-          />
-          <span v-else>?</span>
-        </p>
-        <p class="flex flex-col text-sm font-semibold">
-          <span class="text-xs">Stato</span
-          >{{ currentPOI.values_.stato || "Sconosciuto" }}
+    <p
+      v-if="currentPOI.values_.source && !isURL(currentPOI.values_.source)"
+      class="mx-4 flex flex-col break-words text-lg font-semibold"
+    >
+      <span class="text-sm text-slate-700">Fonte</span
+      >{{ currentPOI.values_.source }}
+    </p>
 
-          <!--
-                Mantenuto
-                Buono
-                Non Visibile
-                Diroccato
+    <POIPhotoSlider v-if="currentPOI.values_.photos.length > 0" />
 
+    <POIVideo v-if="currentPOI.values_.youtube" />
 
-                Sconosciuto
-              -->
-        </p>
-      </div>
-    </div>
+    <a
+      v-if="currentPOI.values_.photos.length > 0"
+      :href="`https://www.nurnet.net/mediateca/?s=${currentPOI.values_.content_id}`"
+      target="_blank"
+      rel="noopener"
+      class="mx-4 my-2 flex min-w-max items-center justify-center gap-x-2 rounded-lg bg-blue-400 fill-white px-4 py-2 font-semibold text-white transition-transform hover:scale-95"
+      >Vai alla Mediateca NurNet<IconOpenOutside />
+    </a>
 
-    <div class="mb-4 grid grid-cols-2">
-      <p class="flex flex-col text-lg font-semibold">
-        <span class="text-sm text-slate-700">Comune</span
-        >{{ currentPOI.values_.comune }}
-      </p>
+    <a
+      v-if="isURL(currentPOI.values_.source)"
+      :href="currentPOI.values_.source"
+      target="_blank"
+      rel="noopener"
+      class="mx-4 min-w-max rounded-lg px-4 py-2 text-center font-semibold text-blue-400 transition-transform hover:scale-95"
+    >
+      Fonte
+    </a>
 
-      <p class="flex flex-col text-lg font-semibold">
-        <span class="text-sm text-slate-700">Localita</span
-        >{{ currentPOI.values_.localita }}
-      </p>
-
-      <p class="flex flex-col text-lg font-semibold">
-        <span class="text-sm text-slate-700">Fonte</span
-        >{{ currentPOI.values_.fonte }}
-      </p>
-    </div>
     <p class="self-center text-sm text-slate-700">
       Aggiunto il
       {{

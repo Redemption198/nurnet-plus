@@ -1,13 +1,12 @@
-import { defineNuxtConfig } from "nuxt";
-
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 export default defineNuxtConfig({
-  css: ["@/assets/css/main.css"],
-
   modules: ["@nuxtjs/tailwindcss", "@vueuse/nuxt", "@kevinmarrec/nuxt-pwa"],
 
   components: ["~/components", "~/components/icons"],
 
+  app: {
+    baseURL: "/nurnet-plus/",
+  },
   pwa: {
     meta: {
       name: "NurNet+",
@@ -25,25 +24,25 @@ export default defineNuxtConfig({
       theme_color: "#fe8702",
       icons: [
         {
-          src: "/pwa/manifest-icon-192.maskable.png",
+          src: "/nurnet-plus/pwa/manifest-icon-192.maskable.png",
           sizes: "192x192",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: "/pwa/manifest-icon-192.maskable.png",
+          src: "/nurnet-plus/pwa/manifest-icon-192.maskable.png",
           sizes: "192x192",
           type: "image/png",
           purpose: "maskable",
         },
         {
-          src: "/pwa/manifest-icon-512.maskable.png",
+          src: "/nurnet-plus/pwa/manifest-icon-512.maskable.png",
           sizes: "512x512",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: "/pwa/manifest-icon-512.maskable.png",
+          src: "/nurnet-plus/pwa/manifest-icon-512.maskable.png",
           sizes: "512x512",
           type: "image/png",
           purpose: "maskable",
