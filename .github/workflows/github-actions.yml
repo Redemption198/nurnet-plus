@@ -2,9 +2,7 @@ name: GitHub Pages Deploy
 on:
   push:
     branches:
-      - main
-permissions:
-  contents: write      
+      - main  
 jobs:
   build-and-deploy:
     concurrency: ci-${{ github.ref }}
@@ -21,6 +19,7 @@ jobs:
       - name: Deploy to GitHub Pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
+          token: REPO_ACCESS
           folder: ./.output/public
           repository-name: Redemption198/Redemption198.github.io
           target-folder: /nurnet-plus
