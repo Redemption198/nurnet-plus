@@ -22,6 +22,7 @@ jobs:
           token: ${{ secrets.REPO_ACCESS }}
           folder: ./.output/public
           repository-name: Redemption198/Redemption198.github.io
+          branch: main
           target-folder: /nurnet-plus
       
  
