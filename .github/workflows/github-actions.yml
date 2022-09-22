@@ -19,9 +19,9 @@ jobs:
       - name: Deploy to GitHub Pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
-          folder: output/public
+          folder: ./output/public
           repository-name: Redemption198/Redemption198.github.io
-          target-folder: nurnet-plus
+          target-folder: /nurnet-plus
       
  
       
