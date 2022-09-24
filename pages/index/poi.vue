@@ -12,8 +12,7 @@ function isURL(url) {
   }
 }
 
-if (!currentPOI.value.values_) 
-router.push("/");
+if (!currentPOI.value.values_) router.push("/");
 </script>
 
 <template>

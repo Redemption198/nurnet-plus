@@ -2,7 +2,11 @@ name: GitHub Pages Deploy
 on:
   push:
     branches:
-      - main  
+      - main
+
+env:
+  BASE_URL: /nurnet-plus
+
 jobs:
   build-and-deploy:
     concurrency: ci-${{ github.ref }}
@@ -23,7 +27,7 @@ jobs:
           folder: ./.output/public
           repository-name: Redemption198/Redemption198.github.io
           branch: main
-          target-folder: /nurnet-plus
+          target-folder: ${{ env.BASE_URL }}
       
  
       

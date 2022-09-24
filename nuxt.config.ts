@@ -4,8 +4,14 @@ export default defineNuxtConfig({
 
   components: ["~/components", "~/components/icons"],
 
+  runtimeConfig: {
+    public: {
+      baseURL: process.env.BASE_URL || "",
+    },
+  },
+
   app: {
-    baseURL: "/nurnet-plus/",
+    baseURL: process.env.BASE_URL || "",
   },
   pwa: {
     meta: {

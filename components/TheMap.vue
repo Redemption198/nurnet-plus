@@ -16,6 +16,7 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const config = useRuntimeConfig();
 
 const currentPOI = useCurrentPOI();
 const drawerState = useDrawerState();
@@ -91,7 +92,7 @@ onMounted(() => {
       },
       symbol: {
         symbolType: "image",
-        src: "/nurnet-plus/icons-tileset.png",
+        src: `${config.public.baseURL}/icons-tileset.png`,
         textureCoord: [
           "match",
           ["get", "category_id"],

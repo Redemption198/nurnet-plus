@@ -2,8 +2,10 @@
 const NuxtPage = resolveComponent("NuxtPage");
 const SearchResults = resolveComponent("SearchResults");
 
+const config = useRuntimeConfig();
+
 const { data: mapData, pending } = useLazyFetch("/nurnet-data.json", {
-  // baseURL: "https://redemption198.github.io/nurnet-plus",
+  baseURL: config.public.baseURL,
   server: false,
 });
 </script>
