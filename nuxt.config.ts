@@ -10,6 +10,10 @@ export default defineNuxtConfig({
     },
   },
 
+  experimental: {
+    payloadExtraction: false,
+  },
+
   app: {
     baseURL: process.env.BASE_URL || "",
   },
