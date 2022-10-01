@@ -1,5 +1,4 @@
 <script setup>
-import { useMotionProperties, useSpring } from "@vueuse/motion";
 import { useGesture } from "@vueuse/gesture";
 import { breakpointsTailwind } from "@vueuse/core";
 
@@ -54,6 +53,10 @@ watch(drawerState.value, () => {
 
 watch(lgAndGreater, () => {
   if (lgAndGreater.value) {
+    /**
+     * When @vueuse/motion will support values other than px, use set() to animate the drawer on window resize
+     * https://github.com/vueuse/motion/issues/81
+     */
     set({ y: 0, cursor: "pointer" });
   }
 });
@@ -68,8 +71,9 @@ useGesture(
         drawerTop <= 0 ||
         drawerTop >= window.innerHeight ||
         lgAndGreater.value
-      )
+      ) {
         cancel();
+      }
       set({
         cursor: "grabbing",
         y,
