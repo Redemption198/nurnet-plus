@@ -2,10 +2,7 @@
 const NuxtPage = resolveComponent("NuxtPage");
 const SearchResults = resolveComponent("SearchResults");
 
-const config = useRuntimeConfig();
-
 const { data: mapData, pending } = useLazyFetch("/nurnet-data.json", {
-  baseURL: config.public.baseURL,
   server: false,
 });
 </script>
@@ -21,7 +18,7 @@ const { data: mapData, pending } = useLazyFetch("/nurnet-data.json", {
       ></component>
       <div
         v-else
-        class="flex h-5/6 w-full items-center justify-center text-sm font-bold text-slate-700"
+        class="flex h-5/6 w-full animate-pulse items-center justify-center text-sm font-bold text-slate-700"
       >
         Caricando
       </div>

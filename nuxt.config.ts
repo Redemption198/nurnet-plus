@@ -1,22 +1,14 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 export default defineNuxtConfig({
-  modules: ["@nuxtjs/tailwindcss", "@vueuse/nuxt", "@kevinmarrec/nuxt-pwa"],
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "@vueuse/nuxt",
+    "@kevinmarrec/nuxt-pwa",
+    "@vueuse/motion/nuxt",
+  ],
 
   components: ["~/components", "~/components/icons"],
 
-  runtimeConfig: {
-    public: {
-      baseURL: process.env.BASE_URL || "",
-    },
-  },
-
-  experimental: {
-    payloadExtraction: false,
-  },
-
-  app: {
-    baseURL: process.env.BASE_URL || "",
-  },
   pwa: {
     meta: {
       name: "NurNet+",
@@ -34,29 +26,25 @@ export default defineNuxtConfig({
       theme_color: "#fe8702",
       icons: [
         {
-          src:
-            process.env.BASE_URL || "" + "/pwa/manifest-icon-192.maskable.png",
+          src: "/pwa/manifest-icon-192.maskable.png",
           sizes: "192x192",
           type: "image/png",
           purpose: "any",
         },
         {
-          src:
-            process.env.BASE_URL || "" + "/pwa/manifest-icon-192.maskable.png",
+          src: "/pwa/manifest-icon-192.maskable.png",
           sizes: "192x192",
           type: "image/png",
           purpose: "maskable",
         },
         {
-          src:
-            process.env.BASE_URL || "" + "/pwa/manifest-icon-512.maskable.png",
+          src: "/pwa/manifest-icon-512.maskable.png",
           sizes: "512x512",
           type: "image/png",
           purpose: "any",
         },
         {
-          src:
-            process.env.BASE_URL || "" + "/pwa/manifest-icon-512.maskable.png",
+          src: "/pwa/manifest-icon-512.maskable.png",
           sizes: "512x512",
           type: "image/png",
           purpose: "maskable",

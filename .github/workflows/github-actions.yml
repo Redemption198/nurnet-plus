@@ -18,7 +18,7 @@ jobs:
       - name: Create and Setup .env file 📄
         run: |
           touch .env
-          echo BASE_URL=${{ env.BASE_URL }} > .env
+          echo NUXT_APP_BASE_URL=${{ env.BASE_URL }} > .env
           cat .env
 
       - name: Install and Build 🔧
