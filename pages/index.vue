@@ -2,7 +2,7 @@
 const NuxtPage = resolveComponent("NuxtPage");
 const SearchResults = resolveComponent("SearchResults");
 
-const { data: mapData, pending } = useLazyFetch("/nurnet-data.json", {
+const { data: mapData, pending } = useLazyFetch("nurnet-data.json", {
   server: false,
 });
 </script>

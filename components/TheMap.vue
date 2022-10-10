@@ -92,7 +92,7 @@ onMounted(() => {
       },
       symbol: {
         symbolType: "image",
-        src: config.app.baseURL || "" + "/icons-tileset.png",
+        src: `${config.app.baseURL}icons-tileset.png`,
         textureCoord: [
           "match",
           ["get", "category_id"],

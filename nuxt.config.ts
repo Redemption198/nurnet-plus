@@ -26,25 +26,25 @@ export default defineNuxtConfig({
       theme_color: "#fe8702",
       icons: [
         {
-          src: "/pwa/manifest-icon-192.maskable.png",
+          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-192.maskable.png`,
           sizes: "192x192",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: "/pwa/manifest-icon-192.maskable.png",
+          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-192.maskable.png`,
           sizes: "192x192",
           type: "image/png",
           purpose: "maskable",
         },
         {
-          src: "/pwa/manifest-icon-512.maskable.png",
+          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-512.maskable.png`,
           sizes: "512x512",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: "/pwa/manifest-icon-512.maskable.png",
+          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-512.maskable.png`,
           sizes: "512x512",
           type: "image/png",
           purpose: "maskable",

@@ -3,7 +3,7 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
-    "generate": "NUXT_APP_BASE_URL=/nurnet-plus nuxt generate",
+    "generate": "NUXT_APP_BASE_URL=/nurnet-plus/ nuxt generate",
     "generate-pwa-assets": "npx pwa-asset-generator ./assets/nurnet-plus.svg ./public/pwa -b 'linear-gradient(to right bottom, #fe8702ff, #d87401ff, #b26100ff)'",
     "preview": "nuxt preview",
     "lint": "eslint ."

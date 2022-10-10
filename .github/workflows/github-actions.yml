@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  BASE_URL: /nurnet-plus
+  BASE_URL: /nurnet-plus/
 
 jobs:
   build-and-deploy:
