@@ -24,7 +24,7 @@ jobs:
       - name: Install and Build 🔧
         run: |
           yarn install
-          npx nuxi generate
+          yarn generate
 
       - name: Deploy to GitHub Pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4.4.0
