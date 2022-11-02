@@ -51,7 +51,7 @@ function getCategoryComponent(category) {
 </script>
 
 <template>
-  <div class="m-4 flex flex-col gap-y-4">
+  <div class="m-4 flex h-full flex-col gap-y-4">
     <input
       v-model="searchInput"
       type="text"
@@ -59,7 +59,12 @@ function getCategoryComponent(category) {
       class="rounded-lg px-2 py-2 focus:outline-none"
     />
 
-    <div v-bind="containerProps" class="scrollbar-hidden h-screen">
+    <IconNurnetPlus
+      v-if="!results.length > 0"
+      class="mt-[30%] mb-auto h-32 w-32 self-center fill-slate-400/30"
+    />
+
+    <div v-else v-bind="containerProps" class="scrollbar-hidden h-screen">
       <div v-bind="wrapperProps" class="flex flex-col gap-y-2">
         <NuxtLink
           v-for="result in list"
