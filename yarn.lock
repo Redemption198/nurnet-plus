@@ -531,7 +531,7 @@
   resolved "https://npm.thux.dev/@nuxt%2fdevalue/-/devalue-2.0.0.tgz#c7bd7e9a516514e612d5d2e511ffc399e0eac322"
   integrity sha512-YBI/6o2EBz02tdEJRBK8xkt3zvOFOWlLBf7WKYGBsSYSRtjjgrqPe2skp6VLLmKx5WbHHDNcW+6oACaurxGzeA==
 
-"@nuxt/kit@3.0.0", "@nuxt/kit@^3.0.0-rc.12", "@nuxt/kit@^3.0.0-rc.13", "@nuxt/kit@^3.0.0-rc.14":
+"@nuxt/kit@3.0.0", "@nuxt/kit@^3.0.0", "@nuxt/kit@^3.0.0-rc.12", "@nuxt/kit@^3.0.0-rc.13", "@nuxt/kit@^3.0.0-rc.14":
   version "3.0.0"
   resolved "https://npm.thux.dev/@nuxt%2fkit/-/kit-3.0.0.tgz#ae49b4e27b15285556cb88f35a56309c5ca0dd79"
   integrity sha512-7ZsOLt5s9a0ZleAIzmoD70JwkZf5ti6bDdxl6f8ew7Huxz+ni/oRfTPTX9TrORXsgW5CvDt6Q9M7IJNPkAN/Iw==
@@ -875,11 +875,6 @@
   resolved "https://npm.thux.dev/@types%2funist/-/unist-2.0.6.tgz#250a7b16c3b91f672a24552ec64678eeb1d3a08d"
   integrity sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==
 
-"@types/web-bluetooth@^0.0.14":
-  version "0.0.14"
-  resolved "https://npm.thux.dev/@types%2fweb-bluetooth/-/web-bluetooth-0.0.14.tgz#94e175b53623384bff1f354cdb3197a8d63cdbe5"
-  integrity sha512-5d2RhCard1nQUC3aHcq/gHzWYO6K0WJmAbjO7mQJgCQKtZpgXxv1rOM6O/dBDhDYYVutk1sciOgNSe+5YyfM8A==
-
 "@types/web-bluetooth@^0.0.16":
   version "0.0.16"
   resolved "https://npm.thux.dev/@types%2fweb-bluetooth/-/web-bluetooth-0.0.16.tgz#1d12873a8e49567371f2a75fe3e7f7edca6662d8"
@@ -1144,7 +1139,7 @@
   resolved "https://npm.thux.dev/@vue%2fshared/-/shared-3.2.45.tgz#a3fffa7489eafff38d984e23d0236e230c818bc2"
   integrity sha512-Ewzq5Yhimg7pSztDV+RH1UDKBzmtqieXQlpTVm2AwraoRL/Rks96mvd8Vgi7Lj+h+TH8dv7mXD3FRZR3TUvbSg==
 
-"@vueuse/core@9.6.0", "@vueuse/core@^9.6.0":
+"@vueuse/core@9.6.0", "@vueuse/core@^9.5.0", "@vueuse/core@^9.6.0":
   version "9.6.0"
   resolved "https://npm.thux.dev/@vueuse%2fcore/-/core-9.6.0.tgz#de1d4730849cdbe28a9ebcf6cad167a700919603"
   integrity sha512-qGUcjKQXHgN+jqXEgpeZGoxdCbIDCdVPz3QiF1uyecVGbMuM63o96I1GjYx5zskKgRI0FKSNsVWM7rwrRMTf6A==
@@ -1152,16 +1147,6 @@
     "@types/web-bluetooth" "^0.0.16"
     "@vueuse/metadata" "9.6.0"
     "@vueuse/shared" "9.6.0"
-    vue-demi "*"
-
-"@vueuse/core@^8.0.1":
-  version "8.9.4"
-  resolved "https://npm.thux.dev/@vueuse%2fcore/-/core-8.9.4.tgz#c7db40f19390b3c9f4ff9294a30461497f62ec19"
-  integrity sha512-B/Mdj9TK1peFyWaPof+Zf/mP9XuGAngaJZBwPaXBvU3aCTZlx3ltlrFFFyMV4iGBwsjSCeUCgZrtkEj9dS2Y3Q==
-  dependencies:
-    "@types/web-bluetooth" "^0.0.14"
-    "@vueuse/metadata" "8.9.4"
-    "@vueuse/shared" "8.9.4"
     vue-demi "*"
 
 "@vueuse/gesture@^2.0.0-beta.1":
@@ -1193,27 +1178,24 @@
     "@vueuse/shared" "9.6.0"
     vue-demi "*"
 
-"@vueuse/metadata@8.9.4":
-  version "8.9.4"
-  resolved "https://npm.thux.dev/@vueuse%2fmetadata/-/metadata-8.9.4.tgz#a4132db33e4c1b1023636acfa20aa7b37ab3d978"
-  integrity sha512-IwSfzH80bnJMzqhaapqJl9JRIiyQU0zsRGEgnxN6jhq7992cPUJIRfV+JHRIZXjYqbwt07E1gTEp0R0zPJ1aqw==
-
 "@vueuse/metadata@9.6.0":
   version "9.6.0"
   resolved "https://npm.thux.dev/@vueuse%2fmetadata/-/metadata-9.6.0.tgz#b0a73277538cebef5d477983f74fdd2aa21ce5f9"
   integrity sha512-sIC8R+kWkIdpi5X2z2Gk8TRYzmczDwHRhEFfCu2P+XW2JdPoXrziqsGpDDsN7ykBx4ilwieS7JUIweVGhvZ93w==
 
-"@vueuse/motion@^2.0.0-beta.12":
-  version "2.0.0-beta.12"
-  resolved "https://npm.thux.dev/@vueuse%2fmotion/-/motion-2.0.0-beta.12.tgz#5ce0afd04f1991a87370ce90907e3979b82f6380"
-  integrity sha512-cAZqXexLX6xo+H1N1Mv+wBSSqG4wB+BdjIuHQ50jwlelXCDxSi8gj0K/9nDS+aUZtWh6YMwS6UGCKg58jMVglA==
+"@vueuse/motion@^2.0.0-beta.25":
+  version "2.0.0-beta.25"
+  resolved "https://npm.thux.dev/@vueuse%2fmotion/-/motion-2.0.0-beta.25.tgz#740929d5c6ce2e7d5eeb693d319b86d72da1bec7"
+  integrity sha512-C0D1qpfd+YYbjoUCNEvbLbaajGI6uwrspJL3g+kbv0uBiVRM4+GWeHwjDZkOAceTYDCVAW7lYhVgZk4ZY/+2RA==
   dependencies:
-    "@vueuse/core" "^8.0.1"
-    "@vueuse/shared" "^8.0.1"
-    framesync "^6.1.0"
-    popmotion "^11.0.3"
-    style-value-types "^5.1.0"
-    vue-demi "*"
+    "@vueuse/core" "^9.5.0"
+    "@vueuse/shared" "^9.5.0"
+    csstype "^3.1.1"
+    framesync "^6.1.2"
+    popmotion "^11.0.5"
+    style-value-types "^5.1.2"
+  optionalDependencies:
+    "@nuxt/kit" "^3.0.0"
 
 "@vueuse/nuxt@^9.6.0":
   version "9.6.0"
@@ -1226,14 +1208,7 @@
     local-pkg "^0.4.2"
     vue-demi "*"
 
-"@vueuse/shared@8.9.4", "@vueuse/shared@^8.0.1":
-  version "8.9.4"
-  resolved "https://npm.thux.dev/@vueuse%2fshared/-/shared-8.9.4.tgz#c9741c30ffb666b50d62f0dd80b76119fd47573e"
-  integrity sha512-wt+T30c4K6dGRMVqPddexEVLa28YwxW5OFIPmzUHICjphfAuBFTTdDoyqREZNDOFJZ44ARH1WWQNCUK8koJ+Ag==
-  dependencies:
-    vue-demi "*"
-
-"@vueuse/shared@9.6.0":
+"@vueuse/shared@9.6.0", "@vueuse/shared@^9.5.0":
   version "9.6.0"
   resolved "https://npm.thux.dev/@vueuse%2fshared/-/shared-9.6.0.tgz#ce2e0e8124c6bdb1e270fc213e334ccc71dcb951"
   integrity sha512-/eDchxYYhkHnFyrb00t90UfjCx94kRHxc7J1GtBCqCG4HyPMX+krV9XJgVtWIsAMaxKVU4fC8NSUviG1JkwhUQ==
@@ -2094,6 +2069,11 @@ csstype@^2.6.8:
   version "2.6.21"
   resolved "https://npm.thux.dev/csstype/-/csstype-2.6.21.tgz#2efb85b7cc55c80017c66a5ad7cbd931fda3a90e"
   integrity sha512-Z1PhmomIfypOpoMjRQB70jfvy/wxT50qW08YXO5lMIJkrdq4yOTR+AW7FqutScmB9NkLwxo+jU+kZLbofZZq/w==
+
+csstype@^3.1.1:
+  version "3.1.1"
+  resolved "https://npm.thux.dev/csstype/-/csstype-3.1.1.tgz#841b532c45c758ee546a11d5bd7b7b473c8c30b9"
+  integrity sha512-DJR/VvkAvSZW9bTouZue2sSxDwdTN92uHjqeKVm+0dAqdfNykRzQ95tay8aXMBAAPpUiq4Qcug2L7neoRh2Egw==
 
 cuint@^0.2.2:
   version "0.2.2"
@@ -3097,7 +3077,7 @@ fraction.js@^4.2.0:
   resolved "https://npm.thux.dev/fraction.js/-/fraction.js-4.2.0.tgz#448e5109a313a3527f5a3ab2119ec4cf0e0e2950"
   integrity sha512-MhLuK+2gUcnZe8ZHlaaINnQLl0xRIGRfcGk2yl8xoQAfHrSsL3rYu6FCmBdkdbhc9EPlwyGHewaRsvwRMJtAlA==
 
-framesync@6.1.2, framesync@^6.1.0:
+framesync@6.1.2, framesync@^6.1.2:
   version "6.1.2"
   resolved "https://npm.thux.dev/framesync/-/framesync-6.1.2.tgz#755eff2fb5b8f3b4d2b266dd18121b300aefea27"
   integrity sha512-jBTqhX6KaQVDyus8muwZbBeGGP0XgujBRbQ7gM7BRdS3CadCZIHiawyzYLnafYcvZIh5j8WE7cxZKFn7dXhu9g==
@@ -5095,7 +5075,7 @@ pluralize@^8.0.0:
   resolved "https://npm.thux.dev/pluralize/-/pluralize-8.0.0.tgz#1a6fa16a38d12a1901e0320fa017051c539ce3b1"
   integrity sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==
 
-popmotion@^11.0.3:
+popmotion@^11.0.5:
   version "11.0.5"
   resolved "https://npm.thux.dev/popmotion/-/popmotion-11.0.5.tgz#8e3e014421a0ffa30ecd722564fd2558954e1f7d"
   integrity sha512-la8gPM1WYeFznb/JqF4GiTkRRPZsfaj2+kCxqQgr2MJylMmIKUwBfWW8Wa5fml/8gmtlD5yI01MP1QCZPWmppA==
@@ -6208,7 +6188,7 @@ strip-literal@^1.0.0:
   dependencies:
     acorn "^8.8.1"
 
-style-value-types@5.1.2, style-value-types@^5.1.0:
+style-value-types@5.1.2, style-value-types@^5.1.2:
   version "5.1.2"
   resolved "https://npm.thux.dev/style-value-types/-/style-value-types-5.1.2.tgz#6be66b237bd546048a764883528072ed95713b62"
   integrity sha512-Vs9fNreYF9j6W2VvuDTP7kepALi7sk0xtk2Tu8Yxi9UoajJdEVpNpCov0HsLTqXvNGKX+Uv09pkozVITi1jf3Q==

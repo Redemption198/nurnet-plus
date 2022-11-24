@@ -28,7 +28,7 @@
   "dependencies": {
     "@vueuse/gesture": "^2.0.0-beta.1",
     "@vueuse/integrations": "^9.6.0",
-    "@vueuse/motion": "^2.0.0-beta.12",
+    "@vueuse/motion": "^2.0.0-beta.25",
     "fuse.js": "^6.6.2",
     "ol": "^7.1.0"
   }
