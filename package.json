@@ -4,7 +4,9 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "NUXT_APP_BASE_URL=/nurnet-plus/ nuxt generate",
-    "generate-pwa-assets": "npx pwa-asset-generator ./assets/nurnet-plus.svg ./public/pwa -b 'linear-gradient(to right bottom, #fe8702ff, #d87401ff, #b26100ff)' --padding 'calc(50vh - 20%) calc(50vw - 25%)'",
+    "generate-pwa-assets-base": "npx pwa-asset-generator ./assets/nurnet-plus.svg ./public/pwa -b 'linear-gradient(to right bottom, #fe8702ff, #d87401ff, #b26100ff)'",
+    "generate-pwa-assets": "npm run generate-pwa-assets-base -- --padding 'calc(50vh - 20%) calc(50vw - 25%)'; npm run generate-pwa-assets-icon-only",
+    "generate-pwa-assets-icon-only": "npm run generate-pwa-assets-base -- --icon-only",
     "preview": "nuxt preview",
     "lint": "eslint ."
   },
