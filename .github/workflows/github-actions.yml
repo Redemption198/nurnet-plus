@@ -4,8 +4,11 @@ on:
     branches:
       - main
 
+permissions: write-all
+      
 env:
   BASE_URL: /nurnet-plus/
+        
 
 jobs:
   build-and-deploy:
@@ -27,7 +30,7 @@ jobs:
           yarn generate
 
       - name: Deploy to GitHub Pages 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.4.0
+        uses: JamesIves/github-pages-deploy-action@v4.4.3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           folder: ./.output/public
