@@ -2,23 +2,14 @@
 export default defineNuxtConfig({
   modules: [
     "@nuxtjs/tailwindcss",
+    "@vite-pwa/nuxt",
     "@vueuse/nuxt",
-    "@kevinmarrec/nuxt-pwa",
     "@vueuse/motion/nuxt",
   ],
 
   components: ["~/components", "~/components/icons"],
 
   pwa: {
-    meta: {
-      name: "NurNet+",
-      description: "Discover Sardinia's numerous Nuraghe and more",
-      theme_color: "#fe8702",
-      ogDescription: "Discover Sardinia's numerous Nuraghe and more",
-      ogSiteName: "NurNet+",
-      ogTitle: "NurNet+",
-      mobileAppIOS: true,
-    },
     manifest: {
       name: "NurNet+",
       short_name: "NurNet+",
