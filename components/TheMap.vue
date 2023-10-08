@@ -6,7 +6,6 @@ import OSM from "ol/source/OSM.js";
 import WebGLPointsLayer from "ol/layer/WebGLPoints.js";
 import { Vector } from "ol/source.js";
 import GeoJSON from "ol/format/GeoJSON.js";
-import { onBeforeRouteUpdate } from "vue-router";
 
 const props = defineProps({
   pois: {
@@ -90,50 +89,49 @@ onMounted(() => {
       variables: {
         selectedMarker: "",
       },
-      symbol: {
         symbolType: "image",
-        src: `${config.app.baseURL}icons-tileset.png`,
-        textureCoord: [
+        "icon-src": `${config.app.baseURL}icons-tileset.png`,
+        "icon-offset": [
           "match",
           ["get", "category_id"],
           // Menhir
           "70",
-          [0.375, 0, 0.5, 1],
+          [0, 64, 0, 64],
           "71",
-          [0.375, 0, 0.5, 1],
+          [0, 64, 0, 64],
           "72",
-          [0.375, 0, 0.5, 1],
+          [0, 64, 0, 64],
           "73",
-          [0.375, 0, 0.5, 1],
+          [0, 64, 0, 64],
           // Domus de janas
           "30",
-          [0.125, 0, 0.25, 1],
+          [64, 0, 64, 0],
           // Tombe dei giganti
           "60",
-          [0.25, 0, 0.375, 1],
+          [128, 0, 128, 0],
           "61",
-          [0.25, 0, 0.375, 1],
+          [128, 0, 128, 0],
           "62",
-          [0.25, 0, 0.375, 1],
+          [128, 0, 128, 0],
           "63",
-          [0.25, 0, 0.375, 1],
+          [128, 0, 128, 0],
           // Dolmen
           "20",
-          [0, 0, 0.125, 1],
+          [192, 0, 192, 0],
           "21",
-          [0, 0, 0.125, 1],
+          [192, 0, 192, 0],
           // Villaggi
           "40",
-          [0.5, 0, 0.625, 1],
+          [256, 0, 256, 0],
           "41",
-          [0.5, 0, 0.625, 1],
+          [256, 0, 256, 0],
           // Culto dell'acqua
           "50",
-          [0.625, 0, 0.75, 1],
+          [320, 0, 320, 0],
           "51",
-          [0.625, 0, 0.75, 1],
+          [320, 0, 320, 0],
           "52",
-          [0.625, 0, 0.75, 1],
+          [320, 0, 320, 0],
           // Altro - Unicum e Grotte Tafoni
           // "101",
           // [170, 171, 168],
@@ -141,15 +139,14 @@ onMounted(() => {
           // [170, 171, 168],
           // Nuraghe
           "10",
-          [0.75, 0, 0.875, 1],
+          [384, 0, 384, 0],
           "11",
-          [0.75, 0, 0.875, 1],
+          [384, 0, 384, 0],
           "12",
-          [0.75, 0, 0.875, 1],
+          [384, 0, 384, 0],
           "13",
-          [0.75, 0, 0.875, 1],
-          // Default
-          [0.875, 0, 1, 1],
+          [384, 0, 384, 0],
+          [0, 64, 0, 64],
         ],
         size: [
           "case",
@@ -159,7 +156,10 @@ onMounted(() => {
         ],
         opacity: 1,
         rotateWithView: false,
-      },
+        'icon-size': [64, 64],
+        'icon-scale': 0.35,
+        'icon-width': 512,
+        'icon-height': 64,
     },
   });
 
