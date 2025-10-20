@@ -42,5 +42,15 @@ export default defineNuxtConfig({
         },
       ],
     },
+    workbox: {
+      additionalManifestEntries: [
+        {
+          url: "nurnet-data.json",
+          revision: null,
+        },
+      ],
+    },
   },
+
+  compatibilityDate: "2025-10-20",
 });
