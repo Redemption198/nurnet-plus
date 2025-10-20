@@ -17,7 +17,7 @@ function handleHorizontalScroll(event) {
     <div
       v-for="photo in currentPOI.values_.photos"
       :key="photo"
-      class="shrink-0 snap-mandatory snap-center overflow-hidden rounded-lg"
+      class="shrink-0 snap-mandatory snap-center overflow-hidden rounded-2xl"
     >
       <img
         :src="photo"

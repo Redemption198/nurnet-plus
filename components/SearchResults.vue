@@ -56,7 +56,7 @@ function getCategoryComponent(category) {
       v-model="searchInput"
       type="text"
       placeholder="Search"
-      class="rounded-lg px-2 py-2 focus:outline-none"
+      class="rounded-2xl px-2 py-2 focus:outline-none"
     />
 
     <IconNurnetPlus
@@ -69,7 +69,7 @@ function getCategoryComponent(category) {
         <NuxtLink
           v-for="result in list"
           :key="result.index"
-          class="rounded-lg bg-slate-200/75 p-2 text-slate-700 shadow-sm backdrop-blur"
+          class="rounded-2xl bg-slate-200/75 p-2 text-slate-700 shadow-sm backdrop-blur"
           to="/poi"
           @click="
             currentPOI = {

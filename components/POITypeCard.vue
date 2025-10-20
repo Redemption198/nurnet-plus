@@ -24,7 +24,7 @@ function getCategoryComponent(category) {
 
 <template>
   <div
-    class="flex w-full items-center gap-x-2 rounded-lg px-2 py-4 text-gray-100 transition-colors"
+    class="flex w-full items-center gap-x-2 rounded-2xl px-2 py-4 text-gray-100 transition-colors"
     :class="useCategoryColor(Number(currentPOI.values_.category_id))"
   >
     <p

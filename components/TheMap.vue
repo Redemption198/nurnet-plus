@@ -7,6 +7,8 @@ import GeoJSON from "ol/format/GeoJSON.js";
 import VectorSource from "ol/source/Vector";
 import WebGLVectorLayer from "ol/layer/WebGLVector";
 
+import GeoJsonWorker from "~/workers/geojson-worker.js?worker";
+
 const props = defineProps({
   pois: {
     type: Object,
@@ -75,8 +77,43 @@ onMounted(() => {
     });
   });
 
+  // NOTE: props.pois must be stringified before sending to the worker
+  const geojsonString = JSON.stringify(props.pois);
+
+  // Instantiate the formatter on the main thread
+  const geojsonFormat = new GeoJSON();
+
   const vectorSource = new VectorSource({
-    features: new GeoJSON().readFeatures(props.pois),
+    loader: function (extent, resolution, projection, success, failure) {
+      const worker = new GeoJsonWorker();
+
+      // Send the large GeoJSON STRING to the worker
+      worker.postMessage({ geojson: geojsonString });
+
+      worker.onmessage = function (e) {
+        if (e.data.type === "success") {
+          // The worker sent back a simple GeoJSON object
+          const transferableGeoJSON = e.data.geojson;
+
+          // ⚠️ FIX: Read the transferable GeoJSON object back into OL features
+          const features = geojsonFormat.readFeatures(transferableGeoJSON);
+
+          vectorSource.addFeatures(features);
+          success(features);
+        } else if (e.data.type === "error") {
+          console.error("Worker GeoJSON parsing error:", e.data.error);
+          failure();
+        }
+        worker.terminate();
+      };
+
+      worker.onerror = function (error) {
+        console.error("Web Worker error:", error);
+        failure();
+        worker.terminate();
+      };
+    },
+    strategy: VectorSource.all,
   });
 
   const pointsLayer = new WebGLVectorLayer({

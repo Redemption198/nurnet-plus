@@ -29,7 +29,7 @@ if (!currentPOI.value.values_) router.push("/");
 
     <LazyPOIUnverifiedBanner v-if="!currentPOI.values_.verified" class="mx-4" />
 
-    <div class="mx-4 flex gap-x-2">
+    <div class="mx-4 flex gap-x-4">
       <POITypeCard />
 
       <POIStatusCard />
@@ -68,7 +68,7 @@ if (!currentPOI.value.values_) router.push("/");
       :href="`https://www.nurnet.net/mediateca/?s=${currentPOI.values_.content_id}`"
       target="_blank"
       rel="noopener"
-      class="mx-4 my-2 flex min-w-max items-center justify-center gap-x-2 rounded-lg bg-blue-400 fill-white px-4 py-2 font-semibold text-white transition-transform hover:scale-95"
+      class="mx-4 my-2 flex min-w-max items-center justify-center gap-x-2 rounded-2xl bg-blue-400 fill-white px-4 py-2 font-semibold text-white transition-transform hover:scale-95"
       >Vai alla Mediateca NurNet<IconOpenOutside />
     </a>
 
@@ -77,7 +77,7 @@ if (!currentPOI.value.values_) router.push("/");
       :href="currentPOI.values_.source"
       target="_blank"
       rel="noopener"
-      class="mx-4 min-w-max rounded-lg px-4 py-2 text-center font-semibold text-blue-400 transition-transform hover:scale-95"
+      class="mx-4 min-w-max rounded-2xl px-4 py-2 text-center font-semibold text-blue-400 transition-transform hover:scale-95"
     >
       Fonte
     </a>

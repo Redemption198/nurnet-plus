@@ -4,7 +4,7 @@ const currentPOI = useCurrentPOI();
 
 <template>
   <div
-    class="flex w-full items-center gap-x-2 rounded-lg fill-gray-100 p-2 text-gray-100"
+    class="flex w-full items-center gap-x-2 rounded-2xl fill-gray-100 p-2 text-gray-100"
     :class="useStatusColor(currentPOI.values_.stato.toLowerCase())"
   >
     <p
