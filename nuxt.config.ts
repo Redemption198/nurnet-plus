@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     "@vite-pwa/nuxt",
     "@vueuse/nuxt",
     "@vueuse/motion/nuxt",
+    "@nuxt/ui",
   ],
 
   components: ["~/components", "~/components/icons"],

@@ -216,7 +216,7 @@ onMounted(() => {
   <div ref="map" class="h-screen w-screen"></div>
 
   <div
-    class="absolute top-0 right-0 z-[1] m-4 flex flex-col items-center overflow-hidden rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
+    class="absolute top-0 right-0 z-1 m-4 flex flex-col items-center overflow-hidden rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
   >
     <MapControlsButton
       class="p-3"

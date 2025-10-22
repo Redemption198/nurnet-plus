@@ -53,7 +53,7 @@ if (!currentPOI.value.values_) router.push("/");
 
     <p
       v-if="currentPOI.values_.source && !isURL(currentPOI.values_.source)"
-      class="mx-4 flex flex-col break-words text-lg font-semibold"
+      class="mx-4 flex flex-col wrap-break-word text-lg font-semibold"
     >
       <span class="text-sm text-slate-700">Fonte</span
       >{{ currentPOI.values_.source }}

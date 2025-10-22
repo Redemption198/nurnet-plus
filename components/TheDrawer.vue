@@ -15,24 +15,36 @@ const { motionProperties } = useMotionProperties(drawer, {
   y: 0,
 });
 
+// Lighter spring configuration for smoother feel
 const { set } = useSpring(motionProperties, {
-  damping: 35,
-  stiffness: 400,
+  damping: 20, // Lower damping = less resistance (was 35)
+  stiffness: 200, // Lower stiffness = softer spring (was 400)
 });
+
+// Track the initial Y position when drag starts
+const initialY = ref(0);
 
 function setDrawerOnTop() {
   const screenSection = window.innerHeight / 3;
-  set({ y: screenSection * 0.01, cursor: "grab" });
+  const targetY = screenSection * 0.01;
+  set({ y: targetY, cursor: "grab" });
+  initialY.value = targetY;
   drawerState.value.currentPosition = "DRAWER_ON_TOP_SCREEN";
 }
+
 function setDrawerOnMiddle() {
   const screenSection = window.innerHeight / 3;
-  set({ y: screenSection, cursor: "grab" });
+  const targetY = screenSection;
+  set({ y: targetY, cursor: "grab" });
+  initialY.value = targetY;
   drawerState.value.currentPosition = "DRAWER_ON_MIDDLE_SCREEN";
 }
+
 function setDrawerOnBottom() {
   const screenSection = window.innerHeight / 3;
-  set({ y: screenSection * 2, cursor: "grab" });
+  const targetY = screenSection * 2;
+  set({ y: targetY, cursor: "grab" });
+  initialY.value = targetY;
   drawerState.value.currentPosition = "DRAWER_ON_BOTTOM_SCREEN";
 }
 
@@ -53,11 +65,8 @@ watch(drawerState.value, () => {
 
 watch(lgAndGreater, () => {
   if (lgAndGreater.value) {
-    /**
-     * When @vueuse/motion will support values other than px, use set() to animate the drawer on window resize
-     * https://github.com/vueuse/motion/issues/81
-     */
     set({ y: 0, cursor: "pointer" });
+    initialY.value = 0;
   }
 });
 
@@ -65,6 +74,10 @@ const { y: drawerContentY } = useScroll(drawerContent);
 
 useGesture(
   {
+    onDragStart: () => {
+      // Capture the current Y position when drag starts
+      initialY.value = motionProperties.y;
+    },
     onDrag: ({ movement: [x, y], cancel }) => {
       const drawerTop = drawer.value.getBoundingClientRect().top;
       if (
@@ -74,9 +87,10 @@ useGesture(
       ) {
         cancel();
       }
+      // Apply movement relative to the initial position
       set({
         cursor: "grabbing",
-        y,
+        y: initialY.value + y,
       });
     },
     onDragEnd: ({ swipe, velocity }) => {
@@ -133,7 +147,7 @@ useGesture(
         return;
       }
 
-      set({ x: 0, y: 0, cursor: "grab" });
+      set({ x: 0, y: initialY.value, cursor: "grab" });
     },
   },
   {
@@ -158,6 +172,7 @@ function enableScroll() {
 
 onMounted(() => {
   disableScroll();
+  if (!lgAndGreater.value) setDrawerOnBottom();
 });
 
 onUnmounted(() => {
@@ -176,7 +191,7 @@ onDeactivated(() => {
 <template>
   <div
     ref="drawer"
-    class="absolute z-[2] select-none rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
+    class="absolute z-2 select-none rounded-2xl bg-slate-200/70 shadow-md backdrop-blur-2xl"
     style="box-shadow: 8px rgb(0 0 0 / 0.15)"
     :class="lgAndGreater ? 'inset-4 w-1/3' : '-bottom-12 h-full w-full'"
   >
