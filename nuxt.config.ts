@@ -2,7 +2,7 @@
 const baseURL = process.env.NUXT_APP_BASE_URL ?? "/";
 
 export default defineNuxtConfig({
-  modules: ["@vite-pwa/nuxt", "@vueuse/nuxt", "@vueuse/motion/nuxt", "@nuxt/ui"],
+  modules: ["@vite-pwa/nuxt", "@vueuse/nuxt", "@nuxt/ui"],
 
   css: ["~/assets/css/tailwind.css"],
 

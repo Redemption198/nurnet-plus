@@ -54,7 +54,11 @@ function getCategoryComponent(category) {
 
 <template>
   <!-- Bottom padding on mobile covers the part of the drawer that sits below the screen -->
-  <div v-bind="containerProps" class="scrollbar-hidden h-full pb-16 lg:pb-4">
+  <div
+    v-bind="containerProps"
+    data-drawer-scroll
+    class="scrollbar-hidden h-full overscroll-contain pb-16 lg:pb-4"
+  >
     <DrawerHeader :scrolled="listY > 0">
       <input
         v-model="searchInput"

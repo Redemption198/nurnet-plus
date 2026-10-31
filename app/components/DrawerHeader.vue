@@ -10,6 +10,7 @@ defineProps({
 
 <template>
   <div
+    data-drawer-drag
     class="sticky top-0 z-10 rounded-t-2xl transition-[background-color,box-shadow] duration-200"
     :class="
       scrolled
@@ -18,7 +19,7 @@ defineProps({
     "
   >
     <DrawerHandle />
-    <div class="px-4 pb-3">
+    <div class="px-4 pb-3 lg:pt-4">
       <slot />
     </div>
   </div>
