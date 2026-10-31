@@ -1,39 +1,33 @@
 {
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "NUXT_APP_BASE_URL=/nurnet-plus/ nuxt generate",
-    "generate-pwa-assets-base": "npx pwa-asset-generator ./assets/nurnet-plus.svg ./public/pwa -b 'linear-gradient(to right bottom, #fe8702ff, #d87401ff, #b26100ff)'",
-    "generate-pwa-assets": "npm run generate-pwa-assets-base -- --padding 'calc(50vh - 20%) calc(50vw - 25%)'; npm run generate-pwa-assets-icon-only",
-    "generate-pwa-assets-icon-only": "npm run generate-pwa-assets-base -- --icon-only",
+    "generate-pwa-assets-base": "vp dlx pwa-asset-generator ./app/assets/nurnet-plus.svg ./public/pwa -b 'linear-gradient(to right bottom, #fe8702ff, #d87401ff, #b26100ff)'",
+    "generate-pwa-assets": "vp run generate-pwa-assets-base -- --padding 'calc(50vh - 20%) calc(50vw - 25%)'; vp run generate-pwa-assets-icon-only",
+    "generate-pwa-assets-icon-only": "vp run generate-pwa-assets-base -- --icon-only",
     "preview": "nuxt preview",
-    "lint": "eslint ."
-  },
-  "devDependencies": {
-    "@antfu/eslint-config": "6.0.0",
-    "@nuxtjs/tailwindcss": "v7.0.0-beta.0",
-    "@tailwindcss/forms": "^0.5.10",
-    "@tauri-apps/cli": "^2.9.0",
-    "@vite-pwa/nuxt": "^1.0.7",
-    "@vueuse/core": "^13.9.0",
-    "@vueuse/nuxt": "^13.9.0",
-    "eslint": "^9.38.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-vue": "^10.5.1",
-    "nuxt": "^4.1.3",
-    "prettier": "^3.6.2",
-    "prettier-plugin-tailwindcss": "^0.7.1",
-    "typescript": "^5.9.3"
+    "postinstall": "nuxt prepare",
+    "prepare": "vp config"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.0.1",
+    "@nuxt/ui": "^4.12.0",
     "@vueuse/gesture": "2.0.0",
-    "@vueuse/integrations": "^13.9.0",
     "@vueuse/motion": "^3.0.3",
-    "fuse.js": "^7.1.0",
-    "ol": "^10.6.1",
-    "tailwindcss": "^4.1.15"
+    "fuse.js": "^7.5.0",
+    "ol": "^10.11.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4",
+    "@types/node": "^24.19.2",
+    "@vite-pwa/nuxt": "^1.1.1",
+    "@vueuse/core": "^15.0.0",
+    "@vueuse/nuxt": "^15.0.0",
+    "nuxt": "^4.6.3",
+    "typescript": "^5.9.3",
+    "vite-plus": "catalog:"
   }
 }

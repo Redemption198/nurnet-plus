@@ -1,12 +1,10 @@
-// https://v3.nuxtjs.org/api/configuration/nuxt.config
+// https://nuxt.com/docs/api/configuration/nuxt-config
+const baseURL = process.env.NUXT_APP_BASE_URL ?? "/";
+
 export default defineNuxtConfig({
-  modules: [
-    "@nuxtjs/tailwindcss",
-    "@vite-pwa/nuxt",
-    "@vueuse/nuxt",
-    "@vueuse/motion/nuxt",
-    "@nuxt/ui",
-  ],
+  modules: ["@vite-pwa/nuxt", "@vueuse/nuxt", "@vueuse/motion/nuxt", "@nuxt/ui"],
+
+  css: ["~/assets/css/tailwind.css"],
 
   components: ["~/components", "~/components/icons"],
 
@@ -18,25 +16,25 @@ export default defineNuxtConfig({
       theme_color: "#fe8702",
       icons: [
         {
-          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-192.maskable.png`,
+          src: `${baseURL}pwa/manifest-icon-192.maskable.png`,
           sizes: "192x192",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-192.maskable.png`,
+          src: `${baseURL}pwa/manifest-icon-192.maskable.png`,
           sizes: "192x192",
           type: "image/png",
           purpose: "maskable",
         },
         {
-          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-512.maskable.png`,
+          src: `${baseURL}pwa/manifest-icon-512.maskable.png`,
           sizes: "512x512",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: `${process.env.NUXT_APP_BASE_URL}pwa/manifest-icon-512.maskable.png`,
+          src: `${baseURL}pwa/manifest-icon-512.maskable.png`,
           sizes: "512x512",
           type: "image/png",
           purpose: "maskable",
@@ -44,6 +42,8 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
+      // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly
+      globPatterns: ["**/*.{js,css,html,svg,ico,woff2}", "icons-tileset.png"],
       additionalManifestEntries: [
         {
           url: "nurnet-data.json",

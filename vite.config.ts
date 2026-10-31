@@ -1,0 +1,16 @@
+import { defineConfig } from "vite-plus";
+
+export default defineConfig({
+  staged: {
+    "*": "vp check --fix",
+  },
+  fmt: {
+    // Large dataset shipped as-is to the client; formatting it would inflate the download
+    ignorePatterns: ["public/nurnet-data.json"],
+  },
+  lint: {
+    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+    rules: { "vite-plus/prefer-vite-plus-imports": "error" },
+    options: { typeAware: true, typeCheck: true },
+  },
+});

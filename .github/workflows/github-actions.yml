@@ -1,40 +1,48 @@
 name: GitHub Pages Deploy
+
 on:
   push:
     branches:
       - main
-      
-env:
-  BASE_URL: /nurnet-plus/
-        
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    concurrency: ci-${{ github.ref }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Create and Setup .env file 📄
-        run: |
-          touch .env
-          echo NUXT_APP_BASE_URL=${{ env.BASE_URL }} > .env
-          cat .env
-
-      - name: Install and Build 🔧
-        run: |
-          yarn install
-          yarn generate
-
-      - name: Deploy to GitHub Pages 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.4.3
+      - name: Setup Vite+ 📦
+        uses: voidzero-dev/setup-vp@v1.22.0
         with:
-          token: ${{ secrets.REPO_ACCESS }}
-          folder: ./.output/public
-          repository-name: Redemption198/Redemption198.github.io
-          branch: main
-          target-folder: ${{ env.BASE_URL }}
-      
- 
-      
+          node-version: "24"
+          cache: true
+
+      - name: Build 🔧
+        run: vp run generate
+
+      - name: Upload artifact 📤
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./.output/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages 🚀
+        id: deployment
+        uses: actions/deploy-pages@v5
