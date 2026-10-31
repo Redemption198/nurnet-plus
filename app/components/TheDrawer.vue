@@ -66,9 +66,9 @@ watch(drawerState.value, () => {
 });
 
 // iOS-style sheet gestures (mobile only):
-// - the header always drags the sheet
-// - below the top detent, dragging anywhere moves the sheet instead of scrolling the content
-// - at the top detent the content scrolls, and pulling down from its top drags the sheet
+// - the header (handle + title/search) always drags the sheet
+// - on the content, scrolling takes priority: the sheet only moves when the content can't
+//   scroll any further that way (pulling down at its top, or nothing to scroll)
 // - the release velocity picks the detent, and the sheet carries on at that speed
 let gesture = null;
 
@@ -78,13 +78,21 @@ function rubberBand(overshoot) {
   return (1 - 1 / ((overshoot * 0.55) / dimension + 1)) * dimension;
 }
 
+// Can a scroll container under the finger move its content for a drag of dy?
+// (dy < 0: finger moves up, content scrolls down)
+function canScroll(target, dy) {
+  for (let el = target.closest("[data-drawer-scroll]"); el;) {
+    if (dy < 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0) {
+      return true;
+    }
+    el = el.parentElement?.closest("[data-drawer-scroll]");
+  }
+  return false;
+}
+
 function gestureMode(dy) {
   if (gesture.target.closest("[data-drawer-drag]")) return "sheet";
-  if (drawerState.value.currentPosition !== "DRAWER_ON_TOP_SCREEN") return "sheet";
-
-  const scroller = gesture.target.closest("[data-drawer-scroll]");
-  if (dy > 0 && (!scroller || scroller.scrollTop <= 0)) return "sheet";
-  return "scroll";
+  return canScroll(gesture.target, dy) ? "scroll" : "sheet";
 }
 
 function startGesture(clientY, target, isMouse) {
@@ -96,9 +104,10 @@ function moveGesture(clientY, event) {
   if (!gesture) return;
   const dy = clientY - gesture.startY;
 
-  // Decide on the first movement: later the browser may already be scrolling natively
+  // Decide within the first few pixels: the browser starts scrolling natively soon after,
+  // and from then on it can't be stopped. The small threshold avoids misreading jitter.
   if (!gesture.mode) {
-    if (dy === 0) return;
+    if (Math.abs(dy) < 3) return;
     gesture.mode = gestureMode(dy);
     if (gesture.mode === "sheet") {
       // Catch the sheet mid-animation, like iOS

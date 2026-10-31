@@ -15,7 +15,7 @@ const { items: mapData } = useNurnetData();
           v-if="mapData"
           :map-data="mapData"
         ></component>
-        <div v-else data-drawer-drag class="h-full">
+        <div v-else data-drawer-drag class="h-full pt-4">
           <DrawerHandle />
           <div
             class="flex h-5/6 w-full animate-pulse items-center justify-center text-sm font-bold text-slate-700"
