@@ -4,6 +4,7 @@ const currentPOI = useCurrentPOI();
 
 <template>
   <iframe
+    :title="`Video: ${currentPOI.values_.name}`"
     :src="
       currentPOI.values_.youtube.includes('facebook.com')
         ? `https://www.facebook.com/plugins/video.php?href=${currentPOI.values_.youtube}&show_text=false&t=0`

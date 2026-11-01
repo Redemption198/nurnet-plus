@@ -2,7 +2,23 @@
 const baseURL = process.env.NUXT_APP_BASE_URL ?? "/";
 
 export default defineNuxtConfig({
-  modules: ["@vite-pwa/nuxt", "@vueuse/nuxt", "@nuxt/ui"],
+  modules: ["@vite-pwa/nuxt", "@vueuse/nuxt", "@nuxt/ui", "@nuxt/a11y"],
+
+  // Development only: axe-core accessibility checks, logged to the console and DevTools
+  a11y: {
+    logIssues: true,
+  },
+
+  app: {
+    head: {
+      htmlAttrs: { lang: "it" },
+    },
+  },
+
+  // The app only has a light design: don't follow the system's dark mode
+  ui: {
+    colorMode: false,
+  },
 
   css: ["~/assets/css/tailwind.css"],
 

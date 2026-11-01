@@ -11,7 +11,10 @@ function handleHorizontalScroll(event) {
 <template>
   <div
     ref="scrollingContainer"
-    class="scrollbar-hidden flex snap-x gap-x-4 overflow-x-scroll px-4"
+    class="scrollbar-hidden flex snap-x gap-x-4 overflow-x-scroll px-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600"
+    tabindex="0"
+    role="region"
+    :aria-label="`Foto di ${currentPOI.values_.name}`"
     @wheel="handleHorizontalScroll($event)"
   >
     <div

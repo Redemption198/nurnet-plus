@@ -20,6 +20,7 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@nuxt/a11y": "1.0.0-alpha.1",
     "@types/node": "^24.19.2",
     "@vite-pwa/nuxt": "^1.1.1",
     "@vueuse/core": "^15.0.0",

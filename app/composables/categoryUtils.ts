@@ -10,21 +10,22 @@ export const useCategoryName = (category: number): string => {
   return "Sconosciuto";
 };
 
+// Darker than the map icons' colours (same hues) so white text meets WCAG AA (4.5:1)
 export const useCategoryColor = (category: number): string => {
-  if (category >= 10 && category <= 13) return "bg-[#fe8535]";
-  if (category === 20 || category === 21) return "bg-[#a89e46]";
-  if (category === 30) return "bg-[#bc7b77]";
-  if (category === 40 || category === 41) return "bg-[#CA8A04]";
-  if (category >= 50 && category <= 52) return "bg-[#4d8fc3]";
-  if (category >= 60 && category <= 63) return "bg-[#a96f47]";
+  if (category >= 10 && category <= 13) return "bg-[#c44f01]";
+  if (category === 20 || category === 21) return "bg-[#7d7534]";
+  if (category === 30) return "bg-[#ad5d58]";
+  if (category === 40 || category === 41) return "bg-[#9d6b03]";
+  if (category >= 50 && category <= 52) return "bg-[#3a79ab]";
+  if (category >= 60 && category <= 63) return "bg-[#9e6842]";
   if (category >= 70 && category <= 73) return "bg-[#312528]";
-  if (category === 110 || category === 101) return "bg-[#aaaba8]";
-  return "bg-red-500";
+  if (category === 110 || category === 101) return "bg-[#737571]";
+  return "bg-red-700";
 };
 
 export const useStatusColor = (status: string): string => {
   if (status === "manutenuto" || status === "mantenuto" || status === "buono")
-    return "bg-green-500";
-  if (status === "diroccato") return "bg-red-500";
-  return "bg-gray-500";
+    return "bg-green-700";
+  if (status === "diroccato") return "bg-red-700";
+  return "bg-gray-600";
 };

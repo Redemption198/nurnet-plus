@@ -6,7 +6,7 @@ const { items: mapData } = useNurnetData();
 </script>
 
 <template>
-  <div class="h-screen w-screen bg-slate-200">
+  <main class="h-screen w-screen bg-slate-200">
     <ClientOnly>
       <TheMap v-if="mapData" :pois="mapData" />
       <TheDrawer>
@@ -25,5 +25,5 @@ const { items: mapData } = useNurnetData();
         </div>
       </TheDrawer>
     </ClientOnly>
-  </div>
+  </main>
 </template>
