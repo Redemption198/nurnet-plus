@@ -14,6 +14,14 @@ const IconVillaggioNuragico = resolveComponent("IconVillaggioNuragico");
 const IconNurnetPlus = resolveComponent("IconNurnetPlus");
 
 const currentPOI = useCurrentPOI();
+const router = useRouter();
+
+function openRandomPOI() {
+  const poi = props.mapData[Math.floor(Math.random() * props.mapData.length)];
+  if (!poi) return;
+  currentPOI.value = { values_: { ...poi, geometry: { flatCoordinates: poi.coordinates } } };
+  router.push("/poi");
+}
 
 const searchInput = ref("");
 const searchInputDebounce = refDebounced(searchInput, 500);
@@ -60,12 +68,23 @@ function getCategoryComponent(category) {
     class="scrollbar-hidden h-full overscroll-contain pb-16 lg:pb-4"
   >
     <DrawerHeader :scrolled="listY > 0">
-      <input
-        v-model="searchInput"
-        type="text"
-        placeholder="Search"
-        class="w-full rounded-2xl bg-white/80 px-3 py-2 text-slate-700 shadow-sm placeholder:text-slate-400 focus:outline-none"
-      />
+      <div class="flex gap-x-2">
+        <input
+          v-model="searchInput"
+          type="text"
+          placeholder="Search"
+          class="min-w-0 flex-1 rounded-2xl bg-white/80 px-3 py-2 text-slate-700 shadow-sm placeholder:text-slate-400 focus:outline-none"
+        />
+        <button
+          type="button"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-slate-600 shadow-sm transition hover:bg-white active:scale-95 cursor-pointer"
+          aria-label="Mostra un sito a caso"
+          title="Mostra un sito a caso"
+          @click="openRandomPOI"
+        >
+          <UIcon name="i-lucide-dices" class="size-5" />
+        </button>
+      </div>
     </DrawerHeader>
 
     <IconNurnetPlus v-if="!results.length" class="mx-auto mt-[30%] h-32 w-32 fill-slate-400/30" />

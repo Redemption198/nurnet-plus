@@ -20,6 +20,12 @@ export default defineNuxtConfig({
     colorMode: false,
   },
 
+  // Bundle the icons the app uses (from the locally installed sets) instead of fetching
+  // them from the Iconify API at runtime: faster, and they work offline in the PWA
+  icon: {
+    clientBundle: { scan: true },
+  },
+
   css: ["~/assets/css/tailwind.css"],
 
   components: ["~/components", "~/components/icons"],
