@@ -33,18 +33,20 @@ const iconStyle = {
   "icon-src": `${config.app.baseURL}icons-tileset.png`,
   "icon-width": 512,
   "icon-height": 64,
+  // icons-tileset.png is one row of 64px tiles: dolmen, domus de janas, tomba dei giganti,
+  // menhir, villaggio, culto dell'acqua, nuraghe, unknown
   "icon-offset": [
     "match",
     ["get", "category_id"],
     // Menhir
     "70",
-    [0, 64],
+    [192, 0],
     "71",
-    [0, 64],
+    [192, 0],
     "72",
-    [0, 64],
+    [192, 0],
     "73",
-    [0, 64],
+    [192, 0],
     // Domus de janas
     "30",
     [64, 0],
@@ -59,9 +61,9 @@ const iconStyle = {
     [128, 0],
     // Dolmen
     "20",
-    [192, 0],
+    [0, 0],
     "21",
-    [192, 0],
+    [0, 0],
     // Villaggi
     "40",
     [256, 0],
@@ -83,8 +85,8 @@ const iconStyle = {
     [384, 0],
     "13",
     [384, 0],
-    // Default value (the last element must be the fallback)
-    [0, 64],
+    // Unknown category: the "?" tile (the last element must be the fallback)
+    [448, 0],
   ],
   "icon-size": [64, 64],
   "icon-anchor": [0.5, 1],
