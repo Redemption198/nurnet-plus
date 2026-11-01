@@ -79,16 +79,19 @@ function getCategoryComponent(category) {
     class="scrollbar-hidden h-full overscroll-contain pb-16 lg:pb-4"
   >
     <DrawerHeader :scrolled="listY > 0">
+      <BrandButton class="mb-3 hidden !bg-transparent !shadow-none !backdrop-blur-none lg:flex" />
+
       <div class="flex gap-x-2">
         <input
           v-model="searchInput"
           type="text"
-          placeholder="Search"
-          class="min-w-0 flex-1 rounded-2xl bg-white/80 px-3 py-2 text-slate-700 shadow-sm placeholder:text-slate-400 focus:outline-none"
+          placeholder="Cerca un sito o un comune…"
+          aria-label="Cerca un sito o un comune"
+          class="min-w-0 flex-1 rounded-2xl bg-white/80 px-3 py-2 text-slate-700 shadow-sm placeholder:text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/60"
         />
         <button
           type="button"
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-slate-600 shadow-sm transition hover:bg-white active:scale-95 cursor-pointer"
+          class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-white/80 text-basalt shadow-sm transition hover:bg-white focus-visible:ring-2 focus-visible:ring-terracotta/60 focus-visible:outline-none active:scale-95"
           aria-label="Mostra un sito a caso"
           title="Mostra un sito a caso"
           @click="openRandomPOI"

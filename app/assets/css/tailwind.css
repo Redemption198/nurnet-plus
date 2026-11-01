@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* NurNet+ brand: colours taken from the sites themselves */
+@theme {
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+
+  /* Nuraghe orange, darkened so white text on it meets WCAG AA */
+  --color-terracotta: #c44f01;
+  --color-terracotta-dark: #9a3e01;
+  /* Menhir basalt */
+  --color-basalt: #312528;
+}
+
 @layer utilities {
   /* Hide scrollbar for Chrome, Safari and Opera */
   .scrollbar-hidden::-webkit-scrollbar {

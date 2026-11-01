@@ -76,6 +76,23 @@ async function addIcons(ml) {
   });
 }
 
+// Recolour the basemap toward Sardinia: limestone ground, a muted sea, macchia greens.
+// Layer ids are from OpenFreeMap's "liberty" style; missing ones are skipped
+const BASEMAP_COLORS = {
+  background: ["background-color", "#f1e9dc"],
+  water: ["fill-color", "#9ec5d6"],
+  park: ["fill-color", "#d6dfbf"],
+  landcover_wood: ["fill-color", "hsla(90, 28%, 60%, 0.55)"],
+  landcover_grass: ["fill-color", "#d3dbb4"],
+  landcover_sand: ["fill-color", "#f2e3c4"],
+};
+
+function warmBasemap(ml) {
+  for (const [layer, [property, color]] of Object.entries(BASEMAP_COLORS)) {
+    if (ml.getLayer(layer)) ml.setPaintProperty(layer, property, color);
+  }
+}
+
 function addTerrain(ml) {
   // Separate sources for terrain and hillshade, as MapLibre recommends
   for (const id of ["terrain", "hillshade"]) {
@@ -267,6 +284,7 @@ onMounted(() => {
 
   ml.on("load", async () => {
     await addIcons(ml);
+    warmBasemap(ml);
     addTerrain(ml);
     addPois(ml);
 
@@ -308,11 +326,11 @@ onUnmounted(() => mlMap.value?.remove());
     v-if="!mapUnavailable"
     class="absolute top-0 right-0 z-1 m-4 flex flex-col items-center overflow-hidden rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
   >
-    <MapControlsButton class="p-3" aria-label="Zoom In" @click.prevent="mlMap.zoomIn()">
+    <MapControlsButton class="p-3" aria-label="Ingrandisci" @click.prevent="mlMap.zoomIn()">
       <IconPlus class="h-6 w-6" />
     </MapControlsButton>
 
-    <MapControlsButton class="p-3" aria-label="Zoom Out" @click.prevent="mlMap.zoomOut()">
+    <MapControlsButton class="p-3" aria-label="Riduci" @click.prevent="mlMap.zoomOut()">
       <IconMinus class="h-6 w-6" />
     </MapControlsButton>
 
@@ -326,3 +344,12 @@ onUnmounted(() => mlMap.value?.remove());
     </MapControlsButton>
   </div>
 </template>
+
+<style>
+/* Mobile: the attribution button sits under the NurNet+ logo pill */
+@media (width < 64rem) {
+  .maplibregl-ctrl-top-left {
+    top: 3.75rem;
+  }
+}
+</style>

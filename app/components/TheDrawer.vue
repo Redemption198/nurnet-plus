@@ -284,7 +284,7 @@ onDeactivated(() => {
     <div
       ref="drawerContent"
       data-drawer-scroll
-      class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600"
+      class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
       :class="$route.path === '/' ? '' : 'overflow-y-scroll'"
       :tabindex="$route.path === '/' ? undefined : 0"
     >

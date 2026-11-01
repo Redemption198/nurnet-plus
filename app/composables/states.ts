@@ -3,6 +3,9 @@ export const useCurrentPOI = () =>
     return {};
   });
 
+// The "Informazioni" sheet (about, credits)
+export const useInfoOpen = () => useState<boolean>("info-open", () => false);
+
 // Category name (as returned by useCategoryName) shown in the list and on the map, or null for all
 export const useCategoryFilter = () => useState<string | null>("category-filter", () => null);
 

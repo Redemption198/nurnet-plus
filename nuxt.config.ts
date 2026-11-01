@@ -22,6 +22,11 @@ export default defineNuxtConfig({
 
   // Bundle the icons the app uses (from the locally installed sets) instead of fetching
   // them from the Iconify API at runtime: faster, and they work offline in the PWA
+  // Self-hosted at build time (no requests to Google at runtime)
+  fonts: {
+    families: [{ name: "Fraunces", provider: "google", weights: [600, 700] }],
+  },
+
   icon: {
     clientBundle: { scan: true },
   },

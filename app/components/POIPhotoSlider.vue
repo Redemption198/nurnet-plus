@@ -11,7 +11,7 @@ function handleHorizontalScroll(event) {
 <template>
   <div
     ref="scrollingContainer"
-    class="scrollbar-hidden flex snap-x gap-x-4 overflow-x-scroll px-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600"
+    class="scrollbar-hidden flex snap-x gap-x-4 overflow-x-scroll px-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
     tabindex="0"
     role="region"
     :aria-label="`Foto di ${currentPOI.values_.name}`"
@@ -22,7 +22,12 @@ function handleHorizontalScroll(event) {
       :key="photo"
       class="shrink-0 snap-mandatory snap-center overflow-hidden rounded-2xl"
     >
-      <img :src="photo" :alt="`${currentPOI.values_.name} Photo`" class="max-h-64" loading="lazy" />
+      <img
+        :src="photo"
+        :alt="`Foto di ${currentPOI.values_.name}`"
+        class="max-h-64"
+        loading="lazy"
+      />
     </div>
   </div>
 </template>

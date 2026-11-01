@@ -22,7 +22,9 @@ const { y: contentY } = useScroll(drawerContent);
   <div v-if="currentPOI.values_" class="flex flex-col gap-y-2 pb-64">
     <DrawerHeader :scrolled="contentY > 0">
       <div class="flex items-center justify-between gap-x-3">
-        <p class="text-xl font-bold">{{ currentPOI.values_.name }}</p>
+        <h2 class="font-display text-2xl leading-tight font-semibold text-basalt">
+          {{ currentPOI.values_.name }}
+        </h2>
         <NuxtLink
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-400/30 text-slate-600 backdrop-blur-md transition hover:bg-slate-400/45 active:scale-95"
           to="/"
@@ -33,7 +35,8 @@ const { y: contentY } = useScroll(drawerContent);
       </div>
     </DrawerHeader>
 
-    <LazyPOIUnverifiedBanner v-if="!currentPOI.values_.verified" class="mx-4" />
+    <!-- Only when explicitly unverified: sites added in later data refreshes have no value -->
+    <LazyPOIUnverifiedBanner v-if="currentPOI.values_.verified === false" class="mx-4" />
 
     <div class="mx-4 flex gap-x-4">
       <POITypeCard />
@@ -46,7 +49,7 @@ const { y: contentY } = useScroll(drawerContent);
     </p>
 
     <p v-if="currentPOI.values_.localita" class="mx-4 flex flex-col text-lg font-semibold">
-      <span class="text-sm text-slate-700">Localita</span>{{ currentPOI.values_.localita }}
+      <span class="text-sm text-slate-700">Località</span>{{ currentPOI.values_.localita }}
     </p>
 
     <p
@@ -56,16 +59,26 @@ const { y: contentY } = useScroll(drawerContent);
       <span class="text-sm text-slate-700">Fonte</span>{{ currentPOI.values_.source }}
     </p>
 
-    <POIPhotoSlider v-if="currentPOI.values_.photos.length > 0" />
+    <div
+      v-if="currentPOI.values_.description"
+      class="mx-4 flex flex-col gap-y-2 text-base text-slate-700"
+    >
+      <span class="text-sm font-semibold text-slate-700">Descrizione</span>
+      <p v-for="(paragraph, i) in currentPOI.values_.description.split('\n\n')" :key="i">
+        {{ paragraph }}
+      </p>
+    </div>
+
+    <POIPhotoSlider v-if="currentPOI.values_.photos?.length > 0" />
 
     <POIVideo v-if="currentPOI.values_.youtube" />
 
     <a
-      v-if="currentPOI.values_.photos.length > 0"
+      v-if="currentPOI.values_.photos?.length > 0"
       :href="`https://www.nurnet.net/mediateca/?s=${currentPOI.values_.content_id}`"
       target="_blank"
       rel="noopener"
-      class="mx-4 my-2 flex min-w-max items-center justify-center gap-x-2 rounded-2xl bg-blue-600 fill-white px-4 py-2 font-semibold text-white transition-transform hover:scale-95"
+      class="mx-4 my-2 flex min-w-max items-center justify-center gap-x-2 rounded-2xl bg-terracotta fill-white px-4 py-2 font-semibold text-white transition-transform hover:scale-95"
       >Vai alla Mediateca NurNet<IconOpenOutside />
     </a>
 
@@ -74,12 +87,12 @@ const { y: contentY } = useScroll(drawerContent);
       :href="currentPOI.values_.source"
       target="_blank"
       rel="noopener"
-      class="mx-4 min-w-max rounded-2xl px-4 py-2 text-center font-semibold text-blue-700 transition-transform hover:scale-95"
+      class="mx-4 min-w-max rounded-2xl px-4 py-2 text-center font-semibold text-terracotta-dark transition-transform hover:scale-95"
     >
       Fonte
     </a>
 
-    <p class="self-center text-sm text-slate-700">
+    <p v-if="currentPOI.values_.date" class="self-center text-sm text-slate-700">
       Aggiunto il
       {{ useDateFormat(new Date(currentPOI.values_.date), "DD/MM/YYYY").value.replace('"', "") }}
     </p>

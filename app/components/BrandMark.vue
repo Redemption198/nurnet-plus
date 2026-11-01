@@ -1,0 +1,21 @@
+<script setup>
+defineProps({
+  wordmark: {
+    type: Boolean,
+    default: true,
+  },
+});
+</script>
+
+<template>
+  <span class="inline-flex items-center gap-x-2">
+    <span
+      class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-[#fe8702] via-[#d87401] to-[#b26100] shadow-sm"
+    >
+      <IconNurnetPlus class="size-5 fill-white" aria-hidden="true" />
+    </span>
+    <span v-if="wordmark" class="font-display text-xl font-semibold tracking-tight text-basalt">
+      NurNet+
+    </span>
+  </span>
+</template>
