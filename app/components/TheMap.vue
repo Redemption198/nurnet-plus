@@ -21,12 +21,14 @@ const config = useRuntimeConfig();
 const currentPOI = useCurrentPOI();
 const drawerState = useDrawerState();
 const mapPadding = useMapPadding();
+const categoryFilter = useCategoryFilter();
 const lgAndGreater = useBreakpoints(breakpointsTailwind).greaterOrEqual("lg");
 
 const map = ref();
 // shallowRef: MapLibre's map must not be wrapped in a deep reactive proxy
 const mlMap = shallowRef();
 const is3D = ref(false);
+const mapUnavailable = ref(false);
 
 // Free sources, no API keys: OpenFreeMap vector tiles and the AWS Terrain Tiles dataset
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
@@ -123,6 +125,18 @@ function applySelection() {
     mlMap.value.setFilter("poi-selected", selectedFilter());
 }
 
+// Markers of the category chosen in the drawer (all when none): match the category_id values
+// that belong to it. to-string turns a missing category into "", which counts as "Sconosciuto"
+function categoryLayerFilter() {
+  if (!categoryFilter.value) return null;
+  const ids = new Set(
+    props.pois
+      .filter((poi) => useCategoryName(Number(poi.category_id)) === categoryFilter.value)
+      .map((poi) => poi.category_id ?? ""),
+  );
+  return ["in", ["to-string", ["get", "category_id"]], ["literal", [...ids]]];
+}
+
 function addPois(ml) {
   ml.addSource("pois", {
     type: "geojson",
@@ -141,6 +155,8 @@ function addPois(ml) {
     id: "pois",
     type: "symbol",
     source: "pois",
+    // addLayer rejects `filter: null` (setFilter accepts it), so only pass one when set
+    ...(categoryFilter.value && { filter: categoryLayerFilter() }),
     layout: {
       "icon-image": iconForCategory,
       "icon-anchor": "bottom",
@@ -194,18 +210,45 @@ function toggle3D() {
 }
 
 onMounted(() => {
-  const ml = new MapLibreMap({
-    container: map.value,
-    style: STYLE_URL,
-    // Sardinia, framed in the area the drawer leaves visible
-    bounds: [
-      [8.1, 38.85],
-      [9.85, 41.3],
-    ],
-    fitBoundsOptions: { padding: toMapPadding(mapPadding.value.map((p) => p + 24)) },
-    maxPitch: 75,
-    attributionControl: false,
+  // Registered first: the drawer still reacts to selections if the map can't be created
+  watch(mapPadding, (padding) => mlMap.value?.setPadding(toMapPadding(padding)));
+
+  watch(currentPOI, async () => {
+    applySelection();
+
+    // Raise the drawer to the middle on mobile (ignored on desktop), then center the POI
+    // in the area left visible, once the drawer has reported its new size
+    drawerState.value.setPosition = "SET_DRAWER_ON_MIDDLE_SCREEN";
+    await nextTick();
+    focusSelectedPOI();
   });
+
+  watch(() => route.path, applySelection);
+
+  watch(categoryFilter, () => {
+    if (mlMap.value?.getLayer("pois")) mlMap.value.setFilter("pois", categoryLayerFilter());
+  });
+
+  let ml;
+  try {
+    ml = new MapLibreMap({
+      container: map.value,
+      style: STYLE_URL,
+      // Sardinia, framed in the area the drawer leaves visible
+      bounds: [
+        [8.1, 38.85],
+        [9.85, 41.3],
+      ],
+      fitBoundsOptions: { padding: toMapPadding(mapPadding.value.map((p) => p + 24)) },
+      maxPitch: 75,
+      attributionControl: false,
+    });
+  } catch (error) {
+    // e.g. WebGL is unavailable or disabled
+    console.error("Map unavailable:", error);
+    mapUnavailable.value = true;
+    return;
+  }
   mlMap.value = ml;
 
   // Attribution is required by the tile providers: keep it where the drawer doesn't cover it.
@@ -245,20 +288,6 @@ onMounted(() => {
       drawerState.value.setPosition = "SET_DRAWER_ON_BOTTOM_SCREEN";
     }
   });
-
-  watch(mapPadding, (padding) => ml.setPadding(toMapPadding(padding)));
-
-  watch(currentPOI, async () => {
-    applySelection();
-
-    // Raise the drawer to the middle on mobile (ignored on desktop), then center the POI
-    // in the area left visible, once the drawer has reported its new size
-    drawerState.value.setPosition = "SET_DRAWER_ON_MIDDLE_SCREEN";
-    await nextTick();
-    focusSelectedPOI();
-  });
-
-  watch(() => route.path, applySelection);
 });
 
 onUnmounted(() => mlMap.value?.remove());
@@ -267,7 +296,16 @@ onUnmounted(() => mlMap.value?.remove());
 <template>
   <div ref="map" class="h-screen w-screen"></div>
 
+  <p
+    v-if="mapUnavailable"
+    class="absolute inset-x-4 top-4 z-1 rounded-2xl bg-slate-100 p-4 text-center text-sm font-semibold text-slate-700 shadow-sm lg:left-auto lg:w-96"
+  >
+    La mappa non è disponibile su questo dispositivo (WebGL non supportato), ma puoi cercare e
+    consultare i siti dalla lista.
+  </p>
+
   <div
+    v-if="!mapUnavailable"
     class="absolute top-0 right-0 z-1 m-4 flex flex-col items-center overflow-hidden rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
   >
     <MapControlsButton class="p-3" aria-label="Zoom In" @click.prevent="mlMap.zoomIn()">

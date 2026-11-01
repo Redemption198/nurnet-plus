@@ -3,6 +3,9 @@ export const useCurrentPOI = () =>
     return {};
   });
 
+// Category name (as returned by useCategoryName) shown in the list and on the map, or null for all
+export const useCategoryFilter = () => useState<string | null>("category-filter", () => null);
+
 // Screen area covered by the drawer, as [top, right, bottom, left] css pixels for the map view
 export const useMapPadding = () =>
   useState<number[]>("map-padding", () => {

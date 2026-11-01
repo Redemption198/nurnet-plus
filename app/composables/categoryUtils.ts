@@ -10,6 +10,19 @@ export const useCategoryName = (category: number): string => {
   return "Sconosciuto";
 };
 
+// Filter chips, most common first; `id` is any category id of the group, for its colour
+export const CATEGORY_FILTERS = [
+  { name: "Nuraghe", id: 10 },
+  { name: "Domus de janas", id: 30 },
+  { name: "Tombe dei giganti", id: 60 },
+  { name: "Villaggi", id: 40 },
+  { name: "Unicum e Grotte Tafoni", id: 110 },
+  { name: "Menhir", id: 70 },
+  { name: "Culto dell'acqua", id: 50 },
+  { name: "Dolmen", id: 20 },
+  { name: "Sconosciuto", id: 0 },
+];
+
 // Darker than the map icons' colours (same hues) so white text meets WCAG AA (4.5:1)
 export const useCategoryColor = (category: number): string => {
   if (category >= 10 && category <= 13) return "bg-[#c44f01]";

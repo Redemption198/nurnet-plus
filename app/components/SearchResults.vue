@@ -16,29 +16,40 @@ const IconNurnetPlus = resolveComponent("IconNurnetPlus");
 const currentPOI = useCurrentPOI();
 const router = useRouter();
 
+const categoryFilter = useCategoryFilter();
+const inCategory = (poi) =>
+  !categoryFilter.value || useCategoryName(Number(poi.category_id)) === categoryFilter.value;
+
+// Random POI, within the selected category if there is one
 function openRandomPOI() {
-  const poi = props.mapData[Math.floor(Math.random() * props.mapData.length)];
+  const pool = categoryFilter.value ? props.mapData.filter(inCategory) : props.mapData;
+  const poi = pool[Math.floor(Math.random() * pool.length)];
   if (!poi) return;
   currentPOI.value = { values_: { ...poi, geometry: { flatCoordinates: poi.coordinates } } };
   router.push("/poi");
 }
 
 const searchInput = ref("");
-const searchInputDebounce = refDebounced(searchInput, 500);
+// MiniSearch answers in a few ms, so search as you type
+const searchInputDebounce = refDebounced(searchInput, 150);
 
-// Searching runs in the data worker; it returns indices into mapData
+// Searching runs in the data worker; it returns indices into mapData, best match first
 const { search } = useNurnetData();
 const results = shallowRef(props.mapData);
 let latestSearch = 0;
 
-watch(searchInputDebounce, async (query) => {
-  const searchId = ++latestSearch;
-  const matches = query
-    ? (await search(query)).map((index) => props.mapData[index])
-    : props.mapData;
-  // Ignore responses that arrive after a newer search was started
-  if (searchId === latestSearch) results.value = matches;
-});
+watch(
+  [searchInputDebounce, categoryFilter],
+  async ([query]) => {
+    const searchId = ++latestSearch;
+    const matches = query.trim()
+      ? (await search(query)).map((index) => props.mapData[index])
+      : props.mapData;
+    // Ignore responses that arrive after a newer search was started
+    if (searchId === latestSearch) results.value = matches.filter(inCategory);
+  },
+  { immediate: true },
+);
 
 // Must match the row height in the template (h-17 = 68px)
 const { list, containerProps, wrapperProps } = useVirtualList(results, {
@@ -83,6 +94,29 @@ function getCategoryComponent(category) {
           @click="openRandomPOI"
         >
           <UIcon name="i-lucide-dices" class="size-5" />
+        </button>
+      </div>
+
+      <!-- Category filter: also filters the markers on the map -->
+      <div
+        class="scrollbar-hidden -mx-4 mt-2 flex gap-x-2 overflow-x-auto px-4"
+        role="group"
+        aria-label="Filtra per tipo"
+      >
+        <button
+          v-for="category in CATEGORY_FILTERS"
+          :key="category.name"
+          type="button"
+          class="shrink-0 cursor-pointer rounded-full px-3 py-1 text-sm font-semibold shadow-sm transition active:scale-95"
+          :class="
+            categoryFilter === category.name
+              ? [useCategoryColor(category.id), 'text-white']
+              : 'bg-white/80 text-slate-700 hover:bg-white'
+          "
+          :aria-pressed="categoryFilter === category.name"
+          @click="categoryFilter = categoryFilter === category.name ? null : category.name"
+        >
+          {{ category.name }}
         </button>
       </div>
     </DrawerHeader>

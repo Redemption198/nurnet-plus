@@ -95,20 +95,30 @@ function gestureMode(dy) {
   return canScroll(gesture.target, dy) ? "scroll" : "sheet";
 }
 
-function startGesture(clientY, target, isMouse) {
+function startGesture(clientX, clientY, target, isMouse) {
   if (lgAndGreater.value) return;
-  gesture = { startY: clientY, startDrawerY: 0, target, isMouse, mode: null, moved: false };
+  gesture = {
+    startX: clientX,
+    startY: clientY,
+    startDrawerY: 0,
+    target,
+    isMouse,
+    mode: null,
+    moved: false,
+  };
 }
 
-function moveGesture(clientY, event) {
+function moveGesture(clientX, clientY, event) {
   if (!gesture) return;
   const dy = clientY - gesture.startY;
 
   // Decide within the first few pixels: the browser starts scrolling natively soon after,
   // and from then on it can't be stopped. The small threshold avoids misreading jitter.
   if (!gesture.mode) {
-    if (Math.abs(dy) < 3) return;
-    gesture.mode = gestureMode(dy);
+    const dx = clientX - gesture.startX;
+    if (Math.abs(dy) < 3 && Math.abs(dx) < 3) return;
+    // Mostly sideways (e.g. the category chips): leave it to native horizontal scrolling
+    gesture.mode = Math.abs(dx) > Math.abs(dy) ? "scroll" : gestureMode(dy);
     if (gesture.mode === "sheet") {
       // Catch the sheet mid-animation, like iOS
       gsap.killTweensOf(drawer.value);
@@ -160,23 +170,33 @@ function endGesture() {
   gesture = null;
 }
 
-useEventListener(drawer, "touchstart", (e) => startGesture(e.touches[0].clientY, e.target, false), {
-  passive: true,
-});
+useEventListener(
+  drawer,
+  "touchstart",
+  (e) => startGesture(e.touches[0].clientX, e.touches[0].clientY, e.target, false),
+  {
+    passive: true,
+  },
+);
 // Not passive: preventDefault stops the content from scrolling while the sheet moves
-useEventListener(drawer, "touchmove", (e) => moveGesture(e.touches[0].clientY, e), {
-  passive: false,
-});
+useEventListener(
+  drawer,
+  "touchmove",
+  (e) => moveGesture(e.touches[0].clientX, e.touches[0].clientY, e),
+  {
+    passive: false,
+  },
+);
 useEventListener(drawer, ["touchend", "touchcancel"], endGesture);
 
 useEventListener(drawer, "pointerdown", (e) => {
   if (e.pointerType !== "mouse" || e.button !== 0 || lgAndGreater.value) return;
   // Stop links from being dragged natively (that cancels the gesture), but keep inputs focusable
   if (!e.target.closest("input, textarea, select")) e.preventDefault();
-  startGesture(e.clientY, e.target, true);
+  startGesture(e.clientX, e.clientY, e.target, true);
 });
 useEventListener(window, "pointermove", (e) => {
-  if (e.pointerType === "mouse") moveGesture(e.clientY, e);
+  if (e.pointerType === "mouse") moveGesture(e.clientX, e.clientY, e);
 });
 useEventListener(window, ["pointerup", "pointercancel"], (e) => {
   if (e.pointerType === "mouse") endGesture();
