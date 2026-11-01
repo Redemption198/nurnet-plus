@@ -6,7 +6,7 @@ export default defineConfig({
   },
   fmt: {
     // Large dataset shipped as-is to the client; formatting it would inflate the download
-    ignorePatterns: ["public/nurnet-data.json"],
+    ignorePatterns: ["public/nurnet-*.json"],
   },
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],

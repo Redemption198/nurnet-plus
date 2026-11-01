@@ -13,8 +13,7 @@ const IconTombaGiganti = resolveComponent("IconTombaGiganti");
 const IconVillaggioNuragico = resolveComponent("IconVillaggioNuragico");
 const IconNurnetPlus = resolveComponent("IconNurnetPlus");
 
-const currentPOI = useCurrentPOI();
-const router = useRouter();
+const { search, openPOI } = useNurnetData();
 
 const categoryFilter = useCategoryFilter();
 const inCategory = (poi) =>
@@ -24,9 +23,7 @@ const inCategory = (poi) =>
 function openRandomPOI() {
   const pool = categoryFilter.value ? props.mapData.filter(inCategory) : props.mapData;
   const poi = pool[Math.floor(Math.random() * pool.length)];
-  if (!poi) return;
-  currentPOI.value = { values_: { ...poi, geometry: { flatCoordinates: poi.coordinates } } };
-  router.push("/poi");
+  if (poi) openPOI(poi);
 }
 
 const searchInput = ref("");
@@ -34,7 +31,6 @@ const searchInput = ref("");
 const searchInputDebounce = refDebounced(searchInput, 150);
 
 // Searching runs in the data worker; it returns indices into mapData, best match first
-const { search } = useNurnetData();
 const results = shallowRef(props.mapData);
 let latestSearch = 0;
 
@@ -138,16 +134,7 @@ function getCategoryComponent(category) {
         <NuxtLink
           class="flex h-full items-center rounded-2xl bg-slate-200/75 p-2 text-slate-700 shadow-sm backdrop-blur-sm"
           to="/poi"
-          @click="
-            currentPOI = {
-              values_: {
-                ...result.data,
-                geometry: {
-                  flatCoordinates: result.data.coordinates,
-                },
-              },
-            }
-          "
+          @click.prevent="openPOI(result.data)"
         >
           <div class="flex min-w-0 items-center gap-x-2">
             <component

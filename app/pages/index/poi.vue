@@ -41,7 +41,14 @@ const { y: contentY } = useScroll(drawerContent);
     <div class="mx-4 flex gap-x-4">
       <POITypeCard />
 
-      <POIStatusCard />
+      <POIStatusCard v-if="currentPOI.values_.detailsStatus !== 'loading'" />
+      <!-- Placeholder while the details file is still loading (only right after startup) -->
+      <div
+        v-else
+        class="w-full animate-pulse rounded-2xl bg-slate-300/60"
+        role="status"
+        aria-label="Caricamento dei dettagli"
+      />
     </div>
 
     <p v-if="currentPOI.values_.comune" class="mx-4 flex flex-col text-lg font-semibold">
@@ -50,6 +57,20 @@ const { y: contentY } = useScroll(drawerContent);
 
     <p v-if="currentPOI.values_.localita" class="mx-4 flex flex-col text-lg font-semibold">
       <span class="text-sm text-slate-700">Località</span>{{ currentPOI.values_.localita }}
+    </p>
+
+    <div
+      v-if="currentPOI.values_.detailsStatus === 'loading'"
+      class="mx-4 flex animate-pulse flex-col gap-y-2"
+      aria-hidden="true"
+    >
+      <div class="h-4 w-1/3 rounded-full bg-slate-300/60" />
+      <div class="h-4 w-full rounded-full bg-slate-300/60" />
+      <div class="h-4 w-5/6 rounded-full bg-slate-300/60" />
+    </div>
+
+    <p v-if="currentPOI.values_.detailsStatus === 'error'" class="mx-4 text-sm text-slate-600">
+      Foto e descrizione non disponibili al momento. Controlla la connessione e riprova.
     </p>
 
     <p

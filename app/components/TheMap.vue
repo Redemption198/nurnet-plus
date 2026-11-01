@@ -14,11 +14,11 @@ const props = defineProps({
   },
 });
 
-const router = useRouter();
 const route = useRoute();
 const config = useRuntimeConfig();
 
 const currentPOI = useCurrentPOI();
+const { openPOI } = useNurnetData();
 const drawerState = useDrawerState();
 const mapPadding = useMapPadding();
 const categoryFilter = useCategoryFilter();
@@ -230,15 +230,19 @@ onMounted(() => {
   // Registered first: the drawer still reacts to selections if the map can't be created
   watch(mapPadding, (padding) => mlMap.value?.setPadding(toMapPadding(padding)));
 
-  watch(currentPOI, async () => {
-    applySelection();
+  // The id, not the object: the POI's details are merged in later and must not re-trigger this
+  watch(
+    () => currentPOI.value.values_?.content_id,
+    async () => {
+      applySelection();
 
-    // Raise the drawer to the middle on mobile (ignored on desktop), then center the POI
-    // in the area left visible, once the drawer has reported its new size
-    drawerState.value.setPosition = "SET_DRAWER_ON_MIDDLE_SCREEN";
-    await nextTick();
-    focusSelectedPOI();
-  });
+      // Raise the drawer to the middle on mobile (ignored on desktop), then center the POI
+      // in the area left visible, once the drawer has reported its new size
+      drawerState.value.setPosition = "SET_DRAWER_ON_MIDDLE_SCREEN";
+      await nextTick();
+      focusSelectedPOI();
+    },
+  );
 
   watch(() => route.path, applySelection);
 
@@ -294,9 +298,7 @@ onMounted(() => {
     }
 
     ml.on("click", ["poi-selected", "pois"], (event) => {
-      const poi = props.pois[event.features[0].properties.i];
-      currentPOI.value = { values_: { ...poi, geometry: { flatCoordinates: poi.coordinates } } };
-      router.push("/poi");
+      openPOI(props.pois[event.features[0].properties.i]);
     });
   });
 

@@ -1,5 +1,8 @@
+// The POI open in the drawer: its index fields, plus its details once loaded
+// (`detailsStatus`: "loading" | "loaded" | "error"). `values_` mirrors OpenLayers' Feature shape
 export const useCurrentPOI = () =>
-  useState<object>("currentPOI", () => {
+  // oxlint-disable-next-line typescript/no-explicit-any -- fields come from the data files
+  useState<{ values_?: Record<string, any> }>("currentPOI", () => {
     return {};
   });
 
