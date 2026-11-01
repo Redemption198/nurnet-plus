@@ -1,12 +1,11 @@
 <script setup>
-import Map from "ol/Map.js";
-import View from "ol/View.js";
-import Feature from "ol/Feature.js";
-import Point from "ol/geom/Point.js";
-import WebGLTileLayer from "ol/layer/WebGLTile.js";
-import OSM from "ol/source/OSM.js";
-import VectorSource from "ol/source/Vector";
-import WebGLVectorLayer from "ol/layer/WebGLVector";
+import { MapLibreMap, AttributionControl, setWorkerUrl } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+// MapLibre looks for its worker next to its own module, which bundling moves: point to it
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+import { breakpointsTailwind } from "@vueuse/core";
+
+setWorkerUrl(workerUrl);
 
 const props = defineProps({
   pois: {
@@ -22,183 +21,235 @@ const config = useRuntimeConfig();
 const currentPOI = useCurrentPOI();
 const drawerState = useDrawerState();
 const mapPadding = useMapPadding();
+const lgAndGreater = useBreakpoints(breakpointsTailwind).greaterOrEqual("lg");
 
 const map = ref();
-// shallowRef: a deep-reactive proxy of the OpenLayers map breaks identity checks
-// (e.g. hit detection's layerFilter) and adds overhead to every map call
-const olMap = shallowRef();
+// shallowRef: MapLibre's map must not be wrapped in a deep reactive proxy
+const mlMap = shallowRef();
+const is3D = ref(false);
 
-const iconStyle = {
-  "symbol-type": "icon",
-  "icon-src": `${config.app.baseURL}icons-tileset.png`,
-  "icon-width": 512,
-  "icon-height": 64,
-  // icons-tileset.png is one row of 64px tiles: dolmen, domus de janas, tomba dei giganti,
-  // menhir, villaggio, culto dell'acqua, nuraghe, unknown
-  "icon-offset": [
-    "match",
-    ["get", "category_id"],
-    // Menhir
-    "70",
-    [192, 0],
-    "71",
-    [192, 0],
-    "72",
-    [192, 0],
-    "73",
-    [192, 0],
-    // Domus de janas
-    "30",
-    [64, 0],
-    // Tombe dei giganti
-    "60",
-    [128, 0],
-    "61",
-    [128, 0],
-    "62",
-    [128, 0],
-    "63",
-    [128, 0],
-    // Dolmen
-    "20",
-    [0, 0],
-    "21",
-    [0, 0],
-    // Villaggi
-    "40",
-    [256, 0],
-    "41",
-    [256, 0],
-    // Culto dell'acqua
-    "50",
-    [320, 0],
-    "51",
-    [320, 0],
-    "52",
-    [320, 0],
-    // Nuraghe
-    "10",
-    [384, 0],
-    "11",
-    [384, 0],
-    "12",
-    [384, 0],
-    "13",
-    [384, 0],
-    // Unknown category: the "?" tile (the last element must be the fallback)
-    [448, 0],
-  ],
-  "icon-size": [64, 64],
-  "icon-anchor": [0.5, 1],
-  "icon-opacity": 1,
-  "icon-rotate-with-view": false,
-};
+// Free sources, no API keys: OpenFreeMap vector tiles and the AWS Terrain Tiles dataset
+const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+const TERRAIN_TILES = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png";
+const TERRAIN_ATTRIBUTION =
+  '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Terrain Tiles</a>';
 
-onMounted(() => {
-  const view = new View({
-    center: [8.9, 39.9],
-    zoom: 8.8,
-    projection: "EPSG:4326",
-    // Keeps the center in the part of the map the drawer doesn't cover
-    padding: mapPadding.value,
+// icons-tileset.png is one row of 64px tiles, in this order
+const ICONS = ["dolmen", "domus", "tomba", "menhir", "villaggio", "acqua", "nuraghe", "unknown"];
+
+// category_id -> icon name ("unknown" for anything else)
+const iconForCategory = [
+  "match",
+  ["get", "category_id"],
+  ["70", "71", "72", "73"],
+  "menhir",
+  "30",
+  "domus",
+  ["60", "61", "62", "63"],
+  "tomba",
+  ["20", "21"],
+  "dolmen",
+  ["40", "41"],
+  "villaggio",
+  ["50", "51", "52"],
+  "acqua",
+  ["10", "11", "12", "13"],
+  "nuraghe",
+  "unknown",
+];
+
+async function addIcons(ml) {
+  const image = new Image();
+  image.src = `${config.app.baseURL}icons-tileset.png`;
+  await image.decode();
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 64;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  ICONS.forEach((name, i) => {
+    context.clearRect(0, 0, 64, 64);
+    context.drawImage(image, i * 64, 0, 64, 64, 0, 0, 64, 64);
+    // pixelRatio 2: the 64px tiles are drawn at 32 css px, so they stay sharp on retina
+    ml.addImage(name, context.getImageData(0, 0, 64, 64), { pixelRatio: 2 });
+  });
+}
+
+function addTerrain(ml) {
+  // Separate sources for terrain and hillshade, as MapLibre recommends
+  for (const id of ["terrain", "hillshade"]) {
+    ml.addSource(id, {
+      type: "raster-dem",
+      tiles: [TERRAIN_TILES],
+      encoding: "terrarium",
+      tileSize: 256,
+      maxzoom: 14,
+      attribution: TERRAIN_ATTRIBUTION,
+    });
+  }
+
+  // Hillshading goes under the first label layer so text stays on top
+  const firstSymbolLayer = ml.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+  ml.addLayer(
+    {
+      id: "hillshade",
+      type: "hillshade",
+      source: "hillshade",
+      paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#47515f" },
+    },
+    firstSymbolLayer,
+  );
+
+  // Exaggerated a bit: Sardinia's relief is gentle and would look flat at 1x
+  ml.setTerrain({ source: "terrain", exaggeration: 1.5 });
+  ml.setSky({
+    "sky-color": "#a8d4f5",
+    "horizon-color": "#e2e8f0",
+    "sky-horizon-blend": 0.5,
+    "horizon-fog-blend": 0.6,
+    "fog-color": "#e2e8f0",
+    "fog-ground-blend": 0.4,
+  });
+}
+
+// The selected POI's layer shows only the POI open in the drawer (none on the list)
+function selectedFilter() {
+  const id = route.path === "/" ? "" : (currentPOI.value.values_?.content_id ?? "");
+  return ["==", ["get", "content_id"], id];
+}
+
+// The layer only exists once the style has loaded; addPois applies the filter itself
+function applySelection() {
+  if (mlMap.value?.getLayer("poi-selected"))
+    mlMap.value.setFilter("poi-selected", selectedFilter());
+}
+
+function addPois(ml) {
+  ml.addSource("pois", {
+    type: "geojson",
+    // Only what the map needs; the full POI comes from props.pois via its index
+    data: {
+      type: "FeatureCollection",
+      features: props.pois.map((poi, i) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: poi.coordinates },
+        properties: { i, content_id: poi.content_id, category_id: poi.category_id },
+      })),
+    },
   });
 
-  olMap.value = new Map({
-    target: map.value,
-    layers: [
-      new WebGLTileLayer({
-        source: new OSM(),
-      }),
+  ml.addLayer({
+    id: "pois",
+    type: "symbol",
+    source: "pois",
+    layout: {
+      "icon-image": iconForCategory,
+      "icon-anchor": "bottom",
+      "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.5, 13, 0.75, 16, 0.9],
+      // Overlapping icons are hidden while zoomed out and come back when zooming in
+      "icon-padding": 0,
+    },
+  });
+
+  // The selected POI, drawn again bigger and always visible
+  ml.addLayer({
+    id: "poi-selected",
+    type: "symbol",
+    source: "pois",
+    filter: selectedFilter(),
+    layout: {
+      "icon-image": iconForCategory,
+      "icon-anchor": "bottom",
+      "icon-size": 1.3,
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+    },
+  });
+}
+
+function toMapPadding([top, right, bottom, left]) {
+  return { top, right, bottom, left };
+}
+
+function focusSelectedPOI() {
+  const coordinates = currentPOI.value.values_?.geometry?.flatCoordinates;
+  if (!coordinates || !mlMap.value) return;
+
+  mlMap.value.flyTo({
+    center: [coordinates[0], coordinates[1]],
+    zoom: Math.max(mlMap.value.getZoom(), 13.5),
+    pitch: is3D.value ? 60 : 0,
+    padding: toMapPadding(mapPadding.value),
+    duration: 1400,
+    essential: true,
+  });
+}
+
+function toggle3D() {
+  is3D.value = !is3D.value;
+  mlMap.value.easeTo({
+    pitch: is3D.value ? 60 : 0,
+    bearing: is3D.value ? mlMap.value.getBearing() : 0,
+    duration: 800,
+  });
+}
+
+onMounted(() => {
+  const ml = new MapLibreMap({
+    container: map.value,
+    style: STYLE_URL,
+    // Sardinia, framed in the area the drawer leaves visible
+    bounds: [
+      [8.1, 38.85],
+      [9.85, 41.3],
     ],
-    view,
-    controls: [],
+    fitBoundsOptions: { padding: toMapPadding(mapPadding.value.map((p) => p + 24)) },
+    maxPitch: 75,
+    attributionControl: false,
+  });
+  mlMap.value = ml;
+
+  // Attribution is required by the tile providers: keep it where the drawer doesn't cover it.
+  // On mobile it starts collapsed to the (i) button, so it doesn't cover the top of the map
+  ml.addControl(
+    new AttributionControl({ compact: true }),
+    lgAndGreater.value ? "bottom-right" : "top-left",
+  );
+  if (!lgAndGreater.value) {
+    ml.once("load", () => {
+      map.value
+        .querySelector(".maplibregl-ctrl-attrib")
+        ?.classList.remove("maplibregl-compact-show");
+    });
+  }
+
+  ml.on("load", async () => {
+    await addIcons(ml);
+    addTerrain(ml);
+    addPois(ml);
+
+    for (const layer of ["pois", "poi-selected"]) {
+      ml.on("mouseenter", layer, () => (ml.getCanvas().style.cursor = "pointer"));
+      ml.on("mouseleave", layer, () => (ml.getCanvas().style.cursor = ""));
+    }
+
+    ml.on("click", ["poi-selected", "pois"], (event) => {
+      const poi = props.pois[event.features[0].properties.i];
+      currentPOI.value = { values_: { ...poi, geometry: { flatCoordinates: poi.coordinates } } };
+      router.push("/poi");
+    });
   });
 
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
-  olMap.value.on("movestart", () => {
-    if (view.getInteracting() && drawerState.value.currentPosition !== "DRAWER_ON_BOTTOM_SCREEN") {
+  ml.on("movestart", (event) => {
+    if (event.originalEvent && drawerState.value.currentPosition !== "DRAWER_ON_BOTTOM_SCREEN") {
       drawerState.value.setPosition = "SET_DRAWER_ON_BOTTOM_SCREEN";
     }
   });
 
-  olMap.value.on("click", function (evt) {
-    if (view.getInteracting() || view.getAnimating()) {
-      return;
-    }
-    olMap.value.forEachFeatureAtPixel(
-      evt.pixel,
-      function (feature) {
-        currentPOI.value = feature;
-        router.push("/poi");
-        return true;
-      },
-      { layerFilter: (layer) => layer === pointsLayer },
-    );
-  });
-
-  const vectorSource = new VectorSource();
-
-  // Create the OpenLayers features in batches so the main thread never blocks for long,
-  // then add them in one go: each addFeatures makes the WebGL layer rebuild its buffers
-  (async () => {
-    const features = [];
-    for (let i = 0; i < props.pois.length; i += 1000) {
-      for (const { coordinates, ...properties } of props.pois.slice(i, i + 1000)) {
-        features.push(new Feature({ ...properties, geometry: new Point(coordinates) }));
-      }
-      await new Promise((resolve) => setTimeout(resolve));
-    }
-    vectorSource.addFeatures(features);
-  })();
-
-  const pointsLayer = new WebGLVectorLayer({
-    source: vectorSource,
-    style: { ...iconStyle, "icon-scale": 0.35 },
-  });
-  olMap.value.addLayer(pointsLayer);
-
-  // The selected POI is drawn again, bigger and on top, from its own one-feature source
-  const selectedSource = new VectorSource();
-  olMap.value.addLayer(
-    new WebGLVectorLayer({
-      source: selectedSource,
-      style: { ...iconStyle, "icon-scale": 0.6 },
-      // Clicks go to pointsLayer, whose features carry all the POI properties
-      disableHitDetection: true,
-    }),
-  );
-
-  function showSelectedMarker() {
-    selectedSource.clear();
-    const values = currentPOI.value.values_;
-    const coordinates = values?.geometry?.flatCoordinates;
-    if (!coordinates) return;
-
-    selectedSource.addFeature(
-      new Feature({
-        category_id: values.category_id,
-        geometry: new Point([coordinates[0], coordinates[1]]),
-      }),
-    );
-  }
-
-  function focusSelectedPOI() {
-    const [x, y] = currentPOI.value.values_?.geometry?.flatCoordinates ?? [];
-    if (x === undefined) return;
-
-    view.animate({
-      center: [x, y],
-      zoom: Math.max(view.getZoom(), 12),
-      duration: 350,
-    });
-  }
-
-  watch(mapPadding, (padding) => {
-    view.padding = padding;
-  });
+  watch(mapPadding, (padding) => ml.setPadding(toMapPadding(padding)));
 
   watch(currentPOI, async () => {
-    showSelectedMarker();
+    applySelection();
 
     // Raise the drawer to the middle on mobile (ignored on desktop), then center the POI
     // in the area left visible, once the drawer has reported its new size
@@ -207,13 +258,10 @@ onMounted(() => {
     focusSelectedPOI();
   });
 
-  watch(
-    () => route.path,
-    (path) => {
-      if (path === "/") selectedSource.clear();
-    },
-  );
+  watch(() => route.path, applySelection);
 });
+
+onUnmounted(() => mlMap.value?.remove());
 </script>
 
 <template>
@@ -222,30 +270,21 @@ onMounted(() => {
   <div
     class="absolute top-0 right-0 z-1 m-4 flex flex-col items-center overflow-hidden rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
   >
-    <MapControlsButton
-      class="p-3"
-      aria-label="Zoom In"
-      @click.prevent="
-        olMap.getView().animate({
-          zoom: olMap.getView().getZoom() + 1,
-          duration: 250,
-        })
-      "
-    >
+    <MapControlsButton class="p-3" aria-label="Zoom In" @click.prevent="mlMap.zoomIn()">
       <IconPlus class="h-6 w-6" />
     </MapControlsButton>
 
-    <MapControlsButton
-      class="p-3"
-      aria-label="Zoom Out"
-      @click.prevent="
-        olMap.getView().animate({
-          zoom: olMap.getView().getZoom() - 1,
-          duration: 250,
-        })
-      "
-    >
+    <MapControlsButton class="p-3" aria-label="Zoom Out" @click.prevent="mlMap.zoomOut()">
       <IconMinus class="h-6 w-6" />
+    </MapControlsButton>
+
+    <MapControlsButton
+      class="h-12 w-12 text-sm font-bold text-slate-600"
+      :aria-label="is3D ? 'Vista 2D' : 'Vista 3D'"
+      :aria-pressed="is3D"
+      @click.prevent="toggle3D()"
+    >
+      {{ is3D ? "2D" : "3D" }}
     </MapControlsButton>
   </div>
 </template>
