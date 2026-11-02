@@ -2,6 +2,13 @@
 // The (i) sheet: how to read the map, how to use the app, and the credits
 const infoOpen = useInfoOpen();
 
+// Like the drawer: the header floats over the content, which scrolls under it, and turns into a
+// blurred bar once there is something under it
+const body = ref<HTMLElement | null>(null);
+const { y: bodyY } = useScroll(body);
+const headerEl = ref<HTMLElement | null>(null);
+const { height: headerHeight } = useElementSize(headerEl, undefined, { box: "border-box" });
+
 const link = "font-semibold text-terracotta-dark underline underline-offset-2";
 
 // The status values in the data, with the icons the site page uses (see statusOf)
@@ -39,8 +46,14 @@ const TIPS = [
     }"
   >
     <template #content="{ close }">
-      <div class="flex max-h-[85dvh] flex-col">
-        <header class="flex items-start justify-between gap-x-3 p-4 pb-2">
+      <div class="relative flex max-h-[85dvh] flex-col rounded-[inherit]">
+        <header
+          ref="headerEl"
+          class="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-x-3 rounded-t-3xl p-4 pb-2 transition-[background-color,box-shadow] duration-200"
+          :class="
+            bodyY > 0 ? 'bg-panel/85 shadow-[0_1px_0_var(--color-line)] backdrop-blur-xl' : ''
+          "
+        >
           <div class="flex flex-col gap-y-1">
             <BrandMark />
             <p class="text-sm text-muted">Esplora i siti della Sardegna nuragica</p>
@@ -57,7 +70,11 @@ const TIPS = [
           </button>
         </header>
 
-        <div class="flex flex-col gap-y-6 overflow-y-auto px-4 pb-6 text-sm text-basalt">
+        <div
+          ref="body"
+          class="scrollbar-hidden flex flex-col gap-y-6 overflow-y-auto overscroll-contain rounded-[inherit] px-4 pb-6 text-sm text-basalt"
+          :style="{ paddingTop: `${headerHeight + 8}px` }"
+        >
           <p class="text-pretty text-muted">
             Un client non ufficiale per esplorare nuraghi, domus de janas, tombe dei giganti, pozzi
             sacri e gli altri siti censiti dal
