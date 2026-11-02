@@ -7,3 +7,12 @@ node_modules
 .env
 dist
 .DS_Store
+# Agent skills and their local state (installed per machine, not app code)
+.agents/
+.claude/
+.codex/
+.github/agents/
+.github/hooks/
+.github/skills/
+.impeccable/
+skills-lock.json
