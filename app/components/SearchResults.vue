@@ -103,9 +103,10 @@ function getCategoryComponent(category) {
         </button>
       </div>
 
-      <!-- Category filter: also filters the markers on the map -->
+      <!-- Category filter: also filters the markers on the map. The scroll container clips
+           vertically too: py-1 leaves room for the chips' shadow, the margins keep the spacing -->
       <div
-        class="scrollbar-hidden -mx-4 mt-2 flex gap-x-2 overflow-x-auto px-4"
+        class="scrollbar-hidden -mx-4 mt-1 -mb-1 flex gap-x-2 overflow-x-auto px-4 py-1"
         role="group"
         aria-label="Filtra per tipo"
       >
