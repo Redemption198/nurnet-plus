@@ -10,6 +10,7 @@ const drawerContent = ref<HTMLElement | null>(null);
 provideDrawerScroller(drawerContent);
 
 const drawerState = useDrawerState();
+const headerHeight = useDrawerHeaderHeight();
 const mapPadding = useMapPadding();
 const route = useRoute();
 
@@ -305,17 +306,19 @@ onDeactivated(() => lockPageScroll(false));
     ref="drawer"
     class="absolute z-2 flex flex-col rounded-2xl bg-panel/75 shadow-[0_6px_24px_rgb(49_37_40/0.16)] backdrop-blur-2xl select-none"
     :class="lgAndGreater ? 'inset-4 w-1/3' : '-bottom-12 h-full w-full'"
+    :style="{ '--drawer-header-h': `${headerHeight}px` }"
   >
-    <!-- The handle lives in each page's sticky DrawerHeader so content can scroll under it.
-         Nothing between the drawer and that header may combine rounded corners with clipped
-         overflow: Firefox then drops the header's backdrop-filter
-         (https://bugzilla.mozilla.org/show_bug.cgi?id=1782876). The scroll areas are clipped to
-         the drawer's rounded shape with clip-path instead (.drawer-clip) -->
+    <!-- Each page's DrawerHeader (handle, title or search) is teleported here: over the scroll
+         area, not inside it, so the content can be clipped to the rounded corners without
+         clipping the header (Firefox drops the backdrop-filter of anything inside rounded,
+         clipped overflow: https://bugzilla.mozilla.org/show_bug.cgi?id=1782876). The scroll
+         areas leave --drawer-header-h free at the top, and content scrolls up under the header -->
+    <div id="drawer-header" class="absolute inset-x-0 top-0 z-10"></div>
     <div
       ref="drawerContent"
       data-drawer-scroll
-      class="drawer-clip scrollbar-hidden relative min-h-0 flex-1 overscroll-contain focus-visible:-outline-offset-2"
-      :class="route.path === '/' ? '' : 'overflow-y-scroll'"
+      class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain rounded-[inherit] focus-visible:-outline-offset-2"
+      :class="route.path === '/' ? '' : 'overflow-y-scroll pt-(--drawer-header-h)'"
       :tabindex="route.path === '/' ? undefined : 0"
     >
       <slot></slot>

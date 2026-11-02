@@ -57,3 +57,6 @@ export const useMapView = () =>
     "map-view",
     () => null,
   );
+
+// Height of the drawer's header (css px), which floats over the top of the drawer's scroll area
+export const useDrawerHeaderHeight = () => useState<number>("drawer-header-height", () => 0);

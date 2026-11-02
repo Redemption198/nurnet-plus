@@ -100,17 +100,17 @@ function warmBasemap(ml: MapLibreMap) {
 }
 
 function addTerrain(ml: MapLibreMap) {
-  // Separate sources for terrain and hillshade, as MapLibre recommends
-  for (const id of ["terrain", "hillshade"]) {
-    ml.addSource(id, {
-      type: "raster-dem",
-      tiles: [TERRAIN_TILES],
-      encoding: "terrarium",
-      tileSize: 256,
-      maxzoom: 14,
-      attribution: TERRAIN_ATTRIBUTION,
-    });
-  }
+  // One source for the 3D terrain and the hillshading. MapLibre suggests separate ones, but a
+  // hillshade source of its own drew grey lines along tile edges (its tiles' borders weren't
+  // matched to their neighbours)
+  ml.addSource("terrain", {
+    type: "raster-dem",
+    tiles: [TERRAIN_TILES],
+    encoding: "terrarium",
+    tileSize: 256,
+    maxzoom: 14,
+    attribution: TERRAIN_ATTRIBUTION,
+  });
 
   // Hillshading goes under the first label layer so text stays on top
   const firstSymbolLayer = ml.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
@@ -118,7 +118,7 @@ function addTerrain(ml: MapLibreMap) {
     {
       id: "hillshade",
       type: "hillshade",
-      source: "hillshade",
+      source: "terrain",
       paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#47515f" },
     },
     firstSymbolLayer,

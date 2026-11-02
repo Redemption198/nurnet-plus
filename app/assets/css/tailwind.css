@@ -41,12 +41,6 @@
   }
 }
 
-/* The drawer's scroll areas: content scrolled under the header stays inside the drawer's rounded
-   corners. clip-path, not overflow + border-radius, which in Firefox drops the header's blur */
-@utility drawer-clip {
-  clip-path: inset(0 round var(--radius-2xl));
-}
-
 /* Hide scrollbars on horizontal strips (chips, photos) that are scrolled by touch or trackpad */
 @utility scrollbar-hidden {
   scrollbar-width: none;
