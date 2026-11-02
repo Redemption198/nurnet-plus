@@ -9,6 +9,21 @@ const { search, openPOI } = useNurnetData();
 // navigate before a @click.prevent could stop it
 const router = useRouter();
 const siteHref = (id: string) => router.resolve(`/poi/${id}`).href;
+
+// Hovering a row (mouse) or focusing it (keyboard) points the site out on the map; a tap opens it
+const hovered = useHoveredSite();
+const indexOf = computed(() => new Map(props.mapData.map((poi, i) => [poi.content_id, i])));
+function pointOut(poi: NurnetPOI | null, event?: PointerEvent | FocusEvent) {
+  if (event instanceof PointerEvent && event.pointerType !== "mouse") return;
+  if (
+    event instanceof FocusEvent &&
+    poi &&
+    !(event.target as HTMLElement).matches(":focus-visible")
+  )
+    return;
+  hovered.value = poi ? (indexOf.value.get(poi.content_id) ?? null) : null;
+}
+onUnmounted(() => (hovered.value = null));
 const categoryFilter = useCategoryFilter();
 const searchMatches = useSearchMatches();
 const mapView = useMapView();
@@ -206,6 +221,10 @@ const countLabel = computed(() => {
           class="-mx-2 flex h-full items-center gap-x-3 rounded-xl px-2 text-basalt transition-colors hover:bg-basalt/5"
           :href="siteHref(result.data.content_id)"
           @click.prevent="openPOI(result.data)"
+          @pointerenter="pointOut(result.data, $event)"
+          @pointerleave="pointOut(null, $event)"
+          @focus="pointOut(result.data, $event)"
+          @blur="pointOut(null)"
         >
           <CategoryIcon :category-id="result.data.category_id" class="size-7 shrink-0" />
           <div class="min-w-0">

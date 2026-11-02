@@ -28,6 +28,7 @@ const mapFitBounds = useMapFitBounds();
 const searchMatches = useSearchMatches();
 const mapView = useMapView();
 const highlighted = useHighlightedVisible();
+const hovered = useHoveredSite();
 
 const map = ref<HTMLElement | null>(null);
 // shallowRef: MapLibre's map must not be wrapped in a deep reactive proxy
@@ -241,6 +242,31 @@ function addPois(ml: MapLibreMap) {
     },
     paint: LABEL_PAINT,
   });
+
+  // The site hovered or focused in the list: drawn again a bit bigger, always visible (even
+  // where markers overlap), with its name
+  ml.addLayer({
+    id: "poi-hover",
+    type: "symbol",
+    source: "pois",
+    filter: hoverFilter(),
+    layout: {
+      "icon-image": iconForCategory,
+      "icon-anchor": "bottom",
+      "icon-size": 1.15,
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+      ...labelLayout(ml, 0),
+      "text-size": 13,
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    },
+    paint: { ...LABEL_PAINT, "text-halo-width": 2 },
+  });
+}
+
+function hoverFilter(): FilterSpecification {
+  return ["==", ["get", "i"], hovered.value ?? -1];
 }
 
 // Lines of sight from the open nuraghe to the sites it can see (none on the list): in mid-air
@@ -569,6 +595,9 @@ onMounted(() => {
     updateSightLines,
   );
   watch(highlighted, applyHighlight);
+  watch(hovered, () => {
+    if (mlMap.value?.getLayer("poi-hover")) mlMap.value.setFilter("poi-hover", hoverFilter());
+  });
   watch(searchMatches, applyFocus);
 
   // "Mostra sulla mappa" and friends: frame the requested area in the part the drawer leaves visible

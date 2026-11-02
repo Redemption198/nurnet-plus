@@ -60,3 +60,6 @@ export const useMapView = () =>
 
 // Height of the drawer's header (css px), which floats over the top of the drawer's scroll area
 export const useDrawerHeaderHeight = () => useState<number>("drawer-header-height", () => 0);
+
+// The site (index into the items) hovered or focused in the main list: the map points it out
+export const useHoveredSite = () => useState<number | null>("hovered-site", () => null);
