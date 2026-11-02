@@ -114,7 +114,7 @@ function getCategoryComponent(category) {
           v-for="category in CATEGORY_FILTERS"
           :key="category.name"
           type="button"
-          class="shrink-0 cursor-pointer rounded-full px-3 py-1 text-sm font-semibold shadow-sm transition active:scale-95"
+          class="flex shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full py-1 pr-3 pl-2 text-sm font-semibold shadow-sm transition active:scale-95"
           :class="
             categoryFilter === category.name
               ? [useCategoryColor(category.id), 'text-white']
@@ -123,6 +123,24 @@ function getCategoryComponent(category) {
           :aria-pressed="categoryFilter === category.name"
           @click="categoryFilter = categoryFilter === category.name ? null : category.name"
         >
+          <!-- Same icons as the list: category colour, white on the selected chip -->
+          <component
+            :is="getCategoryComponent(category.id)"
+            v-if="getCategoryComponent(category.id)"
+            class="size-4 shrink-0"
+            :style="{
+              fill: categoryFilter === category.name ? '#fff' : useCategoryHex(category.id),
+            }"
+            aria-hidden="true"
+          />
+          <UIcon
+            v-else
+            name="i-lucide-circle-help"
+            class="size-4 shrink-0"
+            :style="{
+              color: categoryFilter === category.name ? '#fff' : useCategoryHex(category.id),
+            }"
+          />
           {{ category.name }}
         </button>
       </div>
@@ -141,7 +159,15 @@ function getCategoryComponent(category) {
             <component
               :is="getCategoryComponent(Number(result.data.category_id))"
               v-if="getCategoryComponent(Number(result.data.category_id))"
-              class="h-8 w-8 shrink-0 fill-slate-500"
+              class="h-8 w-8 shrink-0"
+              :style="{ fill: useCategoryHex(Number(result.data.category_id)) }"
+            />
+            <!-- No icon of its own (Unicum, unknown): a "?" like the map's marker, keeping rows aligned -->
+            <UIcon
+              v-else
+              name="i-lucide-circle-help"
+              class="size-8 shrink-0"
+              :style="{ color: useCategoryHex(Number(result.data.category_id)) }"
             />
 
             <div class="min-w-0">

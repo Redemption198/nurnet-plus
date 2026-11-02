@@ -23,6 +23,20 @@ export const CATEGORY_FILTERS = [
   { name: "Sconosciuto", id: 0 },
 ];
 
+// The same colours as hex, for fills (e.g. the list icons): dark enough to stand out (3:1+)
+// on the light list rows
+export const useCategoryHex = (category: number): string => {
+  if (category >= 10 && category <= 13) return "#c44f01";
+  if (category === 20 || category === 21) return "#7d7534";
+  if (category === 30) return "#ad5d58";
+  if (category === 40 || category === 41) return "#9d6b03";
+  if (category >= 50 && category <= 52) return "#3a79ab";
+  if (category >= 60 && category <= 63) return "#9e6842";
+  if (category >= 70 && category <= 73) return "#312528";
+  if (category === 110 || category === 101) return "#737571";
+  return "#c10007";
+};
+
 // Darker than the map icons' colours (same hues) so white text meets WCAG AA (4.5:1)
 export const useCategoryColor = (category: number): string => {
   if (category >= 10 && category <= 13) return "bg-[#c44f01]";

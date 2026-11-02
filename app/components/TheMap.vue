@@ -1,9 +1,8 @@
 <script setup>
-import { MapLibreMap, AttributionControl, setWorkerUrl } from "maplibre-gl";
+import { MapLibreMap, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // MapLibre looks for its worker next to its own module, which bundling moves: point to it
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
-import { breakpointsTailwind } from "@vueuse/core";
 
 setWorkerUrl(workerUrl);
 
@@ -22,7 +21,6 @@ const { openPOI } = useNurnetData();
 const drawerState = useDrawerState();
 const mapPadding = useMapPadding();
 const categoryFilter = useCategoryFilter();
-const lgAndGreater = useBreakpoints(breakpointsTailwind).greaterOrEqual("lg");
 
 const map = ref();
 // shallowRef: MapLibre's map must not be wrapped in a deep reactive proxy
@@ -262,6 +260,8 @@ onMounted(() => {
       ],
       fitBoundsOptions: { padding: toMapPadding(mapPadding.value.map((p) => p + 24)) },
       maxPitch: 75,
+      // The map credits (OpenFreeMap, OpenMapTiles, OpenStreetMap, Terrain Tiles) are in the
+      // "Informazioni" sheet, opened from the NurNet+ (i) button on the map / top of the drawer
       attributionControl: false,
     });
   } catch (error) {
@@ -271,20 +271,6 @@ onMounted(() => {
     return;
   }
   mlMap.value = ml;
-
-  // Attribution is required by the tile providers: keep it where the drawer doesn't cover it.
-  // On mobile it starts collapsed to the (i) button, so it doesn't cover the top of the map
-  ml.addControl(
-    new AttributionControl({ compact: true }),
-    lgAndGreater.value ? "bottom-right" : "top-left",
-  );
-  if (!lgAndGreater.value) {
-    ml.once("load", () => {
-      map.value
-        .querySelector(".maplibregl-ctrl-attrib")
-        ?.classList.remove("maplibregl-compact-show");
-    });
-  }
 
   ml.on("load", async () => {
     await addIcons(ml);
@@ -346,12 +332,3 @@ onUnmounted(() => mlMap.value?.remove());
     </MapControlsButton>
   </div>
 </template>
-
-<style>
-/* Mobile: the attribution button sits under the NurNet+ logo pill */
-@media (width < 64rem) {
-  .maplibregl-ctrl-top-left {
-    top: 3.75rem;
-  }
-}
-</style>
