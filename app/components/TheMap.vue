@@ -226,7 +226,24 @@ function toggle3D() {
 
 onMounted(() => {
   // Registered first: the drawer still reacts to selections if the map can't be created
-  watch(mapPadding, (padding) => mlMap.value?.setPadding(toMapPadding(padding)));
+  // Changing the padding is a camera move: it would cancel the inertia of a pan in progress (the
+  // drawer collapses as soon as the user pans), so wait for the map to stop. It is applied without
+  // moving what is on screen: the point now in the middle of the new visible area becomes the centre
+  watch(mapPadding, () => {
+    const ml = mlMap.value;
+    if (!ml) return;
+    const apply = () => {
+      const padding = toMapPadding(mapPadding.value);
+      const { width, height } = ml.getContainer().getBoundingClientRect();
+      const center = ml.unproject([
+        (padding.left + width - padding.right) / 2,
+        (padding.top + height - padding.bottom) / 2,
+      ]);
+      ml.jumpTo({ center, padding });
+    };
+    if (ml.isMoving()) ml.once("moveend", apply);
+    else apply();
+  });
 
   // The id, not the object: the POI's details are merged in later and must not re-trigger this
   watch(
@@ -260,6 +277,8 @@ onMounted(() => {
       ],
       fitBoundsOptions: { padding: toMapPadding(mapPadding.value.map((p) => p + 24)) },
       maxPitch: 75,
+      // A longer glide after a fling, closer to iOS maps (MapLibre's default deceleration is 2500)
+      dragPan: { linearity: 0.3, maxSpeed: 2000, deceleration: 1800 },
       // The map credits (OpenFreeMap, OpenMapTiles, OpenStreetMap, Terrain Tiles) are in the
       // "Informazioni" sheet, opened from the NurNet+ (i) button on the map / top of the drawer
       attributionControl: false,

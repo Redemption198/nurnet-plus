@@ -96,7 +96,7 @@ const { y: contentY } = useScroll(drawerContent);
 
     <a
       v-if="currentPOI.values_.photos?.length > 0"
-      :href="`https://www.nurnet.net/mediateca/?s=${currentPOI.values_.content_id}`"
+      :href="`https://www.nurnet.net/mediateca/?s=${encodeURIComponent(currentPOI.values_.name)}`"
       target="_blank"
       rel="noopener"
       class="mx-4 my-2 flex min-w-max items-center justify-center gap-x-2 rounded-2xl bg-terracotta fill-white px-4 py-2 font-semibold text-white transition-transform hover:scale-95"
