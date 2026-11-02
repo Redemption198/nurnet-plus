@@ -91,7 +91,7 @@ const countLabel = computed(() => {
   <div
     v-bind="containerProps"
     data-drawer-scroll
-    class="scrollbar-hidden h-full overscroll-contain pb-16 lg:pb-4"
+    class="drawer-clip scrollbar-hidden h-full overscroll-contain pb-16 lg:pb-4"
   >
     <DrawerHeader :scrolled="listY > 0">
       <BrandButton
