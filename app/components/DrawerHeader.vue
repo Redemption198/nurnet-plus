@@ -9,7 +9,7 @@ defineProps<{ scrolled?: boolean }>();
     class="sticky top-0 z-10 rounded-t-2xl pt-4 transition-[background-color,box-shadow] duration-200"
     :class="
       scrolled
-        ? 'bg-panel/80 shadow-[0_1px_0_var(--color-line)] backdrop-blur-xl backdrop-saturate-150'
+        ? 'bg-panel/55 shadow-[0_1px_0_var(--color-line)] backdrop-blur-xl backdrop-saturate-180'
         : ''
     "
   >
