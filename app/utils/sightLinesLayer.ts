@@ -216,11 +216,11 @@ export function createSightLinesLayer(id: string) {
         canvas.height / devicePixelRatio,
       );
       gl.uniform1f(uniforms.u_highlight!, highlight);
-      gl.uniform4f(uniforms.u_widths!, 3, 2.2, 1.6, 2);
+      gl.uniform4f(uniforms.u_widths!, 2, 1.5, 1.2, 2);
       gl.uniform4fv(
         uniforms.u_colors!,
         [
-          ...VISIBILITY_LEVELS.map((level, i) => rgba(level.color, [0.9, 0.85, 0.8][i]!)),
+          ...VISIBILITY_LEVELS.map((level, i) => rgba(level.color, [0.8, 0.7, 0.75][i]!)),
           rgba("#312528", 0.75), // towers
         ].flat(),
       );

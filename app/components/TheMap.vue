@@ -274,10 +274,26 @@ function groundAt(ml, coordinates, elevation) {
 // Towers placed on the terrain (rather than on their elevation) in the last update
 let exactTowers = 0;
 let approximateTowers = 0;
+// While a nuraghe with lines of sight is open, the rest of the map steps back: the other markers
+// fade and lose their names, and the visible sites win where names collide
+const FADED_OPACITY = 0.3;
+function applyFocus(ml, sites) {
+  if (!ml.getLayer("pois")) return;
+  const focused = sites.length > 0;
+  // The open site itself is drawn by "poi-selected"
+  const inFocus = ["in", ["get", "i"], ["literal", sites.map((site) => site.i)]];
+  // The zoom step must be the outermost expression
+  const name = focused ? ["case", inFocus, ["get", "name"], ""] : ["get", "name"];
+  ml.setPaintProperty("pois", "icon-opacity", focused ? ["case", inFocus, 1, FADED_OPACITY] : 1);
+  ml.setLayoutProperty("pois", "text-field", ["step", ["zoom"], "", 12.5, name]);
+  ml.setLayoutProperty("pois", "symbol-sort-key", focused ? ["case", inFocus, 0, 1] : 0);
+}
+
 function updateSightLines() {
   const ml = mlMap.value;
   if (!ml) return;
   ml.getSource("visibility")?.setData(visibilityEnds());
+  applyFocus(ml, visibleSites());
 
   const poi = currentPOI.value.values_;
   const sites = visibleSites();
