@@ -392,7 +392,8 @@ function addSightLines(ml: MapLibreMap) {
     source: "visibility",
     filter: ["==", ["get", "i"], -1],
     layout: {
-      "text-field": ["get", "name"],
+      // Only until the markers show their own names
+      "text-field": ["step", ["zoom"], ["get", "name"], LABEL_ZOOM, ""],
       "text-font": labelFont(ml),
       "text-size": 13,
       "text-anchor": "bottom",
@@ -469,8 +470,20 @@ function showMyLocation() {
   );
 }
 
+// What covers the map besides the drawer: the controls on the right, and on phones the brand
+// button at the top left (a 44px button 16px from the edges). Camera moves frame things in what
+// is left, so nothing lands under them
+const isDesktop = useMediaQuery("(min-width: 1024px)");
+const OVERLAY_RIGHT = 16 + 48 + 8;
+const OVERLAY_TOP_MOBILE = 16 + 44 + 8;
+
 function toMapPadding([top, right, bottom, left]: number[]) {
-  return { top: top!, right: right!, bottom: bottom!, left: left! };
+  return {
+    top: top! + (isDesktop.value ? 0 : OVERLAY_TOP_MOBILE),
+    right: right! + OVERLAY_RIGHT,
+    bottom: bottom!,
+    left: left!,
+  };
 }
 
 // Close enough to see the site and its neighbours (and their names), not so close that the
@@ -482,22 +495,23 @@ function focusSelectedPOI() {
   mlMap.value.flyTo({
     center: coordinates as LngLatLike,
     zoom: Math.max(mlMap.value.getZoom(), 12.5),
-    pitch: is3D.value ? 60 : 0,
+    // Keep the visitor's own tilt; only a flat map stays flat
+    pitch: is3D.value ? Math.max(mlMap.value.getPitch(), 45) : 0,
     padding: toMapPadding(mapPadding.value),
     duration: 1400,
     essential: true,
   });
 }
 
+// The button follows the map's actual tilt (set by it or by a two-finger drag), and camera moves
+// keep whatever tilt the visitor chose
+const TILTED = 5; // degrees
 function toggle3D() {
   const ml = mlMap.value;
   if (!ml) return;
-  is3D.value = !is3D.value;
-  ml.easeTo({
-    pitch: is3D.value ? 60 : 0,
-    bearing: is3D.value ? ml.getBearing() : 0,
-    duration: 800,
-  });
+  const tilt = !is3D.value;
+  is3D.value = tilt;
+  ml.easeTo({ pitch: tilt ? 60 : 0, bearing: tilt ? ml.getBearing() : 0, duration: 800 });
 }
 
 function publishView(ml: MapLibreMap) {
@@ -565,9 +579,9 @@ onMounted(() => {
     if (request.lowerDrawer) drawerState.value.request = "bottom";
     await nextTick();
     mlMap.value.fitBounds(request.bounds, {
-      // On top of the map's own padding (the drawer's area), which fitBounds adds itself; more
-      // on the right, where the map controls are
-      padding: { top: 48, bottom: 48, left: 48, right: 96 },
+      // On top of the map's own padding (drawer, controls, brand button), which fitBounds adds.
+      // Room for the markers and their names around the points themselves
+      padding: { top: 48, bottom: 40, left: 64, right: 56 },
       maxZoom: 14,
       duration: 1200,
       essential: true,
@@ -632,6 +646,8 @@ onMounted(() => {
   });
 
   ml.on("moveend", () => publishView(ml));
+  // Whatever tilted the map (the button, a two-finger drag, a camera move), the button follows
+  ml.on("pitchend", () => (is3D.value = ml.getPitch() > TILTED));
 
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
   ml.on("movestart", (event) => {
@@ -657,7 +673,7 @@ onUnmounted(() => mlMap.value?.remove());
 
   <div
     v-if="!mapUnavailable"
-    class="absolute top-0 right-0 z-1 m-4 flex flex-col items-end gap-y-2"
+    class="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-1 flex flex-col items-end gap-y-2"
   >
     <div
       class="flex flex-col items-center overflow-hidden rounded-2xl bg-panel/80 shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"

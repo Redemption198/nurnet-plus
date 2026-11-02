@@ -12,8 +12,12 @@ const { items: mapData, error, reload } = useNurnetData();
     <AppSplash :ready="!!mapData || !!error" />
 
     <ClientOnly>
-      <!-- On desktop the brand is at the top of the drawer instead -->
-      <BrandButton class="absolute top-4 left-4 z-3 lg:hidden" />
+      <!-- On desktop the brand is at the top of the drawer instead. Under the drawer (z-2) when
+           it's raised; clear of the notch/status bar -->
+      <BrandButton
+        compact
+        class="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 z-1 lg:hidden"
+      />
       <InfoSheet />
 
       <TheDrawer>
@@ -22,7 +26,7 @@ const { items: mapData, error, reload } = useNurnetData();
           v-if="mapData"
           :map-data="mapData"
         ></component>
-        <div v-else data-drawer-drag class="h-full pt-4">
+        <div v-else data-drawer-drag class="h-full">
           <DrawerHandle />
           <div
             class="flex h-5/6 w-full flex-col items-center justify-center gap-y-4 px-8 text-center text-sm font-semibold text-muted"

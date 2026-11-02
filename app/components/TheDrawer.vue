@@ -303,16 +303,18 @@ onDeactivated(() => lockPageScroll(false));
 <template>
   <div
     ref="drawer"
-    class="absolute z-2 flex flex-col rounded-2xl bg-panel/75 shadow-[0_6px_24px_rgb(49_37_40/0.16)] backdrop-blur-2xl select-none"
+    class="absolute z-2 flex flex-col rounded-2xl bg-panel/75 pt-4 lg:pb-4 shadow-[0_6px_24px_rgb(49_37_40/0.16)] backdrop-blur-2xl select-none"
     :class="lgAndGreater ? 'inset-4 w-1/3' : '-bottom-12 h-full w-full'"
   >
     <!-- The handle lives in each page's sticky DrawerHeader so content can scroll under it.
-         No overflow-hidden here: with the rounded corners it breaks the header's
-         backdrop-filter in Firefox (https://bugzilla.mozilla.org/show_bug.cgi?id=1782876) -->
+         Nothing between the drawer and that header may combine rounded corners with clipped
+         overflow: Firefox then drops the header's backdrop-filter
+         (https://bugzilla.mozilla.org/show_bug.cgi?id=1782876). Instead the drawer's padding
+         (pt-4, lg:pb-4: its corner radius) keeps the scrolling content out of the corners -->
     <div
       ref="drawerContent"
       data-drawer-scroll
-      class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain rounded-[inherit] focus-visible:-outline-offset-2"
+      class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain focus-visible:-outline-offset-2"
       :class="route.path === '/' ? '' : 'overflow-y-scroll'"
       :tabindex="route.path === '/' ? undefined : 0"
     >
