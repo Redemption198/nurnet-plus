@@ -59,6 +59,8 @@ const { y: contentY } = useScroll(drawerContent);
       <span class="text-sm text-slate-700">Località</span>{{ currentPOI.values_.localita }}
     </p>
 
+    <POIContext />
+
     <div
       v-if="currentPOI.values_.detailsStatus === 'loading'"
       class="mx-4 flex animate-pulse flex-col gap-y-2"

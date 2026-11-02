@@ -20,6 +20,15 @@ export interface NurnetDetails {
   verified?: boolean;
   date?: string;
   photos: string[];
+  // From the NurNet Geoportale (geo.nurnet.net), for most sites
+  elevation?: number;
+  typology?: string;
+  period?: string;
+  lithology?: string;
+  landUse?: string;
+  riverDistance?: number;
+  springDistance?: number;
+  coastDistance?: number;
 }
 
 // One worker for the whole app: it loads the data once and answers searches and details
