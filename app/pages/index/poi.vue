@@ -61,6 +61,8 @@ const { y: contentY } = useScroll(drawerContent);
 
     <POIContext />
 
+    <POIVisibility />
+
     <div
       v-if="currentPOI.values_.detailsStatus === 'loading'"
       class="mx-4 flex animate-pulse flex-col gap-y-2"

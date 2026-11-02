@@ -21,6 +21,7 @@ const { openPOI } = useNurnetData();
 const drawerState = useDrawerState();
 const mapPadding = useMapPadding();
 const categoryFilter = useCategoryFilter();
+const mapFitBounds = useMapFitBounds();
 
 const map = ref();
 // shallowRef: MapLibre's map must not be wrapped in a deep reactive proxy
@@ -197,6 +198,69 @@ function addPois(ml) {
   });
 }
 
+// Lines of sight from the open nuraghe to the sites it can see (none on the list), with a dot at
+// each end: the markers there may be hidden where they overlap
+function visibilityLines() {
+  const poi = currentPOI.value.values_;
+  const visible = route.path === "/" ? [] : (poi?.visible ?? []);
+  return {
+    type: "FeatureCollection",
+    features: visible
+      .filter((site) => props.pois[site.i])
+      .flatMap((site) => {
+        const end = props.pois[site.i].coordinates;
+        return [
+          {
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: [poi.coordinates, end] },
+            properties: { height: site.height },
+          },
+          { type: "Feature", geometry: { type: "Point", coordinates: end }, properties: {} },
+        ];
+      }),
+  };
+}
+
+function updateVisibilityLines() {
+  mlMap.value?.getSource("visibility")?.setData(visibilityLines());
+}
+
+function addVisibilityLines(ml) {
+  ml.addSource("visibility", { type: "geojson", data: visibilityLines() });
+  // Under the markers; the better the view, the stronger the line
+  ml.addLayer(
+    {
+      id: "visibility",
+      type: "line",
+      source: "visibility",
+      filter: ["==", ["geometry-type"], "LineString"],
+      layout: { "line-cap": "round" },
+      paint: {
+        "line-color": "#c44f01",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1.5, 14, 3],
+        "line-opacity": ["interpolate", ["linear"], ["get", "height"], 0, 0.3, 15, 0.85],
+      },
+    },
+    "pois",
+  );
+  ml.addLayer(
+    {
+      id: "visibility-ends",
+      type: "circle",
+      source: "visibility",
+      filter: ["==", ["geometry-type"], "Point"],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 2.5, 14, 4.5],
+        "circle-color": "#c44f01",
+        "circle-stroke-color": "#fff",
+        "circle-stroke-width": 1.5,
+        "circle-pitch-alignment": "map",
+      },
+    },
+    "pois",
+  );
+}
+
 function toMapPadding([top, right, bottom, left]) {
   return { top, right, bottom, left };
 }
@@ -261,6 +325,25 @@ onMounted(() => {
 
   watch(() => route.path, applySelection);
 
+  // The lines follow the open nuraghe once its line-of-sight data arrives, and go on the list
+  watch([() => currentPOI.value.values_?.visible, () => route.path], updateVisibilityLines);
+
+  // "Mostra sulla mappa": frame the requested area in the part the drawer leaves visible
+  watch(mapFitBounds, async (bounds) => {
+    if (!bounds || !mlMap.value) return;
+    mapFitBounds.value = null;
+    // Lower the drawer (mobile); it reports the new padding as it starts moving
+    drawerState.value.setPosition = "SET_DRAWER_ON_BOTTOM_SCREEN";
+    await nextTick();
+    mlMap.value.fitBounds(bounds, {
+      // On top of the map's own padding (the drawer's area), which fitBounds adds itself
+      padding: 48,
+      maxZoom: 14,
+      duration: 1200,
+      essential: true,
+    });
+  });
+
   watch(categoryFilter, () => {
     if (mlMap.value?.getLayer("pois")) mlMap.value.setFilter("pois", categoryLayerFilter());
   });
@@ -296,6 +379,7 @@ onMounted(() => {
     warmBasemap(ml);
     addTerrain(ml);
     addPois(ml);
+    addVisibilityLines(ml);
 
     for (const layer of ["pois", "poi-selected"]) {
       ml.on("mouseenter", layer, () => (ml.getCanvas().style.cursor = "pointer"));

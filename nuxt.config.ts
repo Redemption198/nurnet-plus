@@ -86,6 +86,7 @@ export default defineNuxtConfig({
       additionalManifestEntries: [
         dataFileEntry("nurnet-index.json"),
         dataFileEntry("nurnet-details.json"),
+        dataFileEntry("nurnet-visibility.json"),
       ],
     },
   },

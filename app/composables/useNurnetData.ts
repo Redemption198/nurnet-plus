@@ -31,6 +31,16 @@ export interface NurnetDetails {
   coastDistance?: number;
 }
 
+// A site visible from the open one (line of sight between nuraghi, from CRS4)
+export interface VisibleSite {
+  i: number; // index into `items`
+  height: number; // metres of tower visible, 0-15, the mean of both directions
+  distance: number; // metres
+}
+
+// Only nuraghi have line-of-sight data
+export const isNuraghe = (category: string | null) => /^1[0-3]$/.test(category ?? "");
+
 // One worker for the whole app: it loads the data once and answers searches and details
 let worker: Worker | undefined;
 let lastRequestId = 0;
@@ -38,7 +48,7 @@ const pending = new Map<number, (value: never) => void>();
 const items = shallowRef<NurnetPOI[] | null>(null);
 const error = ref<string | null>(null);
 
-function startWorker(indexUrl: string, detailsUrl: string) {
+function startWorker(indexUrl: string, detailsUrl: string, visibilityUrl: string) {
   worker = new DataWorker();
   worker.onmessage = ({ data }) => {
     if (data.type === "data") {
@@ -49,12 +59,15 @@ function startWorker(indexUrl: string, detailsUrl: string) {
     } else if (data.type === "details") {
       pending.get(data.requestId)?.(data.details as never);
       pending.delete(data.requestId);
+    } else if (data.type === "visible") {
+      pending.get(data.requestId)?.(data.visible as never);
+      pending.delete(data.requestId);
     } else if (data.type === "error" || data.type === "details-error") {
       if (data.type === "error") error.value = data.message;
       console.error("NurNet data worker:", data.message);
     }
   };
-  worker.postMessage({ type: "load", indexUrl, detailsUrl });
+  worker.postMessage({ type: "load", indexUrl, detailsUrl, visibilityUrl });
 }
 
 function request<T>(message: Record<string, unknown>, idKey: string) {
@@ -72,7 +85,11 @@ export function useNurnetData() {
 
   if (import.meta.client && !worker) {
     const url = (file: string) => new URL(`${config.app.baseURL}${file}`, location.href).href;
-    startWorker(url("nurnet-index.json"), url("nurnet-details.json"));
+    startWorker(
+      url("nurnet-index.json"),
+      url("nurnet-details.json"),
+      url("nurnet-visibility.json"),
+    );
   }
 
   // Resolves with the indices (into `items`) of the matching POIs, best match first
@@ -85,12 +102,35 @@ export function useNurnetData() {
     return request<NurnetDetails | null>({ type: "details", id }, "requestId");
   }
 
+  // The sites visible from a nuraghe, nearest first; null if the data couldn't be loaded
+  function getVisible(id: string) {
+    return request<VisibleSite[] | null>({ type: "visible", id }, "requestId");
+  }
+
   // Opens a POI right away with what the index has; its details are filled in when available
   async function openPOI(poi: NurnetPOI) {
     currentPOI.value = {
-      values_: { ...poi, geometry: { flatCoordinates: poi.coordinates }, detailsStatus: "loading" },
+      values_: {
+        ...poi,
+        geometry: { flatCoordinates: poi.coordinates },
+        detailsStatus: "loading",
+        visibleStatus: isNuraghe(poi.category_id) ? "loading" : "none",
+      },
     };
     void router.push("/poi");
+
+    if (isNuraghe(poi.category_id)) {
+      void getVisible(poi.content_id).then((visible) => {
+        if (currentPOI.value.values_?.content_id !== poi.content_id) return;
+        currentPOI.value = {
+          values_: {
+            ...currentPOI.value.values_,
+            visible: visible ?? [],
+            visibleStatus: visible ? "loaded" : "error",
+          },
+        };
+      });
+    }
 
     const details = await getDetails(poi.content_id);
     // The user may have moved on to another POI meanwhile
@@ -105,5 +145,5 @@ export function useNurnetData() {
     };
   }
 
-  return { items, error, search, getDetails, openPOI };
+  return { items, error, search, getDetails, getVisible, openPOI };
 }

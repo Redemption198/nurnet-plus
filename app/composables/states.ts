@@ -25,3 +25,7 @@ export const useDrawerState = () =>
       setPosition: "",
     };
   });
+
+// Set to [[west, south], [east, north]] to frame that area on the map (the map resets it to null)
+export const useMapFitBounds = () =>
+  useState<[[number, number], [number, number]] | null>("map-fit-bounds", () => null);
