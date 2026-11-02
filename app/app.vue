@@ -1,203 +1,60 @@
-<script setup>
+<script setup lang="ts">
 const config = useRuntimeConfig();
+const asset = (file: string) => `${config.app.baseURL}pwa/${file}`;
+
+// iOS launch screens (pwa-asset-generator): device width and height in css px, pixel ratio.
+// Each has a portrait and a landscape image, named by their size in pixels
+const SPLASH_DEVICES: [width: number, height: number, ratio: number][] = [
+  [1024, 1366, 2],
+  [834, 1194, 2],
+  [768, 1024, 2],
+  [834, 1112, 2],
+  [810, 1080, 2],
+  [430, 932, 3],
+  [393, 852, 3],
+  [428, 926, 3],
+  [390, 844, 3],
+  [375, 812, 3],
+  [414, 896, 3],
+  [414, 896, 2],
+  [414, 736, 3],
+  [375, 667, 2],
+  [320, 568, 2],
+];
+
+const splashLinks = SPLASH_DEVICES.flatMap(([width, height, ratio]) =>
+  (["portrait", "landscape"] as const).map((orientation) => {
+    const [w, h] = orientation === "portrait" ? [width, height] : [height, width];
+    return {
+      rel: "apple-touch-startup-image" as const,
+      href: asset(`apple-splash-${w * ratio}-${h * ratio}.jpg`),
+      media: `(device-width: ${width}px) and (device-height: ${height}px) and (-webkit-device-pixel-ratio: ${ratio}) and (orientation: ${orientation})`,
+    };
+  }),
+);
+
+useHead({
+  title: "NurNet+",
+  meta: [
+    {
+      name: "description",
+      content:
+        "La mappa dei siti della Sardegna nuragica: nuraghi, domus de janas, tombe dei giganti e altri, dai dati del progetto NurNet.",
+    },
+    // The browser and status bars take the map's sand colour
+    { name: "theme-color", content: "#f1e9dc" },
+    { name: "mobile-web-app-capable", content: "yes" },
+    { name: "apple-mobile-web-app-title", content: "NurNet+" },
+  ],
+  link: [
+    { rel: "icon", type: "image/png", sizes: "196x196", href: asset("favicon-196.png") },
+    { rel: "apple-touch-icon", href: asset("apple-icon-180.png") },
+    ...splashLinks,
+  ],
+});
 </script>
 
 <template>
-  <Head>
-    <Title>NurNet+</Title>
-
-    <Meta name="apple-mobile-web-app-capable" content="yes" />
-
-    <Link
-      rel="icon"
-      type="image/png"
-      sizes="196x196"
-      :href="`${config.app.baseURL}pwa/favicon-196.png`"
-    />
-
-    <Link rel="apple-touch-icon" :href="`${config.app.baseURL}pwa/apple-icon-180.png`" />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2048-2732.jpg`"
-      media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2732-2048.jpg`"
-      media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1668-2388.jpg`"
-      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2388-1668.jpg`"
-      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1536-2048.jpg`"
-      media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2048-1536.jpg`"
-      media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1668-2224.jpg`"
-      media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2224-1668.jpg`"
-      media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1620-2160.jpg`"
-      media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2160-1620.jpg`"
-      media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1290-2796.jpg`"
-      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2796-1290.jpg`"
-      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1179-2556.jpg`"
-      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2556-1179.jpg`"
-      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1284-2778.jpg`"
-      media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2778-1284.jpg`"
-      media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1170-2532.jpg`"
-      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2532-1170.jpg`"
-      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1125-2436.jpg`"
-      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2436-1125.jpg`"
-      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1242-2688.jpg`"
-      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2688-1242.jpg`"
-      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-828-1792.jpg`"
-      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1792-828.jpg`"
-      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1242-2208.jpg`"
-      media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-2208-1242.jpg`"
-      media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-750-1334.jpg`"
-      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1334-750.jpg`"
-      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-640-1136.jpg`"
-      media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-    />
-
-    <Link
-      rel="apple-touch-startup-image"
-      :href="`${config.app.baseURL}pwa/apple-splash-1136-640.jpg`"
-      media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-    />
-  </Head>
-
   <UApp>
     <NuxtPage />
   </UApp>

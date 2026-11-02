@@ -1,73 +1,73 @@
-<script setup>
+<script setup lang="ts">
 import gsap from "gsap";
 
-const props = defineProps({
-  // Data is loaded: play the exit animation, then disappear
-  ready: {
-    type: Boolean,
-    default: false,
-  },
-});
+// Data is loaded: play the exit animation, then disappear
+const props = defineProps<{ ready: boolean }>();
 
 const visible = ref(true);
-const root = ref();
-const mark = ref();
-const wordmark = ref();
+const root = ref<HTMLElement | null>(null);
+const mark = ref<HTMLElement | null>(null);
+const wordmark = ref<HTMLElement | null>(null);
 
-let intro;
+// The splash's animations, reverted (looping intro included) once it's gone
+let animations: gsap.Context | undefined;
+const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function hide() {
+  animations?.revert();
+  visible.value = false;
+}
 
 onMounted(() => {
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduceMotion) return;
-
-  // The five dots of the logo (a nuraghe seen from above) appear centre first, then around it
-  const dots = mark.value.querySelectorAll("circle");
-  intro = gsap
-    .timeline()
-    .from(dots, {
-      scale: 0,
-      transformOrigin: "50% 50%",
-      duration: 0.5,
-      ease: "back.out(2.2)",
-      stagger: 0.09,
-    })
-    .from(wordmark.value, { opacity: 0, y: 10, duration: 0.5, ease: "power3.out" }, "-=0.25")
-    .to(dots, {
-      scale: 0.82,
-      transformOrigin: "50% 50%",
-      duration: 0.7,
-      ease: "sine.inOut",
-      stagger: { each: 0.08, yoyo: true, repeat: -1 },
-    });
+  if (props.ready || reduceMotion()) return;
+  animations = gsap.context(() => {
+    // The five dots of the logo (a nuraghe seen from above) appear centre first, then around it
+    const dots = mark.value!.querySelectorAll("circle");
+    gsap
+      .timeline()
+      .from(dots, {
+        scale: 0,
+        transformOrigin: "50% 50%",
+        duration: 0.5,
+        ease: "back.out(2.2)",
+        stagger: 0.09,
+      })
+      .from(wordmark.value, { opacity: 0, y: 10, duration: 0.5, ease: "power3.out" }, "-=0.25")
+      .to(dots, {
+        scale: 0.82,
+        transformOrigin: "50% 50%",
+        duration: 0.7,
+        ease: "sine.inOut",
+        stagger: { each: 0.08, yoyo: true, repeat: -1 },
+      });
+  }, root.value ?? undefined);
 });
 
 watch(
   () => props.ready,
   (ready) => {
-    if (!ready) return;
-    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) {
-      visible.value = false;
-      return;
-    }
-    intro?.pause();
-    gsap.to(root.value, {
-      opacity: 0,
-      scale: 1.04,
-      duration: 0.45,
-      ease: "power2.in",
-      onComplete: () => (visible.value = false),
-    });
+    if (!ready || !visible.value) return;
+    if (!animations) return hide();
+    animations.add(() =>
+      gsap.to(root.value, {
+        opacity: 0,
+        scale: 1.04,
+        duration: 0.45,
+        ease: "power2.in",
+        onComplete: hide,
+      }),
+    );
   },
-  { immediate: true },
 );
+
+onUnmounted(() => animations?.revert());
 </script>
 
 <template>
   <div
     v-if="visible"
     ref="root"
-    class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-y-5 bg-[#f1e9dc]"
+    class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-y-5 bg-sand"
     role="status"
     aria-label="Caricamento dei siti"
   >

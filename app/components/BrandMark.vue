@@ -1,10 +1,5 @@
-<script setup>
-defineProps({
-  wordmark: {
-    type: Boolean,
-    default: true,
-  },
-});
+<script setup lang="ts">
+withDefaults(defineProps<{ wordmark?: boolean }>(), { wordmark: true });
 </script>
 
 <template>

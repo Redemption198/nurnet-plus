@@ -51,8 +51,13 @@ export default defineNuxtConfig({
     manifest: {
       name: "NurNet+",
       short_name: "NurNet+",
-      description: "Discover Sardinia's numerous Nuraghe and more",
-      theme_color: "#fe8702",
+      description:
+        "La mappa dei siti della Sardegna nuragica: nuraghi, domus de janas, tombe dei giganti e altri.",
+      lang: "it",
+      display: "standalone",
+      // The map's sand colour, as the theme-color meta in app.vue
+      theme_color: "#f1e9dc",
+      background_color: "#f1e9dc",
       icons: [
         {
           src: `${baseURL}pwa/manifest-icon-192.maskable.png`,

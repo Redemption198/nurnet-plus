@@ -1,42 +1,33 @@
-<script setup>
-const currentPOI = useCurrentPOI();
+<script setup lang="ts">
+const site = useCurrentSite();
 const route = useRoute();
-const { items, openPOI } = useNurnetData();
-
-function isURL(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
+const { items, openPOI, retry } = useNurnetData();
 
 // The URL decides which site is open: a shared link, a reload, back/forward. Sites opened from the
 // app are already open by the time the route changes
 watch(
   [() => route.params.id, items],
   ([id, list]) => {
-    if (!list || currentPOI.value.values_?.content_id === id) return;
+    if (!list || site.value?.content_id === id) return;
     const poi = list.find((item) => item.content_id === id);
     if (poi) openPOI(poi, { navigate: false });
-    else navigateTo("/", { replace: true });
+    else void navigateTo("/", { replace: true });
   },
   { immediate: true },
 );
 
-const poi = computed(() =>
-  currentPOI.value.values_?.content_id === route.params.id ? currentPOI.value.values_ : null,
-);
+const poi = computed(() => (site.value?.content_id === route.params.id ? site.value : null));
+const category = computed(() => categoryOf(poi.value?.category_id));
+const status = computed(() => statusOf(poi.value?.stato));
 
-// Tab title and link previews: "Nuraghe Losa · NurNet+", "Nuraghe complesso a Abbasanta…"
+// Tab title and link previews: "Nuraghe Losa · NurNet+", "Nuraghe complesso ad Abbasanta…"
+const place = computed(() => [poi.value?.comune, poi.value?.regione].filter(Boolean).join(", "));
 const description = computed(() => {
   if (!poi.value) return undefined;
-  const kind = poi.value.typology || useCategoryName(Number(poi.value.category_id));
-  const place = [poi.value.comune, poi.value.regione].filter(Boolean).join(", ");
+  const kind = poi.value.typology || category.value.name;
   // "ad Abbasanta", "a Barumini"
-  const preposition = /^a/i.test(place) ? "ad" : "a";
-  return `${kind}${place ? ` ${preposition} ${place}` : ""}, sulla mappa di NurNet+.`;
+  const preposition = /^a/i.test(place.value) ? "ad" : "a";
+  return `${kind}${place.value ? ` ${preposition} ${place.value}` : ""}, sulla mappa di NurNet+.`;
 });
 useSeoMeta({
   title: () => (poi.value ? `${poi.value.name} · NurNet+` : "NurNet+"),
@@ -45,112 +36,145 @@ useSeoMeta({
   ogDescription: description,
 });
 
-const drawerContent = useState("drawer-content");
-const { y: contentY } = useScroll(drawerContent);
+// Esc closes the site, unless a dialog (photo viewer, info sheet) is open and takes it
+onKeyStroke("Escape", (event) => {
+  if (event.defaultPrevented || document.querySelector("[role='dialog']")) return;
+  void navigateTo("/");
+});
+
+const isURL = (value: string | undefined) => !!value && URL.canParse(value);
+const sourceHost = computed(() =>
+  isURL(poi.value?.source) ? new URL(poi.value!.source!).hostname.replace(/^www\./, "") : null,
+);
+const added = computed(() =>
+  poi.value?.date
+    ? new Date(poi.value.date).toLocaleDateString("it-IT", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null,
+);
+
+const scroller = useDrawerScroller();
+const { y: contentY } = useScroll(scroller);
 </script>
 
 <template>
-  <div v-if="poi" class="flex flex-col gap-y-2 pb-64">
+  <article v-if="poi" class="flex flex-col pb-64" :aria-labelledby="`site-${poi.content_id}`">
     <DrawerHeader :scrolled="contentY > 0">
-      <div class="flex items-center justify-between gap-x-3">
-        <h2 class="font-display text-2xl leading-tight font-semibold text-basalt">
-          {{ currentPOI.values_.name }}
+      <div class="flex items-start justify-between gap-x-3">
+        <h2
+          :id="`site-${poi.content_id}`"
+          class="pt-1.5 font-display text-2xl leading-tight font-semibold text-balance text-basalt"
+        >
+          {{ poi.name }}
         </h2>
         <NuxtLink
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-400/30 text-slate-600 backdrop-blur-md transition hover:bg-slate-400/45 active:scale-95"
+          class="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-well active:scale-95"
           to="/"
           aria-label="Chiudi"
         >
-          <IconCancel class="h-4.5 w-4.5" />
+          <span class="flex size-9 items-center justify-center rounded-full bg-well/70">
+            <IconCancel class="size-4.5" />
+          </span>
         </NuxtLink>
       </div>
     </DrawerHeader>
 
-    <!-- Only when explicitly unverified: sites added in later data refreshes have no value -->
-    <LazyPOIUnverifiedBanner v-if="currentPOI.values_.verified === false" class="mx-4" />
-
-    <div class="mx-4 flex gap-x-4">
-      <POITypeCard />
-
-      <POIStatusCard v-if="currentPOI.values_.detailsStatus !== 'loading'" />
-      <!-- Placeholder while the details file is still loading (only right after startup) -->
-      <div
-        v-else
-        class="w-full animate-pulse rounded-2xl bg-slate-300/60"
-        role="status"
-        aria-label="Caricamento dei dettagli"
-      />
-    </div>
-
-    <p v-if="currentPOI.values_.comune" class="mx-4 flex flex-col text-lg font-semibold">
-      <span class="text-sm text-slate-700">Comune</span>{{ currentPOI.values_.comune }}
-    </p>
-
-    <p v-if="currentPOI.values_.localita" class="mx-4 flex flex-col text-lg font-semibold">
-      <span class="text-sm text-slate-700">Località</span>{{ currentPOI.values_.localita }}
-    </p>
-
-    <POIContext />
-
-    <POIVisibility />
-
-    <div
-      v-if="currentPOI.values_.detailsStatus === 'loading'"
-      class="mx-4 flex animate-pulse flex-col gap-y-2"
-      aria-hidden="true"
-    >
-      <div class="h-4 w-1/3 rounded-full bg-slate-300/60" />
-      <div class="h-4 w-full rounded-full bg-slate-300/60" />
-      <div class="h-4 w-5/6 rounded-full bg-slate-300/60" />
-    </div>
-
-    <p v-if="currentPOI.values_.detailsStatus === 'error'" class="mx-4 text-sm text-slate-600">
-      Foto e descrizione non disponibili al momento. Controlla la connessione e riprova.
-    </p>
-
-    <p
-      v-if="currentPOI.values_.source && !isURL(currentPOI.values_.source)"
-      class="mx-4 flex flex-col wrap-break-word text-lg font-semibold"
-    >
-      <span class="text-sm text-slate-700">Fonte</span>{{ currentPOI.values_.source }}
-    </p>
-
-    <div
-      v-if="currentPOI.values_.description"
-      class="mx-4 flex flex-col gap-y-2 text-base text-slate-700"
-    >
-      <span class="text-sm font-semibold text-slate-700">Descrizione</span>
-      <p v-for="(paragraph, i) in currentPOI.values_.description.split('\n\n')" :key="i">
-        {{ paragraph }}
+    <!-- What it is and where, in one line -->
+    <div class="-mt-1 flex flex-col gap-y-1.5 px-4 pb-4">
+      <p class="flex items-center gap-x-2 text-[0.9375rem] font-semibold text-basalt">
+        <CategoryIcon :category-id="poi.category_id" class="size-5 shrink-0" />
+        <span>
+          {{ poi.typology || category.name
+          }}<span v-if="place" class="font-normal text-muted"> · {{ place }}</span>
+        </span>
+      </p>
+      <p
+        v-if="status || poi.verified === false || poi.localita"
+        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted"
+      >
+        <span v-if="status" class="flex items-center gap-x-1">
+          <UIcon :name="status.icon" class="size-4" aria-hidden="true" />{{ status.label }}
+        </span>
+        <span v-if="poi.localita" class="flex items-center gap-x-1">
+          <UIcon name="i-lucide-map-pin" class="size-4" aria-hidden="true" />{{ poi.localita }}
+        </span>
+        <span v-if="poi.verified === false" class="flex items-center gap-x-1 text-terracotta-dark">
+          <UIcon name="i-lucide-badge-alert" class="size-4" aria-hidden="true" />Non verificato
+        </span>
       </p>
     </div>
 
-    <POIPhotoSlider v-if="currentPOI.values_.photos?.length > 0" />
-
-    <POIVideo v-if="currentPOI.values_.youtube" />
-
-    <a
-      v-if="currentPOI.values_.photos?.length > 0"
-      :href="`https://www.nurnet.net/mediateca/?s=${encodeURIComponent(currentPOI.values_.name)}`"
-      target="_blank"
-      rel="noopener"
-      class="mx-4 my-2 flex min-w-max items-center justify-center gap-x-2 rounded-2xl bg-terracotta fill-white px-4 py-2 font-semibold text-white transition-transform hover:scale-95"
-      >Vai alla Mediateca NurNet<IconOpenOutside />
-    </a>
-
-    <a
-      v-if="isURL(currentPOI.values_.source)"
-      :href="currentPOI.values_.source"
-      target="_blank"
-      rel="noopener"
-      class="mx-4 min-w-max rounded-2xl px-4 py-2 text-center font-semibold text-terracotta-dark transition-transform hover:scale-95"
+    <POIPhotoSlider v-if="poi.photos.length" class="pb-4" />
+    <!-- The strip's space while the details load, so the page doesn't jump -->
+    <div
+      v-else-if="poi.detailsStatus === 'loading'"
+      class="flex gap-x-3 overflow-hidden px-4 pb-4"
+      role="status"
+      aria-label="Caricamento di foto e descrizione"
     >
-      Fonte
-    </a>
+      <div v-for="n in 3" :key="n" class="size-40 shrink-0 animate-pulse rounded-2xl bg-well" />
+    </div>
 
-    <p v-if="currentPOI.values_.date" class="self-center text-sm text-slate-700">
-      Aggiunto il
-      {{ useDateFormat(new Date(currentPOI.values_.date), "DD/MM/YYYY").value.replace('"', "") }}
-    </p>
-  </div>
+    <SiteActions class="px-4 pb-6" />
+
+    <div
+      v-if="poi.detailsStatus === 'error'"
+      class="mx-4 mb-6 flex items-center gap-x-3 text-sm text-muted"
+    >
+      <p class="flex-1">Foto e descrizione non si sono caricate.</p>
+      <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="retry">
+        Riprova
+      </UButton>
+    </div>
+
+    <section
+      v-if="poi.description"
+      class="flex flex-col gap-y-3 px-4 pb-6"
+      aria-labelledby="site-description"
+    >
+      <h3 id="site-description" class="text-base font-semibold text-basalt">Descrizione</h3>
+      <p
+        v-for="(paragraph, i) in poi.description.split('\n\n')"
+        :key="i"
+        class="max-w-[65ch] text-[0.9375rem] leading-relaxed text-pretty text-basalt/85"
+      >
+        {{ paragraph }}
+      </p>
+    </section>
+
+    <POIVideo v-if="poi.youtube" class="px-4 pb-6" />
+
+    <POIVisibility class="pb-6" />
+
+    <POIContext class="pb-6" />
+
+    <!-- Where the information comes from -->
+    <footer class="flex flex-col gap-y-2 border-t border-line px-4 pt-4 text-sm text-muted">
+      <p v-if="poi.source && !sourceHost">Fonte: {{ poi.source }}</p>
+      <div class="flex flex-wrap gap-x-5 gap-y-1">
+        <a
+          v-if="sourceHost"
+          :href="poi.source"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex min-h-11 items-center gap-x-1 font-semibold text-terracotta-dark underline-offset-4 hover:underline"
+        >
+          Fonte: {{ sourceHost }}<UIcon name="i-lucide-arrow-up-right" class="size-4" />
+        </a>
+        <a
+          v-if="poi.photos.length"
+          :href="`https://www.nurnet.net/mediateca/?s=${encodeURIComponent(poi.name)}`"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex min-h-11 items-center gap-x-1 font-semibold text-terracotta-dark underline-offset-4 hover:underline"
+        >
+          Foto nella Mediateca NurNet<UIcon name="i-lucide-arrow-up-right" class="size-4" />
+        </a>
+      </div>
+      <p v-if="added">Aggiunto a NurNet il {{ added }}</p>
+    </footer>
+  </article>
 </template>

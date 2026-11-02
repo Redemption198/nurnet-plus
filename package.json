@@ -9,6 +9,7 @@
     "generate-pwa-assets": "vp run generate-pwa-assets-base -- --padding 'calc(50vh - 20%) calc(50vw - 25%)'; vp run generate-pwa-assets-icon-only",
     "generate-pwa-assets-icon-only": "vp run generate-pwa-assets-base -- --icon-only",
     "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
     "postinstall": "nuxt prepare",
     "prepare": "vp config"
   },
@@ -22,12 +23,14 @@
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.150",
     "@nuxt/a11y": "1.0.0-alpha.1",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^24.19.2",
     "@vite-pwa/nuxt": "^1.1.1",
     "@vueuse/core": "^15.0.0",
     "@vueuse/nuxt": "^15.0.0",
     "nuxt": "^4.6.3",
     "typescript": "^5.9.3",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vue-tsc": "^3.3.14"
   }
 }

@@ -28,6 +28,15 @@ jobs:
           node-version: "24"
           cache: true
 
+      - name: Lint and format 🧹
+        run: vp check
+
+      - name: Type check 🔎
+        run: vp run typecheck
+
+      - name: Test 🧪
+        run: vp test
+
       - name: Build 🔧
         run: vp run generate
 

@@ -7,7 +7,8 @@ import {
 // Lines of sight drawn in mid-air, from the top of one tower to the top of the other, with each
 // tower as a thin vertical stick. MapLibre's line layers are always draped on the terrain, hence
 // this custom WebGL layer: each line is a ribbon widened in screen space (constant pixel width),
-// with soft edges, dashes in pixels for the weakest level, and one line that can be highlighted
+// with soft edges, dashes in pixels for the weakest level, and one line that can be highlighted.
+// Drawn over the terrain, not depth-tested against it
 
 export interface SightLine {
   from: [number, number, number]; // lon, lat, altitude of the tower top (metres, as rendered)
@@ -229,10 +230,10 @@ export function createSightLinesLayer(id: string) {
       gl.bindVertexArray(vao);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      // Hidden behind hills, like a real line of sight; drawn without writing depth so the
-      // overlapping ribbons blend
-      gl.enable(gl.DEPTH_TEST);
-      gl.depthFunc(gl.LEQUAL);
+      // Always over the terrain: the depth this layer computes doesn't match the terrain's at closer
+      // zooms (the lines vanished into the hills they clear), and the lines are what the visitor
+      // came to see
+      gl.disable(gl.DEPTH_TEST);
       gl.depthMask(false);
       gl.disable(gl.CULL_FACE);
       gl.disable(gl.STENCIL_TEST);

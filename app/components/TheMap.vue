@@ -1,31 +1,37 @@
-<script setup>
-import { MapLibreMap, setWorkerUrl } from "maplibre-gl";
+<script setup lang="ts">
+import {
+  MapLibreMap,
+  setWorkerUrl,
+  type ExpressionSpecification,
+  type FilterSpecification,
+  type GeoJSONSource,
+  type LngLatLike,
+} from "maplibre-gl";
+import type { FeatureCollection, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 // MapLibre looks for its worker next to its own module, which bundling moves: point to it
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 
 setWorkerUrl(workerUrl);
 
-const props = defineProps({
-  pois: {
-    type: Array,
-    default: () => [],
-  },
-});
+const props = defineProps<{ pois: NurnetPOI[] }>();
 
 const route = useRoute();
 const config = useRuntimeConfig();
 
-const currentPOI = useCurrentPOI();
+const site = useCurrentSite();
 const { openPOI } = useNurnetData();
 const drawerState = useDrawerState();
 const mapPadding = useMapPadding();
 const categoryFilter = useCategoryFilter();
 const mapFitBounds = useMapFitBounds();
+const searchMatches = useSearchMatches();
+const mapView = useMapView();
+const highlighted = useHighlightedVisible();
 
-const map = ref();
+const map = ref<HTMLElement | null>(null);
 // shallowRef: MapLibre's map must not be wrapped in a deep reactive proxy
-const mlMap = shallowRef();
+const mlMap = shallowRef<MapLibreMap>();
 const is3D = ref(false);
 const mapUnavailable = ref(false);
 
@@ -39,7 +45,7 @@ const TERRAIN_ATTRIBUTION =
 const ICONS = ["dolmen", "domus", "tomba", "menhir", "villaggio", "acqua", "nuraghe", "unknown"];
 
 // category_id -> icon name ("unknown" for anything else)
-const iconForCategory = [
+const iconForCategory: ExpressionSpecification = [
   "match",
   ["get", "category_id"],
   ["70", "71", "72", "73"],
@@ -59,14 +65,14 @@ const iconForCategory = [
   "unknown",
 ];
 
-async function addIcons(ml) {
+async function addIcons(ml: MapLibreMap) {
   const image = new Image();
   image.src = `${config.app.baseURL}icons-tileset.png`;
   await image.decode();
 
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 64;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
+  const context = canvas.getContext("2d", { willReadFrequently: true })!;
   ICONS.forEach((name, i) => {
     context.clearRect(0, 0, 64, 64);
     context.drawImage(image, i * 64, 0, 64, 64, 0, 0, 64, 64);
@@ -77,7 +83,8 @@ async function addIcons(ml) {
 
 // Recolour the basemap toward Sardinia: limestone ground, a muted sea, macchia greens.
 // Layer ids are from OpenFreeMap's "liberty" style; missing ones are skipped
-const BASEMAP_COLORS = {
+type PaintProperty = Parameters<MapLibreMap["setPaintProperty"]>[1];
+const BASEMAP_COLORS: Record<string, [PaintProperty, string]> = {
   background: ["background-color", "#f1e9dc"],
   water: ["fill-color", "#9ec5d6"],
   park: ["fill-color", "#d6dfbf"],
@@ -86,13 +93,13 @@ const BASEMAP_COLORS = {
   landcover_sand: ["fill-color", "#f2e3c4"],
 };
 
-function warmBasemap(ml) {
+function warmBasemap(ml: MapLibreMap) {
   for (const [layer, [property, color]] of Object.entries(BASEMAP_COLORS)) {
     if (ml.getLayer(layer)) ml.setPaintProperty(layer, property, color);
   }
 }
 
-function addTerrain(ml) {
+function addTerrain(ml: MapLibreMap) {
   // Separate sources for terrain and hillshade, as MapLibre recommends
   for (const id of ["terrain", "hillshade"]) {
     ml.addSource(id, {
@@ -130,8 +137,8 @@ function addTerrain(ml) {
 }
 
 // The selected POI's layer shows only the POI open in the drawer (none on the list)
-function selectedFilter() {
-  const id = route.path === "/" ? "" : (currentPOI.value.values_?.content_id ?? "");
+function selectedFilter(): FilterSpecification {
+  const id = route.path === "/" ? "" : (site.value?.content_id ?? "");
   return ["==", ["get", "content_id"], id];
 }
 
@@ -141,40 +148,41 @@ function applySelection() {
     mlMap.value.setFilter("poi-selected", selectedFilter());
 }
 
-// Markers of the category chosen in the drawer (all when none): match the category_id values
-// that belong to it. to-string turns a missing category into "", which counts as "Sconosciuto"
-function categoryLayerFilter() {
+// Markers of the category chosen in the drawer (all when none). to-string turns a missing
+// category into "", which counts as "Sconosciuto"
+function categoryLayerFilter(): FilterSpecification | null {
   if (!categoryFilter.value) return null;
   const ids = new Set(
     props.pois
-      .filter((poi) => useCategoryName(Number(poi.category_id)) === categoryFilter.value)
+      .filter((poi) => categoryOf(poi.category_id).name === categoryFilter.value)
       .map((poi) => poi.category_id ?? ""),
   );
   return ["in", ["to-string", ["get", "category_id"]], ["literal", [...ids]]];
 }
 
 // The basemap's own regular font for our labels (OpenFreeMap serves the glyphs for it)
-function labelFont(ml) {
+function labelFont(ml: MapLibreMap): string[] {
   const font = ml
     .getStyle()
-    .layers.map((layer) => layer.layout?.["text-font"])
+    .layers.map((layer) => (layer.layout as Record<string, unknown> | undefined)?.["text-font"])
     .find(
-      (value) =>
+      (value): value is string[] =>
         Array.isArray(value) &&
         value.every((part) => typeof part === "string") &&
-        /Regular/.test(value[0]),
+        /Regular/.test(String(value[0])),
     );
   return font ?? ["Noto Sans Regular"];
 }
 
 // Names under the markers once zoomed in; a name only shows where it fits
-function labelLayout(ml, fromZoom) {
+const LABEL_ZOOM = 12.5;
+function labelLayout(ml: MapLibreMap, fromZoom: number) {
   return {
-    "text-field": ["step", ["zoom"], "", fromZoom, ["get", "name"]],
+    "text-field": ["step", ["zoom"], "", fromZoom, ["get", "name"]] as ExpressionSpecification,
     "text-font": labelFont(ml),
     "text-size": 12,
-    "text-anchor": "top",
-    "text-offset": [0, 0.3],
+    "text-anchor": "top" as const,
+    "text-offset": [0, 0.3] as [number, number],
     "text-max-width": 9,
     "text-optional": true,
   };
@@ -185,7 +193,7 @@ const LABEL_PAINT = {
   "text-halo-width": 1.5,
 };
 
-function addPois(ml) {
+function addPois(ml: MapLibreMap) {
   ml.addSource("pois", {
     type: "geojson",
     // Only what the map needs; the full POI comes from props.pois via its index
@@ -204,14 +212,14 @@ function addPois(ml) {
     type: "symbol",
     source: "pois",
     // addLayer rejects `filter: null` (setFilter accepts it), so only pass one when set
-    ...(categoryFilter.value && { filter: categoryLayerFilter() }),
+    ...(categoryFilter.value && { filter: categoryLayerFilter()! }),
     layout: {
       "icon-image": iconForCategory,
       "icon-anchor": "bottom",
       "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.5, 13, 0.75, 16, 0.9],
       // Overlapping icons are hidden while zoomed out and come back when zooming in
       "icon-padding": 0,
-      ...labelLayout(ml, 12.5),
+      ...labelLayout(ml, LABEL_ZOOM),
     },
     paint: LABEL_PAINT,
   });
@@ -240,83 +248,98 @@ function addPois(ml) {
 // markers there may be hidden where they overlap
 const TOWER_HEIGHT = 15; // metres, as in CRS4's model
 const sightLines = createSightLinesLayer("sight-lines");
-const highlighted = useHighlightedVisible();
 
 function visibleSites() {
-  const visible = route.path === "/" ? [] : (currentPOI.value.values_?.visible ?? []);
-  return visible.filter((site) => props.pois[site.i]);
+  const visible = route.path === "/" ? [] : (site.value?.visible ?? []);
+  return visible.filter((entry) => props.pois[entry.i]);
 }
+const showsNetwork = computed(() => route.path !== "/" && (site.value?.visible.length ?? 0) > 0);
 
-function visibilityEnds() {
+function visibilityEnds(): FeatureCollection<Point> {
   return {
     type: "FeatureCollection",
-    features: visibleSites().map((site) => ({
+    features: visibleSites().map((entry) => ({
       type: "Feature",
-      geometry: { type: "Point", coordinates: props.pois[site.i].coordinates },
+      geometry: { type: "Point", coordinates: props.pois[entry.i]!.coordinates },
       properties: {
-        i: site.i,
-        name: props.pois[site.i].name,
-        color: VISIBILITY_LEVELS[visibilityLevel(site.height)].color,
+        i: entry.i,
+        name: props.pois[entry.i]!.name,
+        color: VISIBILITY_LEVELS[visibilityLevel(entry.height)]!.color,
       },
     })),
   };
 }
 
-// Ground height as drawn: the terrain where its tiles are loaded, else the site's elevation, both
-// with the terrain's exaggeration. Returns whether the terrain was used
-function groundAt(ml, coordinates, elevation) {
+// Ground height as drawn: the terrain where its tiles are loaded, else the site's elevation (both
+// with the terrain's exaggeration), else `fallback` (a nearby height: 0 would bury the tower).
+// Returns whether the terrain was used
+function groundAt(
+  ml: MapLibreMap,
+  coordinates: [number, number],
+  elevation: number | undefined,
+  fallback = 0,
+) {
   const terrain = ml.queryTerrainElevation(coordinates);
   if (terrain != null) return { height: terrain, exact: true };
   const exaggeration = ml.getTerrain()?.exaggeration ?? 1;
-  return { height: (elevation ?? 0) * exaggeration, exact: false };
+  return { height: elevation != null ? elevation * exaggeration : fallback, exact: false };
+}
+
+// Which markers stay at full strength, by priority: the open nuraghe's network, then the search
+// results. The rest fade and lose their names, and the ones in focus win where names collide
+const FADED_OPACITY = 0.3;
+function applyFocus() {
+  const ml = mlMap.value;
+  if (!ml?.getLayer("pois")) return;
+  const network = visibleSites().map((entry) => entry.i);
+  const focus = network.length ? network : route.path === "/" ? searchMatches.value : null;
+  const inFocus: ExpressionSpecification = ["in", ["get", "i"], ["literal", focus ?? []]];
+  // The zoom step must be the outermost expression
+  const name: ExpressionSpecification = focus
+    ? ["case", inFocus, ["get", "name"], ""]
+    : ["get", "name"];
+  ml.setPaintProperty("pois", "icon-opacity", focus ? ["case", inFocus, 1, FADED_OPACITY] : 1);
+  ml.setLayoutProperty("pois", "text-field", ["step", ["zoom"], "", LABEL_ZOOM, name]);
+  ml.setLayoutProperty("pois", "symbol-sort-key", focus ? ["case", inFocus, 0, 1] : 0);
 }
 
 // Towers placed on the terrain (rather than on their elevation) in the last update
 let exactTowers = 0;
 let approximateTowers = 0;
-// While a nuraghe with lines of sight is open, the rest of the map steps back: the other markers
-// fade and lose their names, and the visible sites win where names collide
-const FADED_OPACITY = 0.3;
-function applyFocus(ml, sites) {
-  if (!ml.getLayer("pois")) return;
-  const focused = sites.length > 0;
-  // The open site itself is drawn by "poi-selected"
-  const inFocus = ["in", ["get", "i"], ["literal", sites.map((site) => site.i)]];
-  // The zoom step must be the outermost expression
-  const name = focused ? ["case", inFocus, ["get", "name"], ""] : ["get", "name"];
-  ml.setPaintProperty("pois", "icon-opacity", focused ? ["case", inFocus, 1, FADED_OPACITY] : 1);
-  ml.setLayoutProperty("pois", "text-field", ["step", ["zoom"], "", 12.5, name]);
-  ml.setLayoutProperty("pois", "symbol-sort-key", focused ? ["case", inFocus, 0, 1] : 0);
-}
 
 function updateSightLines() {
   const ml = mlMap.value;
   if (!ml) return;
-  ml.getSource("visibility")?.setData(visibilityEnds());
-  applyFocus(ml, visibleSites());
+  (ml.getSource("visibility") as GeoJSONSource | undefined)?.setData(visibilityEnds());
+  applyFocus();
 
-  const poi = currentPOI.value.values_;
+  const poi = site.value;
   const sites = visibleSites();
   const tower = TOWER_HEIGHT * (ml.getTerrain()?.exaggeration ?? 1);
   exactTowers = approximateTowers = 0;
-  const towerAt = (coordinates, elevation) => {
-    const ground = groundAt(ml, coordinates, elevation);
+  const towerAt = (
+    coordinates: [number, number],
+    elevation: number | undefined,
+    fallback?: number,
+  ) => {
+    const ground = groundAt(ml, coordinates, elevation, fallback);
     if (ground.exact) exactTowers++;
     else approximateTowers++;
     return { at: coordinates, ground: ground.height, top: ground.height + tower };
   };
-  if (!sites.length) return sightLines.setData([], []);
+  if (!poi || !sites.length) return sightLines.setData([], []);
 
   const origin = towerAt(poi.coordinates, poi.elevation);
   const towers = [origin];
-  const lines = sites.map((site) => {
-    const end = towerAt(props.pois[site.i].coordinates, site.elevation);
+  const lines = sites.map((entry) => {
+    // Sites in sight are usually at a similar height: the origin's ground stands in for unknowns
+    const end = towerAt(props.pois[entry.i]!.coordinates, entry.elevation, origin.ground);
     towers.push(end);
     return {
-      from: [...origin.at, origin.top],
-      to: [...end.at, end.top],
-      level: visibilityLevel(site.height),
-      id: site.i,
+      from: [...origin.at, origin.top] as [number, number, number],
+      to: [...end.at, end.top] as [number, number, number],
+      level: visibilityLevel(entry.height),
+      id: entry.i,
     };
   });
   sightLines.setData(lines, towers);
@@ -325,12 +348,12 @@ function updateSightLines() {
 function applyHighlight() {
   const id = highlighted.value ?? -1;
   sightLines.setHighlight(highlighted.value);
-  const filter = ["==", ["get", "i"], id];
+  const filter: FilterSpecification = ["==", ["get", "i"], id];
   for (const layer of ["visibility-highlight", "visibility-highlight-label"])
     if (mlMap.value?.getLayer(layer)) mlMap.value.setFilter(layer, filter);
 }
 
-function addSightLines(ml) {
+function addSightLines(ml: MapLibreMap) {
   ml.addSource("visibility", { type: "geojson", data: visibilityEnds() });
   // All under the markers
   ml.addLayer(sightLines, "pois");
@@ -349,7 +372,7 @@ function addSightLines(ml) {
     },
     "pois",
   );
-  // The site hovered in the list: a bigger dot and its name, above everything
+  // The site highlighted in the list: a bigger dot and its name, above everything
   ml.addLayer({
     id: "visibility-highlight",
     type: "circle",
@@ -383,26 +406,82 @@ function addSightLines(ml) {
   // Where the terrain wasn't loaded yet, redo the heights once more of it is (only then: an
   // update repaints, which would otherwise end in "idle" again)
   ml.on("idle", () => {
-    if (!approximateTowers) return;
-    const sites = visibleSites();
-    const poi = currentPOI.value.values_;
-    const points = [poi?.coordinates, ...sites.map((site) => props.pois[site.i].coordinates)];
-    const exactNow = points.filter((p) => p && ml.queryTerrainElevation(p) != null).length;
+    if (!approximateTowers || !site.value) return;
+    const points = [
+      site.value.coordinates,
+      ...visibleSites().map((entry) => props.pois[entry.i]!.coordinates),
+    ];
+    const exactNow = points.filter((p) => ml.queryTerrainElevation(p) != null).length;
     if (exactNow > exactTowers) updateSightLines();
   });
 }
 
-function toMapPadding([top, right, bottom, left]) {
-  return { top, right, bottom, left };
+// The visitor's position: a dot on the map, and the map flies there
+const locating = ref(false);
+const locationError = ref<string | null>(null);
+const LOCATION_ERRORS: Record<number, string> = {
+  1: "Permesso di posizione negato: attivalo nelle impostazioni del browser.",
+  2: "Posizione non disponibile al momento.",
+  3: "La posizione non è arrivata in tempo. Riprova.",
+};
+
+function showMyLocation() {
+  const ml = mlMap.value;
+  if (!ml || !("geolocation" in navigator)) return;
+  locating.value = true;
+  locationError.value = null;
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      locating.value = false;
+      const here: [number, number] = [coords.longitude, coords.latitude];
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          { type: "Feature", geometry: { type: "Point", coordinates: here }, properties: {} },
+        ],
+      };
+      const source = ml.getSource("me") as GeoJSONSource | undefined;
+      if (source) source.setData(data);
+      else {
+        ml.addSource("me", { type: "geojson", data });
+        ml.addLayer({
+          id: "me",
+          type: "circle",
+          source: "me",
+          paint: {
+            "circle-radius": 8,
+            "circle-color": "#2563eb",
+            "circle-stroke-color": "#fff",
+            "circle-stroke-width": 3,
+            "circle-pitch-alignment": "map",
+          },
+        });
+      }
+      drawerState.value.request = "bottom";
+      ml.flyTo({ center: here, zoom: Math.max(ml.getZoom(), 12), duration: 1200, essential: true });
+    },
+    (error) => {
+      locating.value = false;
+      locationError.value = LOCATION_ERRORS[error.code] ?? "Posizione non disponibile.";
+      setTimeout(() => (locationError.value = null), 6000);
+    },
+    { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
+  );
 }
 
+function toMapPadding([top, right, bottom, left]: number[]) {
+  return { top: top!, right: right!, bottom: bottom!, left: left! };
+}
+
+// Close enough to see the site and its neighbours (and their names), not so close that the
+// visitor loses where on the island they are
 function focusSelectedPOI() {
-  const coordinates = currentPOI.value.values_?.geometry?.flatCoordinates;
+  const coordinates = site.value?.coordinates;
   if (!coordinates || !mlMap.value) return;
 
   mlMap.value.flyTo({
-    center: [coordinates[0], coordinates[1]],
-    zoom: Math.max(mlMap.value.getZoom(), 13.5),
+    center: coordinates as LngLatLike,
+    zoom: Math.max(mlMap.value.getZoom(), 12.5),
     pitch: is3D.value ? 60 : 0,
     padding: toMapPadding(mapPadding.value),
     duration: 1400,
@@ -411,12 +490,26 @@ function focusSelectedPOI() {
 }
 
 function toggle3D() {
+  const ml = mlMap.value;
+  if (!ml) return;
   is3D.value = !is3D.value;
-  mlMap.value.easeTo({
+  ml.easeTo({
     pitch: is3D.value ? 60 : 0,
-    bearing: is3D.value ? mlMap.value.getBearing() : 0,
+    bearing: is3D.value ? ml.getBearing() : 0,
     duration: 800,
   });
+}
+
+function publishView(ml: MapLibreMap) {
+  const bounds = ml.getBounds();
+  const center = ml.getCenter();
+  mapView.value = {
+    center: [center.lng, center.lat],
+    bounds: [
+      [bounds.getWest(), bounds.getSouth()],
+      [bounds.getEast(), bounds.getNorth()],
+    ],
+  };
 }
 
 onMounted(() => {
@@ -442,13 +535,13 @@ onMounted(() => {
 
   // The id, not the object: the POI's details are merged in later and must not re-trigger this
   watch(
-    () => currentPOI.value.values_?.content_id,
+    () => site.value?.content_id,
     async () => {
       applySelection();
 
       // Raise the drawer to the middle on mobile (ignored on desktop), then center the POI
       // in the area left visible, once the drawer has reported its new size
-      drawerState.value.setPosition = "SET_DRAWER_ON_MIDDLE_SCREEN";
+      drawerState.value.request = "middle";
       await nextTick();
       focusSelectedPOI();
     },
@@ -458,25 +551,23 @@ onMounted(() => {
 
   // The lines follow the open nuraghe once its line-of-sight data arrives, and go on the list
   watch(
-    [
-      () => currentPOI.value.values_?.visible,
-      () => currentPOI.value.values_?.elevation,
-      () => route.path,
-    ],
+    [() => site.value?.visible, () => site.value?.elevation, () => route.path],
     updateSightLines,
   );
   watch(highlighted, applyHighlight);
+  watch(searchMatches, applyFocus);
 
-  // "Mostra sulla mappa": frame the requested area in the part the drawer leaves visible
-  watch(mapFitBounds, async (bounds) => {
-    if (!bounds || !mlMap.value) return;
+  // "Mostra sulla mappa" and friends: frame the requested area in the part the drawer leaves visible
+  watch(mapFitBounds, async (request) => {
+    if (!request || !mlMap.value) return;
     mapFitBounds.value = null;
-    // Lower the drawer (mobile); it reports the new padding as it starts moving
-    drawerState.value.setPosition = "SET_DRAWER_ON_BOTTOM_SCREEN";
+    // Lower the drawer (mobile) if asked; it reports the new padding as it starts moving
+    if (request.lowerDrawer) drawerState.value.request = "bottom";
     await nextTick();
-    mlMap.value.fitBounds(bounds, {
-      // On top of the map's own padding (the drawer's area), which fitBounds adds itself
-      padding: 48,
+    mlMap.value.fitBounds(request.bounds, {
+      // On top of the map's own padding (the drawer's area), which fitBounds adds itself; more
+      // on the right, where the map controls are
+      padding: { top: 48, bottom: 48, left: 48, right: 96 },
       maxZoom: 14,
       duration: 1200,
       essential: true,
@@ -487,10 +578,10 @@ onMounted(() => {
     if (mlMap.value?.getLayer("pois")) mlMap.value.setFilter("pois", categoryLayerFilter());
   });
 
-  let ml;
+  let ml: MapLibreMap;
   try {
     ml = new MapLibreMap({
-      container: map.value,
+      container: map.value!,
       style: STYLE_URL,
       // Sardinia, framed in the area the drawer leaves visible
       bounds: [
@@ -519,9 +610,15 @@ onMounted(() => {
     addTerrain(ml);
     addPois(ml);
     addSightLines(ml);
+    updateSightLines(); // also applies the markers' focus
+    publishView(ml);
 
-    // A site opened from its URL before the map was ready
-    if (route.path !== "/" && currentPOI.value.values_) focusSelectedPOI();
+    // A site opened from its URL before the map was ready: raise the drawer and show it
+    if (route.path !== "/" && site.value) {
+      drawerState.value.request = "middle";
+      await nextTick();
+      focusSelectedPOI();
+    }
 
     for (const layer of ["pois", "poi-selected"]) {
       ml.on("mouseenter", layer, () => (ml.getCanvas().style.cursor = "pointer"));
@@ -529,14 +626,17 @@ onMounted(() => {
     }
 
     ml.on("click", ["poi-selected", "pois"], (event) => {
-      openPOI(props.pois[event.features[0].properties.i]);
+      const poi = props.pois[Number(event.features?.[0]?.properties.i)];
+      if (poi) openPOI(poi);
     });
   });
 
+  ml.on("moveend", () => publishView(ml));
+
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
   ml.on("movestart", (event) => {
-    if (event.originalEvent && drawerState.value.currentPosition !== "DRAWER_ON_BOTTOM_SCREEN") {
-      drawerState.value.setPosition = "SET_DRAWER_ON_BOTTOM_SCREEN";
+    if (event.originalEvent && drawerState.value.position !== "bottom") {
+      drawerState.value.request = "bottom";
     }
   });
 });
@@ -549,7 +649,7 @@ onUnmounted(() => mlMap.value?.remove());
 
   <p
     v-if="mapUnavailable"
-    class="absolute inset-x-4 top-4 z-1 rounded-2xl bg-slate-100 p-4 text-center text-sm font-semibold text-slate-700 shadow-sm lg:left-auto lg:w-96"
+    class="absolute inset-x-4 top-4 z-1 rounded-2xl bg-panel p-4 text-center text-sm font-semibold text-basalt shadow-sm lg:left-auto lg:w-96"
   >
     La mappa non è disponibile su questo dispositivo (WebGL non supportato), ma puoi cercare e
     consultare i siti dalla lista.
@@ -557,23 +657,72 @@ onUnmounted(() => mlMap.value?.remove());
 
   <div
     v-if="!mapUnavailable"
-    class="absolute top-0 right-0 z-1 m-4 flex flex-col items-center overflow-hidden rounded-2xl bg-slate-200/75 shadow-md backdrop-blur-2xl"
+    class="absolute top-0 right-0 z-1 m-4 flex flex-col items-end gap-y-2"
   >
-    <MapControlsButton class="p-3" aria-label="Ingrandisci" @click.prevent="mlMap.zoomIn()">
-      <IconPlus class="h-6 w-6" />
-    </MapControlsButton>
-
-    <MapControlsButton class="p-3" aria-label="Riduci" @click.prevent="mlMap.zoomOut()">
-      <IconMinus class="h-6 w-6" />
-    </MapControlsButton>
-
-    <MapControlsButton
-      class="h-12 w-12 text-sm font-bold text-slate-600"
-      :aria-label="is3D ? 'Vista 2D' : 'Vista 3D'"
-      :aria-pressed="is3D"
-      @click.prevent="toggle3D()"
+    <div
+      class="flex flex-col items-center overflow-hidden rounded-2xl bg-panel/80 shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
     >
-      {{ is3D ? "2D" : "3D" }}
-    </MapControlsButton>
+      <MapControlsButton aria-label="Ingrandisci" @click.prevent="mlMap?.zoomIn()">
+        <IconPlus class="size-6" />
+      </MapControlsButton>
+
+      <MapControlsButton aria-label="Riduci" @click.prevent="mlMap?.zoomOut()">
+        <IconMinus class="size-6" />
+      </MapControlsButton>
+
+      <MapControlsButton
+        class="text-sm font-bold"
+        :class="is3D ? 'bg-basalt !text-white hover:!bg-basalt' : ''"
+        aria-label="Vista 3D con il rilievo"
+        :aria-pressed="is3D"
+        @click.prevent="toggle3D()"
+      >
+        3D
+      </MapControlsButton>
+
+      <MapControlsButton
+        aria-label="Mostra la mia posizione"
+        :disabled="locating"
+        @click.prevent="showMyLocation()"
+      >
+        <UIcon
+          :name="locating ? 'i-lucide-loader-circle' : 'i-lucide-locate-fixed'"
+          class="size-5.5"
+          :class="{ 'animate-spin': locating }"
+        />
+      </MapControlsButton>
+    </div>
+
+    <p
+      v-if="locationError"
+      role="alert"
+      class="max-w-56 rounded-2xl bg-panel/90 px-3 py-2 text-xs font-semibold text-basalt shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
+    >
+      {{ locationError }}
+    </p>
+
+    <!-- How to read the lines while a nuraghe's network is on the map (desktop: on phones the map
+         area is small, and the list's bars use the same colours) -->
+    <ul
+      v-if="showsNetwork"
+      class="hidden flex-col gap-y-1 lg:flex rounded-2xl bg-panel/80 px-3 py-2 text-xs font-semibold text-basalt shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
+      aria-label="Legenda delle linee di vista"
+    >
+      <li v-for="level in VISIBILITY_LEVELS" :key="level.label" class="flex items-center gap-x-2">
+        <svg class="h-2 w-6 shrink-0" viewBox="0 0 24 8" aria-hidden="true">
+          <line
+            x1="2"
+            y1="4"
+            x2="22"
+            y2="4"
+            :stroke="level.color"
+            stroke-width="3"
+            stroke-linecap="round"
+            :stroke-dasharray="level.dashed ? '4 3' : undefined"
+          />
+        </svg>
+        {{ level.label }}
+      </li>
+    </ul>
   </div>
 </template>

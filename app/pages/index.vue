@@ -1,42 +1,42 @@
-<script setup>
+<script setup lang="ts">
 const NuxtPage = resolveComponent("NuxtPage");
 const SearchResults = resolveComponent("SearchResults");
+const route = useRoute();
 
-const { items: mapData, error } = useNurnetData();
+const { items: mapData, error, reload } = useNurnetData();
 </script>
 
 <template>
-  <main class="h-screen w-screen bg-[#f1e9dc]">
+  <main class="h-screen w-screen bg-sand">
     <!-- Outside ClientOnly: part of the prerendered HTML, so it shows before the app loads -->
     <AppSplash :ready="!!mapData || !!error" />
 
     <ClientOnly>
-      <TheMap v-if="mapData" :pois="mapData" />
-
       <!-- On desktop the brand is at the top of the drawer instead -->
-      <BrandButton class="absolute top-4 left-4 z-1 lg:hidden" />
+      <BrandButton class="absolute top-4 left-4 z-3 lg:hidden" />
       <InfoSheet />
 
       <TheDrawer>
         <component
-          :is="$route.path === '/' ? SearchResults : NuxtPage"
+          :is="route.path === '/' ? SearchResults : NuxtPage"
           v-if="mapData"
           :map-data="mapData"
         ></component>
         <div v-else data-drawer-drag class="h-full pt-4">
           <DrawerHandle />
-          <p
-            class="flex h-5/6 w-full items-center justify-center px-8 text-center text-sm font-semibold text-slate-700"
+          <div
+            class="flex h-5/6 w-full flex-col items-center justify-center gap-y-4 px-8 text-center text-sm font-semibold text-muted"
             :class="{ 'animate-pulse': !error }"
           >
-            {{
-              error
-                ? "Impossibile caricare i siti. Controlla la connessione e riprova."
-                : "Caricamento…"
-            }}
-          </p>
+            <p v-if="error">I siti non si sono caricati. Controlla la connessione.</p>
+            <p v-else>Caricamento…</p>
+            <UButton v-if="error" icon="i-lucide-rotate-cw" @click="reload">Riprova</UButton>
+          </div>
         </div>
       </TheDrawer>
+
+      <!-- After the drawer in the page, so keyboard users reach the search before the map -->
+      <TheMap v-if="mapData" :pois="mapData" />
     </ClientOnly>
   </main>
 </template>

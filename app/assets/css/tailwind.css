@@ -1,26 +1,51 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* NurNet+ brand: colours taken from the sites themselves */
+/* NurNet+ palette: colours taken from the sites themselves. Components use these names, not
+   Tailwind's grey scales, so the whole app's tone changes here */
 @theme {
   --font-display: "Fraunces", ui-serif, Georgia, serif;
 
   /* Nuraghe orange, darkened so white text on it meets WCAG AA */
   --color-terracotta: #c44f01;
   --color-terracotta-dark: #9a3e01;
-  /* Menhir basalt */
+  /* Menhir basalt: text and dark accents */
   --color-basalt: #312528;
+
+  /* Neutrals, warm like the limestone and the map */
+  --color-sand: #f1e9dc; /* the map's ground, the splash */
+  --color-panel: #ece5da; /* drawer and floating controls, used translucent over the map */
+  --color-well: #ddd4c7; /* inputs, placeholders, pressed controls */
+  --color-line: #d3c8b9; /* dividers */
+  --color-muted: #5e554f; /* secondary text: 5.8:1 on the panel */
+  --color-subtle: #857a71; /* icons, the drawer handle: 3:1 on the panel */
 }
 
-@layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
+@layer base {
+  /* Browser surfaces in the palette */
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-terracotta) 25%, transparent);
+    color: var(--color-basalt);
   }
 
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .scrollbar-hidden {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+  html {
+    caret-color: var(--color-terracotta);
+    accent-color: var(--color-terracotta);
+    color: var(--color-basalt);
+  }
+
+  /* One focus ring for every control that doesn't draw its own */
+  :focus-visible {
+    outline: 2px solid var(--color-terracotta);
+    outline-offset: 2px;
+  }
+}
+
+/* Hide scrollbars on horizontal strips (chips, photos) that are scrolled by touch or trackpad */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

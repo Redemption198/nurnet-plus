@@ -1,23 +1,14 @@
-<script setup>
-const props = defineProps({
-  photos: {
-    type: Array,
-    default: () => [],
-  },
-  name: {
-    type: String,
-    default: "",
-  },
-});
+<script setup lang="ts">
+const props = defineProps<{ photos: string[]; name: string }>();
 
 // Index of the photo to show, null when closed
-const index = defineModel("index", { type: Number, default: null });
+const index = defineModel<number | null>("index", { default: null });
 
-const track = ref();
+const track = ref<HTMLElement | null>(null);
 const current = ref(0);
 
 // The Mediateca's originals: the URLs we have are WordPress thumbnails ("-300x300")
-const fullSize = (url) => url.replace(/-\d+x\d+(?=\.\w+$)/, "");
+const fullSize = (url: string) => url.replace(/-\d+x\d+(?=\.\w+$)/, "");
 
 // While an arrow/key navigation animates, the scroll position is in between photos: ignore it
 let navigatingUntil = 0;
@@ -30,7 +21,7 @@ function updateCurrent() {
 
 // From the photo we're heading to, not the scroll position: quick repeated presses add up
 // instead of being measured from the middle of a running animation
-function go(direction) {
+function go(direction: number) {
   const el = track.value;
   if (!el) return;
   const target = Math.min(Math.max(current.value + direction, 0), props.photos.length - 1);
@@ -47,7 +38,7 @@ watch(index, async (value) => {
   if (track.value) track.value.scrollLeft = value * track.value.clientWidth;
 });
 
-function onKeydown(event) {
+function onKeydown(event: KeyboardEvent) {
   if (event.key === "ArrowRight") go(1);
   else if (event.key === "ArrowLeft") go(-1);
 }
@@ -60,7 +51,7 @@ function onKeydown(event) {
     :title="`Foto di ${name}`"
     description="Scorri per vedere le altre foto"
     :ui="{ overlay: 'bg-black', content: 'bg-black ring-0 shadow-none' }"
-    @update:open="(open) => !open && (index = null)"
+    @update:open="(open: boolean) => !open && (index = null)"
   >
     <template #content="{ close }">
       <div class="relative flex h-full flex-col" @keydown="onKeydown">
@@ -71,7 +62,7 @@ function onKeydown(event) {
           </p>
           <button
             type="button"
-            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none active:scale-95"
+            class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25 focus-visible:outline-white active:scale-95"
             aria-label="Chiudi"
             @click="close"
           >
@@ -107,6 +98,10 @@ function onKeydown(event) {
             />
           </div>
         </div>
+
+        <p class="absolute inset-x-0 bottom-0 p-4 text-center text-xs text-white/60">
+          Foto dalla Mediateca NurNet, dei rispettivi autori
+        </p>
 
         <!-- Arrows for mouse and keyboard users; on touch screens swiping is enough -->
         <button
