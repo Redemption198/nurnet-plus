@@ -19,11 +19,7 @@ useResizeObserver(header, ([entry]) => {
       ref="header"
       data-drawer-drag
       class="rounded-t-2xl pt-4 transition-[background-color,box-shadow] duration-200"
-      :class="
-        scrolled
-          ? 'bg-panel/95 shadow-[0_1px_0_var(--color-line)] backdrop-blur-3xl backdrop-saturate-180'
-          : ''
-      "
+      :class="scrolled ? 'bg-panel/85 shadow-[0_1px_0_var(--color-line)] backdrop-blur-xl' : ''"
     >
       <DrawerHandle />
       <div class="px-4 pb-3">
