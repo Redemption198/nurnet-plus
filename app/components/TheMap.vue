@@ -296,19 +296,21 @@ function visibilityEnds(): FeatureCollection<Point> {
   };
 }
 
-// Ground height as drawn: the terrain where its tiles are loaded, else the site's elevation (both
-// with the terrain's exaggeration), else `fallback` (a nearby height: 0 would bury the tower).
-// Returns whether the terrain was used
+// Ground height as drawn (with the terrain's exaggeration): the terrain where its tiles are
+// loaded, else the site's elevation, else `fallback` (a nearby height: 0 would bury the tower).
+// queryTerrainElevation gives 0, not null, where the terrain hasn't loaded yet: a 0 for a site
+// known to be higher up is taken as "not loaded"
 function groundAt(
   ml: MapLibreMap,
   coordinates: [number, number],
   elevation: number | undefined,
   fallback = 0,
 ) {
-  const terrain = ml.queryTerrainElevation(coordinates);
-  if (terrain != null) return { height: terrain, exact: true };
   const exaggeration = ml.getTerrain()?.exaggeration ?? 1;
-  return { height: elevation != null ? elevation * exaggeration : fallback, exact: false };
+  const known = elevation != null ? elevation * exaggeration : null;
+  const terrain = ml.queryTerrainElevation(coordinates);
+  const unloaded = terrain == null || (terrain === 0 && (known ?? fallback) > 5);
+  return unloaded ? (known ?? fallback) : terrain;
 }
 
 // Which markers stay at full strength, by priority: the open nuraghe's network, then the search
@@ -329,9 +331,8 @@ function applyFocus() {
   ml.setLayoutProperty("pois", "symbol-sort-key", focus ? ["case", inFocus, 0, 1] : 0);
 }
 
-// Towers placed on the terrain (rather than on their elevation) in the last update
-let exactTowers = 0;
-let approximateTowers = 0;
+// The ground heights used in the last update, to redraw when the terrain loads and changes them
+let usedGrounds: number[] = [];
 
 function updateSightLines() {
   const ml = mlMap.value;
@@ -342,16 +343,15 @@ function updateSightLines() {
   const poi = site.value;
   const sites = visibleSites();
   const tower = TOWER_HEIGHT * (ml.getTerrain()?.exaggeration ?? 1);
-  exactTowers = approximateTowers = 0;
+  usedGrounds = [];
   const towerAt = (
     coordinates: [number, number],
     elevation: number | undefined,
     fallback?: number,
   ) => {
     const ground = groundAt(ml, coordinates, elevation, fallback);
-    if (ground.exact) exactTowers++;
-    else approximateTowers++;
-    return { at: coordinates, ground: ground.height, top: ground.height + tower };
+    usedGrounds.push(ground);
+    return { at: coordinates, ground, top: ground + tower };
   };
   if (!poi || !sites.length) return sightLines.setData([], []);
 
@@ -430,16 +430,22 @@ function addSightLines(ml: MapLibreMap) {
     paint: { ...LABEL_PAINT, "text-halo-width": 2 },
   });
 
-  // Where the terrain wasn't loaded yet, redo the heights once more of it is (only then: an
-  // update repaints, which would otherwise end in "idle" again)
+  // Whenever the map has finished loading (terrain tiles included, e.g. after a zoom or the switch
+  // to 3D), redo the heights if the terrain now gives different ones. Only then: an update
+  // repaints, which would otherwise end in "idle" again
   ml.on("idle", () => {
-    if (!approximateTowers || !site.value) return;
-    const points = [
-      site.value.coordinates,
-      ...visibleSites().map((entry) => props.pois[entry.i]!.coordinates),
+    const poi = site.value;
+    if (!poi || !usedGrounds.length) return;
+    const sites = visibleSites();
+    const origin = groundAt(ml, poi.coordinates, poi.elevation);
+    const grounds = [
+      origin,
+      ...sites.map((entry) =>
+        groundAt(ml, props.pois[entry.i]!.coordinates, entry.elevation, origin),
+      ),
     ];
-    const exactNow = points.filter((p) => ml.queryTerrainElevation(p) != null).length;
-    if (exactNow > exactTowers) updateSightLines();
+    if (grounds.some((ground, i) => Math.abs(ground - (usedGrounds[i] ?? Infinity)) > 1))
+      updateSightLines();
   });
 }
 
