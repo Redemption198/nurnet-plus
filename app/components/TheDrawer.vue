@@ -312,7 +312,7 @@ onDeactivated(() => lockPageScroll(false));
     <div
       ref="drawerContent"
       data-drawer-scroll
-      class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain focus-visible:-outline-offset-2"
+      class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain rounded-[inherit] focus-visible:-outline-offset-2"
       :class="route.path === '/' ? '' : 'overflow-y-scroll'"
       :tabindex="route.path === '/' ? undefined : 0"
     >
