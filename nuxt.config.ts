@@ -91,5 +91,10 @@ export default defineNuxtConfig({
     },
   },
 
+  // Old links to the POI page without an id
+  routeRules: {
+    "/poi": { redirect: baseURL },
+  },
+
   compatibilityDate: "2025-10-20",
 });

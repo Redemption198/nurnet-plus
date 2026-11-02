@@ -82,6 +82,8 @@ async function replyVisible({ requestId, id }) {
         i,
         height,
         distance: Math.round(distance(from.coordinates, items[i].coordinates)),
+        // Metres above sea level (geo.nurnet.net), for the lines in 3D; missing for a few sites
+        elevation: details?.sites[items[i].content_id]?.elevation,
       }))
       .sort((x, y) => x.distance - y.distance);
     self.postMessage({ type: "visible", requestId, visible });

@@ -36,6 +36,7 @@ export interface VisibleSite {
   i: number; // index into `items`
   height: number; // metres of tower visible, 0-15, the mean of both directions
   distance: number; // metres
+  elevation?: number; // metres above sea level
 }
 
 // Only nuraghi have line-of-sight data
@@ -108,7 +109,8 @@ export function useNurnetData() {
   }
 
   // Opens a POI right away with what the index has; its details are filled in when available
-  async function openPOI(poi: NurnetPOI) {
+  // `navigate: false` when the route is already the POI's (opened from its URL)
+  async function openPOI(poi: NurnetPOI, { navigate = true } = {}) {
     currentPOI.value = {
       values_: {
         ...poi,
@@ -117,7 +119,7 @@ export function useNurnetData() {
         visibleStatus: isNuraghe(poi.category_id) ? "loading" : "none",
       },
     };
-    void router.push("/poi");
+    if (navigate) void router.push(`/poi/${poi.content_id}`);
 
     if (isNuraghe(poi.category_id)) {
       void getVisible(poi.content_id).then((visible) => {

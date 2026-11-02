@@ -29,3 +29,7 @@ export const useDrawerState = () =>
 // Set to [[west, south], [east, north]] to frame that area on the map (the map resets it to null)
 export const useMapFitBounds = () =>
   useState<[[number, number], [number, number]] | null>("map-fit-bounds", () => null);
+
+// The visible site (index into the items) hovered or focused in "Visibili da qui", for the map
+export const useHighlightedVisible = () =>
+  useState<number | null>("highlighted-visible", () => null);

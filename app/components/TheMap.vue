@@ -153,6 +153,38 @@ function categoryLayerFilter() {
   return ["in", ["to-string", ["get", "category_id"]], ["literal", [...ids]]];
 }
 
+// The basemap's own regular font for our labels (OpenFreeMap serves the glyphs for it)
+function labelFont(ml) {
+  const font = ml
+    .getStyle()
+    .layers.map((layer) => layer.layout?.["text-font"])
+    .find(
+      (value) =>
+        Array.isArray(value) &&
+        value.every((part) => typeof part === "string") &&
+        /Regular/.test(value[0]),
+    );
+  return font ?? ["Noto Sans Regular"];
+}
+
+// Names under the markers once zoomed in; a name only shows where it fits
+function labelLayout(ml, fromZoom) {
+  return {
+    "text-field": ["step", ["zoom"], "", fromZoom, ["get", "name"]],
+    "text-font": labelFont(ml),
+    "text-size": 12,
+    "text-anchor": "top",
+    "text-offset": [0, 0.3],
+    "text-max-width": 9,
+    "text-optional": true,
+  };
+}
+const LABEL_PAINT = {
+  "text-color": "#312528",
+  "text-halo-color": "rgba(255, 255, 255, 0.9)",
+  "text-halo-width": 1.5,
+};
+
 function addPois(ml) {
   ml.addSource("pois", {
     type: "geojson",
@@ -162,7 +194,7 @@ function addPois(ml) {
       features: props.pois.map((poi, i) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: poi.coordinates },
-        properties: { i, content_id: poi.content_id, category_id: poi.category_id },
+        properties: { i, content_id: poi.content_id, category_id: poi.category_id, name: poi.name },
       })),
     },
   });
@@ -179,10 +211,12 @@ function addPois(ml) {
       "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.5, 13, 0.75, 16, 0.9],
       // Overlapping icons are hidden while zoomed out and come back when zooming in
       "icon-padding": 0,
+      ...labelLayout(ml, 12.5),
     },
+    paint: LABEL_PAINT,
   });
 
-  // The selected POI, drawn again bigger and always visible
+  // The selected POI, drawn again bigger and always visible, with its name a bit earlier
   ml.addLayer({
     id: "poi-selected",
     type: "symbol",
@@ -194,64 +228,104 @@ function addPois(ml) {
       "icon-size": 1.3,
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
+      ...labelLayout(ml, 11),
+      "text-size": 13,
     },
+    paint: LABEL_PAINT,
   });
 }
 
-// Lines of sight from the open nuraghe to the sites it can see (none on the list), with a dot at
-// each end: the markers there may be hidden where they overlap
-function visibilityLines() {
-  const poi = currentPOI.value.values_;
-  const visible = route.path === "/" ? [] : (poi?.visible ?? []);
+// Lines of sight from the open nuraghe to the sites it can see (none on the list): in mid-air
+// between the tops of the towers (sightLinesLayer), plus a dot on the ground at each end, as the
+// markers there may be hidden where they overlap
+const TOWER_HEIGHT = 15; // metres, as in CRS4's model
+const sightLines = createSightLinesLayer("sight-lines");
+const highlighted = useHighlightedVisible();
+
+function visibleSites() {
+  const visible = route.path === "/" ? [] : (currentPOI.value.values_?.visible ?? []);
+  return visible.filter((site) => props.pois[site.i]);
+}
+
+function visibilityEnds() {
   return {
     type: "FeatureCollection",
-    features: visible
-      .filter((site) => props.pois[site.i])
-      .flatMap((site) => {
-        const end = props.pois[site.i].coordinates;
-        return [
-          {
-            type: "Feature",
-            geometry: { type: "LineString", coordinates: [poi.coordinates, end] },
-            properties: { height: site.height },
-          },
-          { type: "Feature", geometry: { type: "Point", coordinates: end }, properties: {} },
-        ];
-      }),
+    features: visibleSites().map((site) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: props.pois[site.i].coordinates },
+      properties: {
+        i: site.i,
+        name: props.pois[site.i].name,
+        color: VISIBILITY_LEVELS[visibilityLevel(site.height)].color,
+      },
+    })),
   };
 }
 
-function updateVisibilityLines() {
-  mlMap.value?.getSource("visibility")?.setData(visibilityLines());
+// Ground height as drawn: the terrain where its tiles are loaded, else the site's elevation, both
+// with the terrain's exaggeration. Returns whether the terrain was used
+function groundAt(ml, coordinates, elevation) {
+  const terrain = ml.queryTerrainElevation(coordinates);
+  if (terrain != null) return { height: terrain, exact: true };
+  const exaggeration = ml.getTerrain()?.exaggeration ?? 1;
+  return { height: (elevation ?? 0) * exaggeration, exact: false };
 }
 
-function addVisibilityLines(ml) {
-  ml.addSource("visibility", { type: "geojson", data: visibilityLines() });
-  // Under the markers; the better the view, the stronger the line
-  ml.addLayer(
-    {
-      id: "visibility",
-      type: "line",
-      source: "visibility",
-      filter: ["==", ["geometry-type"], "LineString"],
-      layout: { "line-cap": "round" },
-      paint: {
-        "line-color": "#c44f01",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1.5, 14, 3],
-        "line-opacity": ["interpolate", ["linear"], ["get", "height"], 0, 0.3, 15, 0.85],
-      },
-    },
-    "pois",
-  );
+// Towers placed on the terrain (rather than on their elevation) in the last update
+let exactTowers = 0;
+let approximateTowers = 0;
+function updateSightLines() {
+  const ml = mlMap.value;
+  if (!ml) return;
+  ml.getSource("visibility")?.setData(visibilityEnds());
+
+  const poi = currentPOI.value.values_;
+  const sites = visibleSites();
+  const tower = TOWER_HEIGHT * (ml.getTerrain()?.exaggeration ?? 1);
+  exactTowers = approximateTowers = 0;
+  const towerAt = (coordinates, elevation) => {
+    const ground = groundAt(ml, coordinates, elevation);
+    if (ground.exact) exactTowers++;
+    else approximateTowers++;
+    return { at: coordinates, ground: ground.height, top: ground.height + tower };
+  };
+  if (!sites.length) return sightLines.setData([], []);
+
+  const origin = towerAt(poi.coordinates, poi.elevation);
+  const towers = [origin];
+  const lines = sites.map((site) => {
+    const end = towerAt(props.pois[site.i].coordinates, site.elevation);
+    towers.push(end);
+    return {
+      from: [...origin.at, origin.top],
+      to: [...end.at, end.top],
+      level: visibilityLevel(site.height),
+      id: site.i,
+    };
+  });
+  sightLines.setData(lines, towers);
+}
+
+function applyHighlight() {
+  const id = highlighted.value ?? -1;
+  sightLines.setHighlight(highlighted.value);
+  const filter = ["==", ["get", "i"], id];
+  for (const layer of ["visibility-highlight", "visibility-highlight-label"])
+    if (mlMap.value?.getLayer(layer)) mlMap.value.setFilter(layer, filter);
+}
+
+function addSightLines(ml) {
+  ml.addSource("visibility", { type: "geojson", data: visibilityEnds() });
+  // All under the markers
+  ml.addLayer(sightLines, "pois");
   ml.addLayer(
     {
       id: "visibility-ends",
       type: "circle",
       source: "visibility",
-      filter: ["==", ["geometry-type"], "Point"],
       paint: {
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 2.5, 14, 4.5],
-        "circle-color": "#c44f01",
+        "circle-color": ["get", "color"],
         "circle-stroke-color": "#fff",
         "circle-stroke-width": 1.5,
         "circle-pitch-alignment": "map",
@@ -259,6 +333,47 @@ function addVisibilityLines(ml) {
     },
     "pois",
   );
+  // The site hovered in the list: a bigger dot and its name, above everything
+  ml.addLayer({
+    id: "visibility-highlight",
+    type: "circle",
+    source: "visibility",
+    filter: ["==", ["get", "i"], -1],
+    paint: {
+      "circle-radius": 7,
+      "circle-color": "#312528",
+      "circle-stroke-color": "#fff",
+      "circle-stroke-width": 2.5,
+      "circle-pitch-alignment": "map",
+    },
+  });
+  ml.addLayer({
+    id: "visibility-highlight-label",
+    type: "symbol",
+    source: "visibility",
+    filter: ["==", ["get", "i"], -1],
+    layout: {
+      "text-field": ["get", "name"],
+      "text-font": labelFont(ml),
+      "text-size": 13,
+      "text-anchor": "bottom",
+      "text-offset": [0, -0.9],
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    },
+    paint: { ...LABEL_PAINT, "text-halo-width": 2 },
+  });
+
+  // Where the terrain wasn't loaded yet, redo the heights once more of it is (only then: an
+  // update repaints, which would otherwise end in "idle" again)
+  ml.on("idle", () => {
+    if (!approximateTowers) return;
+    const sites = visibleSites();
+    const poi = currentPOI.value.values_;
+    const points = [poi?.coordinates, ...sites.map((site) => props.pois[site.i].coordinates)];
+    const exactNow = points.filter((p) => p && ml.queryTerrainElevation(p) != null).length;
+    if (exactNow > exactTowers) updateSightLines();
+  });
 }
 
 function toMapPadding([top, right, bottom, left]) {
@@ -326,7 +441,15 @@ onMounted(() => {
   watch(() => route.path, applySelection);
 
   // The lines follow the open nuraghe once its line-of-sight data arrives, and go on the list
-  watch([() => currentPOI.value.values_?.visible, () => route.path], updateVisibilityLines);
+  watch(
+    [
+      () => currentPOI.value.values_?.visible,
+      () => currentPOI.value.values_?.elevation,
+      () => route.path,
+    ],
+    updateSightLines,
+  );
+  watch(highlighted, applyHighlight);
 
   // "Mostra sulla mappa": frame the requested area in the part the drawer leaves visible
   watch(mapFitBounds, async (bounds) => {
@@ -379,7 +502,10 @@ onMounted(() => {
     warmBasemap(ml);
     addTerrain(ml);
     addPois(ml);
-    addVisibilityLines(ml);
+    addSightLines(ml);
+
+    // A site opened from its URL before the map was ready
+    if (route.path !== "/" && currentPOI.value.values_) focusSelectedPOI();
 
     for (const layer of ["pois", "poi-selected"]) {
       ml.on("mouseenter", layer, () => (ml.getCanvas().style.cursor = "pointer"));

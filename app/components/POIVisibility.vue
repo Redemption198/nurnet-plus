@@ -24,12 +24,11 @@ function formatDistance(metres) {
   return `${(metres / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 })} km`;
 }
 
-// How much of the towers (15 m in CRS4's model) can be seen from each other
-function visibilityLabel(height) {
-  if (height >= 13.5) return "Ben visibile";
-  if (height >= 7.5) return "Visibile";
-  return "Poco visibile";
-}
+const levelOf = (height) => VISIBILITY_LEVELS[visibilityLevel(height)];
+
+// Hovering or focusing a row highlights its line on the map
+const highlighted = useHighlightedVisible();
+onUnmounted(() => (highlighted.value = null));
 
 // The open nuraghe and all the sites it can see, framed on the map
 function showOnMap() {
@@ -88,9 +87,13 @@ function showOnMap() {
       <ul class="flex flex-col gap-y-2">
         <li v-for="site in shown" :key="site.i">
           <NuxtLink
-            to="/poi"
+            :to="`/poi/${site.poi.content_id}`"
             class="flex items-center gap-x-2 rounded-2xl bg-white/60 p-2 text-slate-700 shadow-sm transition active:scale-[0.98]"
             @click.prevent="openPOI(site.poi)"
+            @pointerenter="highlighted = site.i"
+            @pointerleave="highlighted = null"
+            @focus="highlighted = site.i"
+            @blur="highlighted = null"
           >
             <IconNurnetPlus
               class="size-7 shrink-0"
@@ -108,14 +111,17 @@ function showOnMap() {
               class="flex w-24 shrink-0 flex-col items-end gap-y-1"
               :title="`${site.height.toLocaleString('it-IT', { maximumFractionDigits: 1 })} m su 15`"
             >
-              <span class="text-xs font-semibold">{{ visibilityLabel(site.height) }}</span>
+              <span class="text-xs font-semibold">{{ levelOf(site.height).label }}</span>
               <span
                 class="h-1.5 w-full overflow-hidden rounded-full bg-slate-300/70"
                 aria-hidden="true"
               >
                 <span
-                  class="block h-full rounded-full bg-terracotta"
-                  :style="{ width: `${(site.height / 15) * 100}%` }"
+                  class="block h-full rounded-full"
+                  :style="{
+                    width: `${(site.height / 15) * 100}%`,
+                    backgroundColor: levelOf(site.height).color,
+                  }"
                 />
               </span>
             </div>

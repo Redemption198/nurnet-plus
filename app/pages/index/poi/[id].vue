@@ -1,25 +1,56 @@
 <script setup>
 const currentPOI = useCurrentPOI();
-
-const router = useRouter();
+const route = useRoute();
+const { items, openPOI } = useNurnetData();
 
 function isURL(url) {
   try {
-    const testURL = new URL(url);
+    new URL(url);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
 
-if (!currentPOI.value.values_) router.push("/");
+// The URL decides which site is open: a shared link, a reload, back/forward. Sites opened from the
+// app are already open by the time the route changes
+watch(
+  [() => route.params.id, items],
+  ([id, list]) => {
+    if (!list || currentPOI.value.values_?.content_id === id) return;
+    const poi = list.find((item) => item.content_id === id);
+    if (poi) openPOI(poi, { navigate: false });
+    else navigateTo("/", { replace: true });
+  },
+  { immediate: true },
+);
+
+const poi = computed(() =>
+  currentPOI.value.values_?.content_id === route.params.id ? currentPOI.value.values_ : null,
+);
+
+// Tab title and link previews: "Nuraghe Losa · NurNet+", "Nuraghe complesso a Abbasanta…"
+const description = computed(() => {
+  if (!poi.value) return undefined;
+  const kind = poi.value.typology || useCategoryName(Number(poi.value.category_id));
+  const place = [poi.value.comune, poi.value.regione].filter(Boolean).join(", ");
+  // "ad Abbasanta", "a Barumini"
+  const preposition = /^a/i.test(place) ? "ad" : "a";
+  return `${kind}${place ? ` ${preposition} ${place}` : ""}, sulla mappa di NurNet+.`;
+});
+useSeoMeta({
+  title: () => (poi.value ? `${poi.value.name} · NurNet+` : "NurNet+"),
+  ogTitle: () => poi.value?.name,
+  description,
+  ogDescription: description,
+});
 
 const drawerContent = useState("drawer-content");
 const { y: contentY } = useScroll(drawerContent);
 </script>
 
 <template>
-  <div v-if="currentPOI.values_" class="flex flex-col gap-y-2 pb-64">
+  <div v-if="poi" class="flex flex-col gap-y-2 pb-64">
     <DrawerHeader :scrolled="contentY > 0">
       <div class="flex items-center justify-between gap-x-3">
         <h2 class="font-display text-2xl leading-tight font-semibold text-basalt">

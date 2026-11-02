@@ -152,7 +152,7 @@ function getCategoryComponent(category) {
       <div v-for="result in list" :key="result.index" class="h-17 pb-2">
         <NuxtLink
           class="flex h-full items-center rounded-2xl bg-slate-200/75 p-2 text-slate-700 shadow-sm backdrop-blur-sm"
-          to="/poi"
+          :to="`/poi/${result.data.content_id}`"
           @click.prevent="openPOI(result.data)"
         >
           <div class="flex min-w-0 items-center gap-x-2">
