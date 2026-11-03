@@ -218,6 +218,19 @@ const TIPS = [
                   memoria del browser. La cancelli dalle impostazioni del browser per questo sito.
                 </dd>
               </div>
+              <div class="border-t border-line py-2.5">
+                <dt class="text-xs font-semibold text-muted">Chi la cura</dt>
+                <dd class="text-pretty">
+                  Redemption198. Per domande, anche sulla privacy, apri una
+                  <a
+                    :class="link"
+                    href="https://github.com/Redemption198/nurnet-plus/issues/new"
+                    target="_blank"
+                    rel="noopener"
+                    >segnalazione su GitHub</a
+                  >.
+                </dd>
+              </div>
             </dl>
             <button
               type="button"
