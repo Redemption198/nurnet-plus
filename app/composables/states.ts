@@ -4,6 +4,14 @@ export const useCurrentSite = () => useState<CurrentSite | null>("current-site",
 // The "Informazioni" sheet (about, credits)
 export const useInfoOpen = () => useState<boolean>("info-open", () => false);
 
+// Video services the visitor chose to load videos from (POIVideo), until the app is closed.
+// In memory only: nothing about it is stored
+export const useVideoConsent = () =>
+  useState<{ youtube: boolean; facebook: boolean }>("video-consent", () => ({
+    youtube: false,
+    facebook: false,
+  }));
+
 // Category name (as returned by useCategoryName) shown in the list and on the map, or null for all
 export const useCategoryFilter = () => useState<string | null>("category-filter", () => null);
 
