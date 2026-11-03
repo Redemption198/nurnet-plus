@@ -6,6 +6,8 @@ const { arrivedState } = useScroll(scroller);
 
 // Photo opened in the fullscreen viewer, null when closed
 const viewerIndex = ref<number | null>(null);
+// The thumbnails, which the viewer grows out of and shrinks back into
+const thumbs: HTMLElement[] = [];
 
 const photos = computed(() => site.value?.photos ?? []);
 const name = computed(() => site.value?.name ?? "");
@@ -30,6 +32,7 @@ function scrollPage(direction: number) {
       <button
         v-for="(photo, i) in photos"
         :key="photo"
+        :ref="(el: unknown) => (thumbs[i] = el as HTMLElement)"
         type="button"
         class="shrink-0 cursor-zoom-in snap-start overflow-hidden rounded-2xl"
         :aria-label="`Apri la foto ${i + 1} di ${photos.length} a schermo intero`"
@@ -67,6 +70,11 @@ function scrollPage(direction: number) {
       <UIcon name="i-lucide-chevron-right" class="size-5" />
     </button>
 
-    <PhotoViewer v-model:index="viewerIndex" :photos="photos" :name="name" />
+    <PhotoViewer
+      v-model:index="viewerIndex"
+      :photos="photos"
+      :name="name"
+      :thumbnail="(i) => thumbs[i]"
+    />
   </div>
 </template>
