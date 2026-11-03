@@ -321,6 +321,9 @@ let stopWatchingResolution: (() => void) | undefined;
 // top of the map's own padding (drawer, controls, brand button), and how close it may get
 const FIT_PADDING = { top: 48, bottom: 40, left: 64, right: 56 };
 const FIT_MAX_ZOOM = 14;
+// The places the map last framed, until the visitor moves the camera themselves: switching
+// between 2D and 3D frames them again
+let framedPoints: [number, number][] | null = null;
 
 // fitBounds frames places as if the map were flat: tilted, the near side is drawn bigger and the
 // far side smaller, and places on high ground are drawn higher, so some end up under the drawer
@@ -333,24 +336,38 @@ interface CameraCopy {
   zoom: number;
   setCenter(center: LngLat): void;
   setZoom(zoom: number): void;
+  setPitch(pitch: number): void;
+  setBearing(bearing: number): void;
   locationToScreenPoint(place: LngLat, terrain?: MapLibreMap["terrain"]): ScreenPoint;
   screenPointToLocation(point: ScreenPoint): LngLat;
 }
 
-function cameraForTilted(ml: MapLibreMap, points: [number, number][]) {
-  const flat = ml.cameraForBounds(
-    [
-      [Math.min(...points.map((p) => p[0])), Math.min(...points.map((p) => p[1]))],
-      [Math.max(...points.map((p) => p[0])), Math.max(...points.map((p) => p[1]))],
-    ],
-    { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM },
-  );
+// The bounds of a set of places
+const boundsOf = (points: [number, number][]): [[number, number], [number, number]] => [
+  [Math.min(...points.map((p) => p[0])), Math.min(...points.map((p) => p[1]))],
+  [Math.max(...points.map((p) => p[0])), Math.max(...points.map((p) => p[1]))],
+];
+
+// `pitch` and `bearing`: frame them for a tilt the map is about to take (the 3D button)
+function cameraForTilted(
+  ml: MapLibreMap,
+  points: [number, number][],
+  pitch = ml.getPitch(),
+  bearing = ml.getBearing(),
+) {
+  const flat = ml.cameraForBounds(boundsOf(points), {
+    padding: FIT_PADDING,
+    maxZoom: FIT_MAX_ZOOM,
+    bearing,
+  });
   if (!flat?.center || flat.zoom == null) return null;
 
   const transform = (ml as unknown as { _camera?: { transform?: { clone(): CameraCopy } } })._camera
     ?.transform;
   if (!transform) return null;
   const camera = transform.clone();
+  camera.setPitch(pitch);
+  camera.setBearing(bearing);
   camera.setCenter(LngLat.convert(flat.center));
   camera.setZoom(flat.zoom);
   const { top = 0, right = 0, bottom = 0, left = 0 } = ml.getPadding();
@@ -524,7 +541,15 @@ const LOCATION_ERRORS: Record<number, string> = {
   3: "La posizione non è arrivata in tempo. Riprova.",
 };
 
+// The zoom buttons: a camera change of the visitor's, like a pinch
+function zoomBy(step: number) {
+  framedPoints = null;
+  if (step > 0) mlMap.value?.zoomIn();
+  else mlMap.value?.zoomOut();
+}
+
 function showMyLocation() {
+  framedPoints = null;
   const ml = mlMap.value;
   if (!ml || !("geolocation" in navigator)) return;
   locating.value = true;
@@ -656,6 +681,7 @@ function pointAt(ml: MapLibreMap, point: { x: number; y: number } | null) {
 // Close enough to see the site and its neighbours (and their names), not so close that the
 // visitor loses where on the island they are
 function focusSelectedPOI() {
+  framedPoints = null;
   const coordinates = site.value?.coordinates;
   if (!coordinates || !mlMap.value) return;
 
@@ -678,7 +704,20 @@ function toggle3D() {
   if (!ml) return;
   const tilt = !is3D.value;
   is3D.value = tilt;
-  ml.easeTo({ pitch: tilt ? 60 : 0, bearing: tilt ? ml.getBearing() : 0, duration: 800 });
+  const pitch = tilt ? 60 : 0;
+  const bearing = tilt ? ml.getBearing() : 0;
+  // A network the map framed, untouched since: frame it again for the new tilt
+  const camera =
+    framedPoints && visibleSites().length
+      ? tilt
+        ? cameraForTilted(ml, framedPoints, pitch, bearing)
+        : ml.cameraForBounds(boundsOf(framedPoints), {
+            padding: FIT_PADDING,
+            maxZoom: FIT_MAX_ZOOM,
+            bearing,
+          })
+      : null;
+  ml.easeTo({ ...camera, pitch, bearing, duration: 800 });
 }
 
 function publishView(ml: MapLibreMap) {
@@ -752,6 +791,7 @@ onMounted(() => {
     // The drawer's latest size: the map applies it only once it stops moving, and on a site
     // opened from its URL it may not have yet
     ml.setPadding(toMapPadding(mapPadding.value));
+    framedPoints = request.points;
     const camera = ml.getPitch() > TILTED ? cameraForTilted(ml, request.points) : null;
     if (camera) ml.easeTo({ ...camera, duration: 1200, essential: true });
     else
@@ -833,6 +873,8 @@ onMounted(() => {
 
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
   ml.on("movestart", (event) => {
+    // Moved by the visitor (drag, pinch, wheel, keys), not by the app
+    if (event.originalEvent) framedPoints = null;
     if (event.originalEvent && drawerState.value.position !== "bottom") {
       drawerState.value.request = "bottom";
     }
@@ -865,11 +907,11 @@ onUnmounted(() => {
     <div
       class="flex flex-col items-center overflow-hidden rounded-2xl bg-panel/80 shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
     >
-      <MapControlsButton aria-label="Ingrandisci" @click.prevent="mlMap?.zoomIn()">
+      <MapControlsButton aria-label="Ingrandisci" @click.prevent="zoomBy(1)">
         <IconPlus class="size-6" />
       </MapControlsButton>
 
-      <MapControlsButton aria-label="Riduci" @click.prevent="mlMap?.zoomOut()">
+      <MapControlsButton aria-label="Riduci" @click.prevent="zoomBy(-1)">
         <IconMinus class="size-6" />
       </MapControlsButton>
 
