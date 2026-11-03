@@ -28,12 +28,14 @@ export const useDrawerState = () =>
   }));
 
 // Set to frame an area ([[west, south], [east, north]]) on the map, which resets it to null.
-// `lowerDrawer`: on mobile, lower the drawer first to show more of the map
+// `points`: the places in it, framed exactly when the map is tilted. `lowerDrawer`: on mobile,
+// lower the drawer first to show more of the map
 export const useMapFitBounds = () =>
-  useState<{ bounds: [[number, number], [number, number]]; lowerDrawer: boolean } | null>(
-    "map-fit-bounds",
-    () => null,
-  );
+  useState<{
+    bounds: [[number, number], [number, number]];
+    points: [number, number][];
+    lowerDrawer: boolean;
+  } | null>("map-fit-bounds", () => null);
 
 // Returns a function that frames a set of points on the map (call this in setup)
 export function useFitPoints() {
@@ -46,6 +48,7 @@ export function useFitPoints() {
         [Math.min(...lons), Math.min(...lats)],
         [Math.max(...lons), Math.max(...lats)],
       ],
+      points,
       lowerDrawer,
     };
   };

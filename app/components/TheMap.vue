@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {
+  LngLat,
   MapLibreMap,
+  Point as ScreenPoint,
   setWorkerUrl,
   type ExpressionSpecification,
   type FilterSpecification,
@@ -308,6 +310,86 @@ function applyFocus() {
 
 let stopWatchingResolution: (() => void) | undefined;
 
+// Framing places ("Mostra sulla mappa"): room around them for the markers and their names, on
+// top of the map's own padding (drawer, controls, brand button), and how close it may get
+const FIT_PADDING = { top: 48, bottom: 40, left: 64, right: 56 };
+const FIT_MAX_ZOOM = 14;
+
+// fitBounds frames places as if the map were flat: tilted, the near side is drawn bigger and the
+// far side smaller, and places on high ground are drawn higher, so some end up under the drawer
+// or off screen. This starts from its flat camera and corrects it on a copy of the map's camera,
+// where the places are projected as drawn (tilt and terrain), until they fill the free area
+// The map's camera (its "transform", in MapLibre 6 inside the internal `_camera`; its type isn't
+// exported, so this is the part used here). Without it, framing falls back to fitBounds
+interface CameraCopy {
+  center: LngLat;
+  zoom: number;
+  setCenter(center: LngLat): void;
+  setZoom(zoom: number): void;
+  locationToScreenPoint(place: LngLat, terrain?: MapLibreMap["terrain"]): ScreenPoint;
+  screenPointToLocation(point: ScreenPoint): LngLat;
+}
+
+function cameraForTilted(ml: MapLibreMap, points: [number, number][]) {
+  const flat = ml.cameraForBounds(
+    [
+      [Math.min(...points.map((p) => p[0])), Math.min(...points.map((p) => p[1]))],
+      [Math.max(...points.map((p) => p[0])), Math.max(...points.map((p) => p[1]))],
+    ],
+    { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM },
+  );
+  if (!flat?.center || flat.zoom == null) return null;
+
+  const transform = (ml as unknown as { _camera?: { transform?: { clone(): CameraCopy } } })._camera
+    ?.transform;
+  if (!transform) return null;
+  const camera = transform.clone();
+  camera.setCenter(LngLat.convert(flat.center));
+  camera.setZoom(flat.zoom);
+  const { top = 0, right = 0, bottom = 0, left = 0 } = ml.getPadding();
+  const { width, height } = ml.getContainer().getBoundingClientRect();
+  // The free area, where the places must end up
+  const area = {
+    left: left + FIT_PADDING.left,
+    right: width - right - FIT_PADDING.right,
+    top: top + FIT_PADDING.top,
+    bottom: height - bottom - FIT_PADDING.bottom,
+  };
+  if (area.right <= area.left || area.bottom <= area.top) return null;
+  const places = points.map((point) => LngLat.convert(point));
+
+  for (let step = 0; step < 8; step++) {
+    const drawn = places.map((place) =>
+      camera.locationToScreenPoint(place, ml.terrain ?? undefined),
+    );
+    const xs = drawn.map((p) => p.x);
+    const ys = drawn.map((p) => p.y);
+    const box = {
+      left: Math.min(...xs),
+      right: Math.max(...xs),
+      top: Math.min(...ys),
+      bottom: Math.max(...ys),
+    };
+    // Move what is drawn in the middle of the places to the middle of the free area
+    const shift = new ScreenPoint(
+      (box.left + box.right) / 2 - (area.left + area.right) / 2,
+      (box.top + box.bottom) / 2 - (area.top + area.bottom) / 2,
+    );
+    const middle = camera.locationToScreenPoint(camera.center);
+    camera.setCenter(camera.screenPointToLocation(middle.add(shift)));
+    // And zoom so they fill it (a single place, or places on a line, only by the other side)
+    const scales = [
+      (area.right - area.left) / Math.max(box.right - box.left, 1),
+      (area.bottom - area.top) / Math.max(box.bottom - box.top, 1),
+    ];
+    const zoom = Math.min(camera.zoom + Math.log2(Math.min(...scales)), FIT_MAX_ZOOM);
+    const done = Math.abs(zoom - camera.zoom) < 0.01 && shift.mag() < 1;
+    camera.setZoom(zoom);
+    if (done) break;
+  }
+  return { center: camera.center, zoom: camera.zoom };
+}
+
 // The ground heights used in the last update, to redraw when the terrain loads and changes them
 let usedGrounds: number[] = [];
 
@@ -590,14 +672,16 @@ onMounted(() => {
     // Lower the drawer (mobile) if asked; it reports the new padding as it starts moving
     if (request.lowerDrawer) drawerState.value.request = "bottom";
     await nextTick();
-    mlMap.value.fitBounds(request.bounds, {
-      // On top of the map's own padding (drawer, controls, brand button), which fitBounds adds.
-      // Room for the markers and their names around the points themselves
-      padding: { top: 48, bottom: 40, left: 64, right: 56 },
-      maxZoom: 14,
-      duration: 1200,
-      essential: true,
-    });
+    const ml = mlMap.value;
+    const camera = ml.getPitch() > TILTED ? cameraForTilted(ml, request.points) : null;
+    if (camera) ml.easeTo({ ...camera, duration: 1200, essential: true });
+    else
+      ml.fitBounds(request.bounds, {
+        padding: FIT_PADDING,
+        maxZoom: FIT_MAX_ZOOM,
+        duration: 1200,
+        essential: true,
+      });
   });
 
   watch(categoryFilter, () => {
