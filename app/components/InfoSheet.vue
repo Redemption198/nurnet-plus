@@ -10,6 +10,8 @@ const headerEl = ref<HTMLElement | null>(null);
 const { height: headerHeight } = useElementSize(headerEl, undefined, { box: "border-box" });
 
 const link = "font-semibold text-terracotta-dark underline underline-offset-2";
+const pill =
+  "flex min-h-11 items-center justify-center gap-x-2 rounded-full bg-white/80 px-4 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white active:scale-95";
 
 // The status values in the data, with the icons the site page uses (see statusOf)
 const STATUSES = ["mantenuto", "diroccato", "non visibile"].map((value) => statusOf(value)!);
@@ -212,14 +214,24 @@ const TIPS = [
             </dl>
           </section>
 
-          <a
-            class="flex min-h-11 items-center justify-center gap-x-2 self-center rounded-full bg-white/80 px-4 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white active:scale-95"
-            href="https://github.com/Redemption198/nurnet-plus"
-            target="_blank"
-            rel="noopener"
-          >
-            <UIcon name="i-lucide-github" class="size-4" aria-hidden="true" /> Codice sorgente
-          </a>
+          <div class="flex flex-wrap items-center justify-center gap-2 self-center">
+            <a
+              :class="pill"
+              href="https://github.com/Redemption198/nurnet-plus"
+              target="_blank"
+              rel="noopener"
+            >
+              <UIcon name="i-lucide-github" class="size-4" aria-hidden="true" /> Codice sorgente
+            </a>
+            <a
+              :class="pill"
+              href="https://github.com/Redemption198/nurnet-plus/issues/new"
+              target="_blank"
+              rel="noopener"
+            >
+              <UIcon name="i-lucide-bug" class="size-4" aria-hidden="true" /> Segnala un problema
+            </a>
+          </div>
         </div>
       </div>
     </template>
