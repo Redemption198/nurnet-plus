@@ -311,7 +311,10 @@ const TIPS = [
                     target="_blank"
                     rel="noopener"
                     >Terrain Tiles</a
-                  >. Realizzata con MapLibre.
+                  >. Realizzata con
+                  <a :class="link" href="https://maplibre.org/" target="_blank" rel="noopener"
+                    >MapLibre</a
+                  >.
                 </dd>
               </div>
             </dl>
