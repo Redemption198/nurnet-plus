@@ -29,6 +29,11 @@ const categoryFilter = useCategoryFilter();
 const searchMatches = useSearchMatches();
 const mapView = useMapView();
 
+// On phones, searching raises the sheet (as Maps does): lowered, the results would be under the
+// keyboard and the screen's edge. The drawer ignores this on desktop
+const drawerState = useDrawerState();
+const raiseForSearch = () => (drawerState.value.request = "top");
+
 const inCategory = (poi: NurnetPOI) =>
   !categoryFilter.value || categoryOf(poi.category_id).name === categoryFilter.value;
 
@@ -127,6 +132,7 @@ const countLabel = computed(() => {
             enterkeyhint="search"
             placeholder="Cerca sito o comune…"
             aria-label="Cerca un sito o un comune"
+            @focus="raiseForSearch"
             class="h-11 w-full rounded-full bg-white/85 pr-11 pl-10 text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] placeholder:text-muted focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:appearance-none"
           />
           <!-- The browser's own clear button doesn't follow the palette: this one does -->
@@ -185,9 +191,10 @@ const countLabel = computed(() => {
         </button>
       </div>
 
-      <p class="mt-3 -mb-1 text-xs font-semibold text-muted" aria-live="polite">
-        {{ countLabel }}
-      </p>
+      <p class="mt-3 -mb-1 text-xs font-semibold text-muted">{{ countLabel }}</p>
+      <!-- Announced only for a search: the count of sites in view changes with every move of the
+           map, and screen readers would read it out each time -->
+      <p class="sr-only" aria-live="polite">{{ searching ? countLabel : "" }}</p>
     </DrawerHeader>
 
     <!-- Nothing to list: say why, and how to get results back -->

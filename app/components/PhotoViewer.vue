@@ -164,9 +164,12 @@ function onTrackClick(event: MouseEvent) {
   if (!inside) close();
 }
 
+// The arrows move by a whole photo: the browser's own arrow-key scrolling of the track would run
+// alongside and fight the animation
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === "ArrowRight") go(1);
-  else if (event.key === "ArrowLeft") go(-1);
+  if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+  event.preventDefault();
+  go(event.key === "ArrowRight" ? 1 : -1);
 }
 
 // A new site, new photos

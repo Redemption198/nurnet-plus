@@ -36,6 +36,8 @@ const map = ref<HTMLElement | null>(null);
 const mlMap = shallowRef<MapLibreMap>();
 const is3D = ref(false);
 const mapUnavailable = ref(false);
+// The basemap couldn't be loaded (no connection): the list still works
+const mapOffline = ref(false);
 
 // Free sources, no API keys: OpenFreeMap vector tiles and the AWS Terrain Tiles dataset
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
@@ -333,8 +335,10 @@ let framedPoints: [number, number][] | null = null;
 
 // fitBounds frames places as if the map were flat: tilted, the near side is drawn bigger and the
 // far side smaller, and places on high ground are drawn higher (even untilted, the camera's
-// perspective pushes them outwards), so some end up under the drawer or off screen. This starts from its flat camera and corrects it on a copy of the map's camera,
+// perspective pushes them outwards), so some end up under the drawer or off screen.
+// cameraForPlaces starts from its flat camera and corrects it on a copy of the map's camera,
 // where the places are projected as drawn (tilt and terrain), until they fill the free area
+
 // The map's camera (its "transform", in MapLibre 6 inside the internal `_camera`; its type isn't
 // exported, so this is the part used here). Without it, framing falls back to fitBounds
 interface CameraCopy {
@@ -541,6 +545,7 @@ function addSightLines(ml: MapLibreMap) {
 // The visitor's position: a dot on the map, and the map flies there
 const locating = ref(false);
 const locationError = ref<string | null>(null);
+let locationErrorTimer: ReturnType<typeof setTimeout> | undefined;
 const LOCATION_ERRORS: Record<number, string> = {
   1: "Permesso di posizione negato: attivalo nelle impostazioni del browser.",
   2: "Posizione non disponibile al momento.",
@@ -593,7 +598,9 @@ function showMyLocation() {
     (error) => {
       locating.value = false;
       locationError.value = LOCATION_ERRORS[error.code] ?? "Posizione non disponibile.";
-      setTimeout(() => (locationError.value = null), 6000);
+      // A new error gets its full time on screen
+      clearTimeout(locationErrorTimer);
+      locationErrorTimer = setTimeout(() => (locationError.value = null), 6000);
     },
     { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
   );
@@ -640,7 +647,9 @@ async function showOpenedSite() {
   }
   // Another site was opened meanwhile: that one takes over
   if (!site.value || site.value.content_id !== id) return;
-  const network = visibleSites();
+  // From the site itself, not visibleSites(): opened from the list, the route may still be "/"
+  // here (openPOI opens the site before the navigation ends), and that would hide the network
+  const network = site.value.visible.filter((entry) => props.pois[entry.i]);
   if (network.length) {
     fitPoints(
       [site.value.coordinates, ...network.map((entry) => props.pois[entry.i]!.coordinates)],
@@ -849,6 +858,18 @@ onMounted(() => {
   }
   mlMap.value = ml;
 
+  // The basemap's style comes from OpenFreeMap: offline (e.g. the installed app without a
+  // connection) it never loads, and the map would stay empty without a word. Errors before "load"
+  // are the style's own (tiles are only requested after it), so say so until it does load
+  let styleLoaded = false;
+  ml.on("error", () => {
+    if (!styleLoaded) mapOffline.value = true;
+  });
+  ml.once("load", () => {
+    styleLoaded = true;
+    mapOffline.value = false;
+  });
+
   ml.on("load", async () => {
     await addMarkerImages(ml);
     stopWatchingResolution = watchMarkerResolution(ml);
@@ -913,6 +934,14 @@ onUnmounted(() => {
     La mappa non è disponibile su questo dispositivo (WebGL non supportato), ma puoi cercare e
     consultare i siti dalla lista.
   </p>
+  <p
+    v-else-if="mapOffline"
+    role="status"
+    class="absolute top-[max(1rem,env(safe-area-inset-top))] right-18 left-4 z-1 rounded-2xl bg-panel p-4 text-center text-sm font-semibold text-basalt shadow-sm max-lg:top-[calc(max(1rem,env(safe-area-inset-top))+3.5rem)] lg:left-auto lg:w-96"
+  >
+    La mappa non si è caricata: controlla la connessione. Puoi comunque cercare e consultare i siti
+    dalla lista.
+  </p>
 
   <!-- The space beside the buttons (as wide as the location error, when shown) must leave
        clicks and drags to the map, so only the items themselves take them -->
@@ -933,7 +962,7 @@ onUnmounted(() => {
 
       <MapControlsButton
         class="text-sm font-bold"
-        :class="is3D ? 'bg-basalt !text-white hover:!bg-basalt' : ''"
+        :class="is3D ? 'bg-basalt !text-white hover:!bg-basalt' : '!text-muted'"
         aria-label="Vista 3D con il rilievo"
         :aria-pressed="is3D"
         @click.prevent="toggle3D()"
@@ -961,9 +990,6 @@ onUnmounted(() => {
     >
       {{ locationError }}
     </p>
-
-    <!-- How to read the lines while a nuraghe's network is on the map (desktop: on phones the map
-         area is small, and the list's bars use the same colours) -->
   </div>
 
   <!-- The key to the lines of sight (desktop; on mobile the rows in the drawer say it): a strip

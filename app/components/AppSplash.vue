@@ -55,7 +55,8 @@ function breathe(dots: SVGCircleElement[]) {
 }
 
 onMounted(() => {
-  if (props.ready) return;
+  // Already loaded (e.g. the page mounted again): the watcher below won't fire, so go now
+  if (props.ready) return hide();
   animations = gsap.context(() => {
     const dots = [...mark.value!.querySelectorAll("circle")];
     // The logo is already there, as on the launch screen: only the name arrives

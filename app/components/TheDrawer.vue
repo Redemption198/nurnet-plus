@@ -224,8 +224,13 @@ useEventListener(drawer, ["touchend", "touchcancel"], endGesture);
 useEventListener(drawer, "pointerdown", (e: PointerEvent) => {
   if (e.pointerType !== "mouse" || e.button !== 0 || lgAndGreater.value) return;
   // Stop links from being dragged natively (that cancels the gesture), but keep inputs focusable
-  if (!(e.target instanceof Element && e.target.closest("input, textarea, select")))
+  if (!(e.target instanceof Element && e.target.closest("input, textarea, select"))) {
     e.preventDefault();
+    // preventDefault also stops the press from focusing what was pressed: focus it as the
+    // browser would, so a dialog it opens (photo viewer) gives the focus back to it on closing
+    if (e.target instanceof Element)
+      e.target.closest<HTMLElement>("a[href], button, [tabindex]")?.focus({ preventScroll: true });
+  }
   startGesture(e.clientX, e.clientY, e.target, true);
 });
 useEventListener(window, "pointermove", (e: PointerEvent) => {
