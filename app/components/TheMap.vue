@@ -251,6 +251,11 @@ function visibleSites() {
   const visible = route.path === "/" ? [] : (site.value?.visible ?? []);
   return visible.filter((entry) => props.pois[entry.i]);
 }
+// The visibility levels the open nuraghe's lines have, in their usual order, for the legend
+const shownLevels = computed(() => {
+  const levels = new Set((site.value?.visible ?? []).map((entry) => visibilityLevel(entry.height)));
+  return VISIBILITY_LEVELS.filter((_, i) => levels.has(i));
+});
 const showsNetwork = computed(() => route.path !== "/" && (site.value?.visible.length ?? 0) > 0);
 
 function visibilityEnds(): FeatureCollection<Point> {
@@ -599,12 +604,15 @@ function showMyLocation() {
 const isDesktop = useMediaQuery("(min-width: 1024px)");
 const OVERLAY_RIGHT = 16 + 48 + 8;
 const OVERLAY_TOP_MOBILE = 16 + 44 + 8;
+// The sight-lines legend at the bottom right (desktop): always kept clear, so the camera doesn't
+// jump when lines appear
+const OVERLAY_BOTTOM_DESKTOP = 8 + 32 + 16;
 
 function toMapPadding([top, right, bottom, left]: number[]) {
   return {
     top: top! + (isDesktop.value ? 0 : OVERLAY_TOP_MOBILE),
     right: right! + OVERLAY_RIGHT,
-    bottom: bottom!,
+    bottom: bottom! + (isDesktop.value ? OVERLAY_BOTTOM_DESKTOP : 0),
     left: left!,
   };
 }
@@ -898,8 +906,8 @@ onUnmounted(() => {
     consultare i siti dalla lista.
   </p>
 
-  <!-- The column is as wide as its widest item (the legend): the space beside the narrower
-       buttons must leave clicks and drags to the map, so only the items themselves take them -->
+  <!-- The space beside the buttons (as wide as the location error, when shown) must leave
+       clicks and drags to the map, so only the items themselves take them -->
   <div
     v-if="!mapUnavailable"
     class="pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-1 flex flex-col items-end gap-y-2 *:pointer-events-auto"
@@ -948,26 +956,31 @@ onUnmounted(() => {
 
     <!-- How to read the lines while a nuraghe's network is on the map (desktop: on phones the map
          area is small, and the list's bars use the same colours) -->
-    <ul
-      v-if="showsNetwork"
-      class="hidden flex-col gap-y-1 lg:flex rounded-2xl bg-panel/80 px-3 py-2 text-xs font-semibold text-basalt shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
-      aria-label="Legenda delle linee di vista"
-    >
-      <li v-for="level in VISIBILITY_LEVELS" :key="level.label" class="flex items-center gap-x-2">
-        <svg class="h-2 w-6 shrink-0" viewBox="0 0 24 8" aria-hidden="true">
-          <line
-            x1="2"
-            y1="4"
-            x2="22"
-            y2="4"
-            :stroke="level.color"
-            stroke-width="3"
-            stroke-linecap="round"
-            :stroke-dasharray="level.dashed ? '4 3' : undefined"
-          />
-        </svg>
-        {{ level.label }}
-      </li>
-    </ul>
   </div>
+
+  <!-- The key to the lines of sight (desktop; on mobile the rows in the drawer say it): a strip
+       at the bottom right, the near side of a tilted map where framed sites rarely end up, kept
+       clear by the camera (OVERLAY_BOTTOM_DESKTOP). Only the levels the open nuraghe's lines have,
+       and clicks go through it to the lines and markers -->
+  <ul
+    v-if="showsNetwork && !mapUnavailable"
+    aria-label="Legenda delle linee di vista"
+    class="pointer-events-none absolute right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-1 hidden h-8 items-center gap-x-3 rounded-full bg-panel/80 px-3 text-xs font-semibold text-basalt shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl lg:flex"
+  >
+    <li v-for="level in shownLevels" :key="level.label" class="flex items-center gap-x-1.5">
+      <svg class="h-2 w-5 shrink-0" viewBox="0 0 20 8" aria-hidden="true">
+        <line
+          x1="2"
+          y1="4"
+          x2="18"
+          y2="4"
+          :stroke="level.color"
+          stroke-width="3"
+          stroke-linecap="round"
+          :stroke-dasharray="level.dashed ? '4 3' : undefined"
+        />
+      </svg>
+      {{ level.label }}
+    </li>
+  </ul>
 </template>
