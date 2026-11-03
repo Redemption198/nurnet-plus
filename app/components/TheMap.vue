@@ -771,9 +771,11 @@ onUnmounted(() => {
     consultare i siti dalla lista.
   </p>
 
+  <!-- The column is as wide as its widest item (the legend): the space beside the narrower
+       buttons must leave clicks and drags to the map, so only the items themselves take them -->
   <div
     v-if="!mapUnavailable"
-    class="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-1 flex flex-col items-end gap-y-2"
+    class="pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-1 flex flex-col items-end gap-y-2 *:pointer-events-auto"
   >
     <div
       class="flex flex-col items-center overflow-hidden rounded-2xl bg-panel/80 shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
