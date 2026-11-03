@@ -111,11 +111,15 @@ export function createSightLinesLayer(id: string) {
   let origin: [number, number, number] = [0, 0, 0];
   let highlight = -1;
   let vertices: Float32Array | null = null; // to upload on the next render
+  // For pick(): each line's ends (relative to `origin`) and its site, and the last frame's matrix
+  let pickable: { a: number[]; b: number[]; id: number }[] = [];
+  let lastMatrix: Float32Array | null = null;
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
 
   const layer: CustomLayerInterface & {
     setData: (lines: SightLine[], towers: Tower[]) => void;
     setHighlight: (id: number | null) => void;
+    pick: (x: number, y: number, tolerance?: number) => number | null;
   } = {
     id,
     type: "custom",
@@ -182,14 +186,54 @@ export function createSightLinesLayer(id: string) {
         ])
           data.push(...a, ...b, end!, side!, level, siteId);
       };
-      for (const line of lines)
-        segment(relative(line.from), relative(line.to), line.level, line.id);
+      pickable = [];
+      for (const line of lines) {
+        const a = relative(line.from);
+        const b = relative(line.to);
+        segment(a, b, line.level, line.id);
+        pickable.push({ a, b, id: line.id });
+      }
       lineVertices = lines.length * 6;
       for (const tower of towers)
         segment(relative([...tower.at, tower.ground]), relative([...tower.at, tower.top]), 3, -2);
       towerVertices = towers.length * 6;
       vertices = new Float32Array(data);
       map?.triggerRepaint();
+    },
+
+    // The site whose line passes nearest (in css pixels) to a point on the map, as last drawn
+    pick(x, y, tolerance = 8) {
+      if (!lastMatrix || !pickable.length) return null;
+      const m = lastMatrix;
+      const canvas = map.getCanvas();
+      const width = canvas.width / devicePixelRatio;
+      const height = canvas.height / devicePixelRatio;
+      const toScreen = ([px, py, pz]: number[]) => {
+        const w = m[3]! * px! + m[7]! * py! + m[11]! * pz! + m[15]!;
+        if (w <= 0) return null; // behind the camera
+        return [
+          ((m[0]! * px! + m[4]! * py! + m[8]! * pz! + m[12]!) / w + 1) * 0.5 * width,
+          (1 - (m[1]! * px! + m[5]! * py! + m[9]! * pz! + m[13]!) / w) * 0.5 * height,
+        ];
+      };
+      let best: number | null = null;
+      let bestDistance = tolerance;
+      for (const line of pickable) {
+        const a = toScreen(line.a);
+        const b = toScreen(line.b);
+        if (!a || !b) continue;
+        const [dx, dy] = [b[0]! - a[0]!, b[1]! - a[1]!];
+        const t = Math.max(
+          0,
+          Math.min(1, ((x - a[0]!) * dx + (y - a[1]!) * dy) / (dx * dx + dy * dy || 1)),
+        );
+        const distance = Math.hypot(x - (a[0]! + t * dx), y - (a[1]! + t * dy));
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = line.id;
+        }
+      }
+      return best;
     },
 
     setHighlight(siteId) {
@@ -205,11 +249,8 @@ export function createSightLinesLayer(id: string) {
       }
       if (!lineVertices && !towerVertices) return;
       gl.useProgram(program);
-      gl.uniformMatrix4fv(
-        uniforms.u_matrix!,
-        false,
-        translate(args.defaultProjectionData.mainMatrix as ArrayLike<number>, origin),
-      );
+      lastMatrix = translate(args.defaultProjectionData.mainMatrix as ArrayLike<number>, origin);
+      gl.uniformMatrix4fv(uniforms.u_matrix!, false, lastMatrix);
       const canvas = map.getCanvas();
       gl.uniform2f(
         uniforms.u_viewport!,

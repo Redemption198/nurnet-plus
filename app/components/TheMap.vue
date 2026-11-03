@@ -577,6 +577,75 @@ function toMapPadding([top, right, bottom, left]: number[]) {
   };
 }
 
+// A nuraghe that sees others opens on its network (as "Mostra sulla mappa"), once its lines of
+// sight have loaded (they come with the site's details, usually within moments); any other site
+// opens close up on itself
+const fitPoints = useFitPoints();
+async function showOpenedSite() {
+  const id = site.value?.content_id;
+  if (site.value?.visibleStatus === "loading") {
+    await new Promise<void>((resolve) => {
+      const done = () => {
+        stop();
+        clearTimeout(timer);
+        resolve();
+      };
+      const stop = watch(
+        () => site.value?.visibleStatus,
+        (status) => status !== "loading" && done(),
+      );
+      const timer = setTimeout(done, 2500);
+    });
+  }
+  // Another site was opened meanwhile: that one takes over
+  if (!site.value || site.value.content_id !== id) return;
+  const network = visibleSites();
+  if (network.length) {
+    fitPoints(
+      [site.value.coordinates, ...network.map((entry) => props.pois[entry.i]!.coordinates)],
+      false,
+    );
+  } else {
+    focusSelectedPOI();
+  }
+}
+
+// What the mouse is over on the map, reflected in the drawer:
+// - a marker: drawn bigger with its name, and its row in the list marked (useHoveredSite)
+// - on an open nuraghe, a site it sees or that site's line of sight: the line and the row in
+//   "Visibili da qui" (useHighlightedVisible), as hovering the row does
+// Only what this set is cleared, so it doesn't fight the drawer's own hovering
+let pointedSite = false;
+let pointedLine = false;
+function pointAt(ml: MapLibreMap, point: { x: number; y: number } | null) {
+  if (!ml.getLayer("pois")) return;
+  const feature = point
+    ? ml.queryRenderedFeatures([point.x, point.y], { layers: ["poi-selected", "pois"] })[0]
+    : undefined;
+  const i = feature ? Number(feature.properties.i) : null;
+  // The open site's own pin already shows its name
+  const marker = feature?.layer.id === "poi-selected" ? null : i;
+  if (marker !== null) {
+    hovered.value = marker;
+    pointedSite = true;
+  } else if (pointedSite) {
+    hovered.value = null;
+    pointedSite = false;
+  }
+
+  const network = new Set(visibleSites().map((entry) => entry.i));
+  let line = i !== null && network.has(i) ? i : null;
+  if (line === null && point && network.size) line = sightLines.pick(point.x, point.y);
+  if (line !== null) {
+    highlighted.value = line;
+    pointedLine = true;
+  } else if (pointedLine) {
+    highlighted.value = null;
+    pointedLine = false;
+  }
+  ml.getCanvas().style.cursor = i !== null ? "pointer" : "";
+}
+
 // Close enough to see the site and its neighbours (and their names), not so close that the
 // visitor loses where on the island they are
 function focusSelectedPOI() {
@@ -644,11 +713,11 @@ onMounted(() => {
     async () => {
       applySelection();
 
-      // Raise the drawer to the middle on mobile (ignored on desktop), then center the POI
-      // in the area left visible, once the drawer has reported its new size
+      // Raise the drawer to the middle on mobile (ignored on desktop), then show the POI in the
+      // area left visible, once the drawer has reported its new size
       drawerState.value.request = "middle";
       await nextTick();
-      focusSelectedPOI();
+      showOpenedSite();
     },
   );
 
@@ -673,6 +742,9 @@ onMounted(() => {
     if (request.lowerDrawer) drawerState.value.request = "bottom";
     await nextTick();
     const ml = mlMap.value;
+    // The drawer's latest size: the map applies it only once it stops moving, and on a site
+    // opened from its URL it may not have yet
+    ml.setPadding(toMapPadding(mapPadding.value));
     const camera = ml.getPitch() > TILTED ? cameraForTilted(ml, request.points) : null;
     if (camera) ml.easeTo({ ...camera, duration: 1200, essential: true });
     else
@@ -728,13 +800,19 @@ onMounted(() => {
     if (route.path !== "/" && site.value) {
       drawerState.value.request = "middle";
       await nextTick();
-      focusSelectedPOI();
+      showOpenedSite();
     }
 
-    for (const layer of ["pois", "poi-selected"]) {
-      ml.on("mouseenter", layer, () => (ml.getCanvas().style.cursor = "pointer"));
-      ml.on("mouseleave", layer, () => (ml.getCanvas().style.cursor = ""));
-    }
+    // The mouse over the map points things out in the drawer too (see pointAt)
+    let frame = 0;
+    ml.on("mousemove", (event) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => pointAt(ml, event.point));
+    });
+    ml.getCanvas().addEventListener("mouseleave", () => {
+      cancelAnimationFrame(frame);
+      pointAt(ml, null);
+    });
 
     ml.on("click", ["poi-selected", "pois"], (event) => {
       const poi = props.pois[Number(event.features?.[0]?.properties.i)];

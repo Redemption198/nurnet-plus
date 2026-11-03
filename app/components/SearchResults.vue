@@ -10,7 +10,8 @@ const { search, openPOI } = useNurnetData();
 const router = useRouter();
 const siteHref = (id: string) => router.resolve(`/poi/${id}`).href;
 
-// Hovering a row (mouse) or focusing it (keyboard) points the site out on the map; a tap opens it
+// Hovering a row (mouse) or focusing it (keyboard) points the site out on the map, and pointing
+// at a marker on the map marks its row here; a tap opens it
 const hovered = useHoveredSite();
 const indexOf = computed(() => new Map(props.mapData.map((poi, i) => [poi.content_id, i])));
 function pointOut(poi: NurnetPOI | null, event?: PointerEvent | FocusEvent) {
@@ -22,7 +23,10 @@ function pointOut(poi: NurnetPOI | null, event?: PointerEvent | FocusEvent) {
   )
     return;
   hovered.value = poi ? (indexOf.value.get(poi.content_id) ?? null) : null;
+  pointedHere = hovered.value;
 }
+// The last value set by this list: anything else came from the map
+let pointedHere: number | null = null;
 onUnmounted(() => (hovered.value = null));
 const categoryFilter = useCategoryFilter();
 const searchMatches = useSearchMatches();
@@ -86,6 +90,31 @@ const results = computed(() =>
 // Must match the row height in the template (h-16 = 64px)
 const { list, containerProps, wrapperProps } = useVirtualList(results, { itemHeight: 64 });
 const { y: listY } = useScroll(containerProps.ref);
+
+// A marker the mouse rests on (on the map) brings its row into view, unless the row is already
+// visible: after a moment, so the list doesn't jump while the mouse crosses the map
+const revealRow = useDebounceFn((i: number) => {
+  const container = containerProps.ref.value;
+  const rows = container?.querySelector("ul");
+  const poi = props.mapData[i];
+  if (!container || !rows || !poi || hovered.value !== i) return;
+  const index = results.value.indexOf(poi);
+  if (index < 0) return;
+  const top =
+    rows.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+  const row = top + index * 64;
+  const headerHeight = Number.parseFloat(getComputedStyle(container).paddingTop) || 0;
+  const visibleTop = container.scrollTop + headerHeight;
+  const visibleBottom = container.scrollTop + container.clientHeight - 64;
+  if (row >= visibleTop && row <= visibleBottom) return;
+  container.scrollTo({
+    top: row - (container.clientHeight + headerHeight) / 2,
+    behavior: "smooth",
+  });
+}, 350);
+watch(hovered, (i) => {
+  if (i !== null && i !== pointedHere) revealRow(i);
+});
 
 // Back to the top of the list when what it lists changes
 watch([debouncedQuery, categoryFilter], () => {
@@ -219,6 +248,7 @@ const countLabel = computed(() => {
       <li v-for="result in list" :key="result.data.content_id" class="h-16 border-t border-line">
         <a
           class="-mx-2 flex h-full items-center gap-x-3 rounded-xl px-2 text-basalt transition-colors hover:bg-basalt/5"
+          :class="{ 'bg-basalt/5': hovered === indexOf.get(result.data.content_id) }"
           :href="siteHref(result.data.content_id)"
           @click.prevent="openPOI(result.data)"
           @pointerenter="pointOut(result.data, $event)"

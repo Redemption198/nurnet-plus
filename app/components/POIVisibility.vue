@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // "Visibili da qui": the nuraghi visible from the open one, nearest first, linked to their lines
-// on the map. With a mouse, hovering a row highlights its line and a click opens the site; on
+// on the map, both ways (pointing at a site or a line on the map marks the row). With a mouse,
+// hovering a row highlights its line and a click opens the site; on
 // touch screens (no hover) the first tap highlights the line and frames it, "Apri" opens the site
 const site = useCurrentSite();
 const { items, openPOI, retry } = useNurnetData();
@@ -31,6 +32,10 @@ const visible = computed(() =>
   }),
 );
 const shown = computed(() => (showAll.value ? visible.value : visible.value.slice(0, SHORT_LIST)));
+// Pointing at a site or its line on the map marks its row: show the whole list if it's further down
+watch(highlighted, (i) => {
+  if (i !== null && !shown.value.some((entry) => entry.i === i)) showAll.value = true;
+});
 
 // "850 m" up to a kilometre, then "4,2 km"
 function formatDistance(metres: number) {
