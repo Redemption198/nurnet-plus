@@ -18,8 +18,10 @@ const current = ref(0);
 const settled = ref(false);
 const backdrop = ref<HTMLElement | null>(null);
 const chrome = ref<HTMLElement | null>(null);
-// Originals that have loaded, which fade in over their thumbnails
+// Originals that have loaded, which fade in over their placeholders, and those that couldn't be
+// loaded, which leave the thumbnail as the best there is
 const loaded = ref(new Set<number>());
+const failed = ref(new Set<number>());
 
 // The Mediateca's originals: the URLs we have are WordPress thumbnails ("-300x300")
 const fullSize = (url: string) => url.replace(/-\d+x\d+(?=\.\w+$)/, "");
@@ -91,6 +93,18 @@ const PRINT_SHADOW = "0 10px 40px -8px rgb(49 37 40 / 0.35)";
 const fade = (el: HTMLElement | null, from: number, to: number, timing: typeof OPEN) =>
   el?.animate({ opacity: [from, to] }, { ...timing, fill: "forwards" }).finished;
 
+// Resolves once photo i's original is decoded (marking it loaded), or after `timeout` ms
+function originalReady(i: number, timeout: number) {
+  const slide = track.value?.children[i] as HTMLElement | undefined;
+  const img = slide?.querySelector<HTMLImageElement>("[data-original]");
+  if (!img) return Promise.resolve();
+  const decoded = img.decode().then(
+    () => (loaded.value = new Set(loaded.value).add(i)),
+    () => {}, // not loaded (yet, or at all): its @load/@error will say
+  );
+  return Promise.race([decoded, new Promise((resolve) => setTimeout(resolve, timeout))]);
+}
+
 // Open on the photo that was tapped, growing out of its thumbnail
 watch(index, async (value) => {
   if (value === null) return;
@@ -99,6 +113,10 @@ watch(index, async (value) => {
   await nextTick();
   if (!track.value) return;
   track.value.scrollLeft = value * track.value.clientWidth;
+  // Give the original a moment (it's often cached, or quick): then the photo flies in at full
+  // resolution and lands on its own shape, instead of on the placeholder
+  if (!loaded.value.has(value)) await originalReady(value, 300);
+  if (index.value !== value) return;
   const from = props.thumbnail(value)?.getBoundingClientRect();
   const to = photoRect(value);
   const motion = !reduceMotion() && from && to;
@@ -175,7 +193,10 @@ function onKeydown(event: KeyboardEvent) {
 // A new site, new photos
 watch(
   () => props.photos,
-  () => (loaded.value = new Set()),
+  () => {
+    loaded.value = new Set();
+    failed.value = new Set();
+  },
 );
 </script>
 
@@ -201,8 +222,9 @@ watch(
           aria-hidden="true"
         />
 
-        <!-- One photo per screen; swipe or scroll to move. The thumbnail shows until the original
-             loads and fades in over it -->
+        <!-- One photo per screen; swipe or scroll to move. Each shows its original, at full
+             resolution; while it loads, a blurred placeholder made from the thumbnail holds its
+             place, and the original fades in over it -->
         <div
           ref="track"
           class="scrollbar-hidden relative flex h-full snap-x snap-mandatory overflow-x-auto overscroll-contain focus-visible:outline-none"
@@ -218,25 +240,41 @@ watch(
             :key="photo"
             class="flex h-full w-full shrink-0 snap-center items-center justify-center px-2 py-16"
           >
-            <!-- Thumbnail and original in the same place: the square thumbnail as big as fits,
-                 the original at its own shape; one fades into the other -->
+            <!-- Placeholder and original in the same place: the placeholder square as big as
+                 fits, the original at its own shape; one fades into the other. The placeholder
+                 is the thumbnail blurred (it's 300x300: never shown as the photo itself), unless
+                 the original can't be loaded, when the thumbnail is all there is -->
             <div class="@container-size grid h-full w-full place-items-center">
-              <img
+              <div
                 data-thumbnail
-                :src="photo"
-                alt=""
-                aria-hidden="true"
-                class="size-[min(100cqw,100cqh)] rounded-[4px] object-cover shadow-[0_10px_40px_-8px_rgb(49_37_40/0.35)] transition-opacity duration-300 [grid-area:1/1]"
+                class="relative size-[min(100cqw,100cqh)] overflow-hidden rounded-[4px] bg-well shadow-[0_10px_40px_-8px_rgb(49_37_40/0.35)] transition-opacity duration-300 [grid-area:1/1]"
                 :class="loaded.has(i) ? 'opacity-0' : 'opacity-100'"
-              />
+                aria-hidden="true"
+              >
+                <img
+                  :src="photo"
+                  alt=""
+                  class="size-full object-cover"
+                  :class="{ 'scale-110 blur-xl': !failed.has(i) }"
+                />
+                <UIcon
+                  v-if="!failed.has(i)"
+                  name="i-lucide-loader-circle"
+                  class="absolute top-1/2 left-1/2 size-8 -translate-1/2 text-white drop-shadow-md motion-safe:animate-spin"
+                />
+              </div>
+              <!-- Loaded ahead around the photo on screen, so a swipe finds the next one ready -->
               <img
                 data-original
                 :src="fullSize(photo)"
                 :alt="`Foto ${i + 1} di ${photos.length}: ${name}`"
-                :loading="Math.abs(i - (index ?? current)) <= 1 ? 'eager' : 'lazy'"
+                :loading="Math.abs(i - current) <= 2 ? 'eager' : 'lazy'"
+                :fetchpriority="i === current ? 'high' : 'auto'"
+                decoding="async"
                 class="max-h-[100cqh] max-w-[100cqw] rounded-[4px] shadow-[0_10px_40px_-8px_rgb(49_37_40/0.35)] transition-opacity duration-300 [grid-area:1/1]"
                 :class="loaded.has(i) ? 'opacity-100' : 'opacity-0'"
                 @load="loaded = new Set(loaded).add(i)"
+                @error="failed = new Set(failed).add(i)"
               />
             </div>
           </div>
