@@ -57,7 +57,8 @@ export default defineNuxtConfig({
       display: "standalone",
       // The map's sand colour, as the theme-color meta in app.vue
       theme_color: "#f1e9dc",
-      background_color: "#f1e9dc",
+      // Android's launch screen: the logo on terracotta, as the iOS launch screens and the splash
+      background_color: "#c44f01",
       icons: [
         {
           src: `${baseURL}pwa/manifest-icon-192.maskable.png`,

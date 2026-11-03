@@ -9,6 +9,10 @@
   /* Nuraghe orange, darkened so white text on it meets WCAG AA */
   --color-terracotta: #c44f01;
   --color-terracotta-dark: #9a3e01;
+  /* The logo's ground (app icon, launch screens, splash): lit from the top left, terracotta at
+     its heart. package.json's PWA asset script draws the same gradient */
+  --color-brand-light: #e86d10;
+  --color-brand-deep: #a84401;
   /* Menhir basalt: text and dark accents */
   --color-basalt: #312528;
 
@@ -47,6 +51,15 @@
     outline: 2px solid var(--color-terracotta);
     outline-offset: 2px;
   }
+}
+
+@utility bg-brand {
+  background-image: linear-gradient(
+    to right bottom,
+    var(--color-brand-light),
+    var(--color-terracotta),
+    var(--color-brand-deep)
+  );
 }
 
 /* Hide scrollbars on horizontal strips (chips, photos) that are scrolled by touch or trackpad */

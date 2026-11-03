@@ -8,9 +8,9 @@
   >
     <defs>
       <linearGradient id="a">
-        <stop style="stop-color: #fe8702; stop-opacity: 1" offset=".181" />
-        <stop style="stop-color: #d87401; stop-opacity: 1" offset=".516" />
-        <stop style="stop-color: #b26100; stop-opacity: 1" offset=".729" />
+        <stop style="stop-color: #e86d10; stop-opacity: 1" offset=".181" />
+        <stop style="stop-color: #c44f01; stop-opacity: 1" offset=".516" />
+        <stop style="stop-color: #a84401; stop-opacity: 1" offset=".729" />
       </linearGradient>
       <linearGradient
         id="b"
