@@ -108,6 +108,7 @@ function selectedFilter(): FilterSpecification {
 function applySelection() {
   if (!mlMap.value?.getLayer("poi-selected")) return;
   mlMap.value.setFilter("poi-selected", selectedFilter());
+  mlMap.value.setFilter("poi-hover", hoverFilter());
   applyFocus();
 }
 
@@ -230,8 +231,14 @@ function addPois(ml: MapLibreMap) {
   });
 }
 
+// Never the open site: its pin is already there (it stays hovered after the click that opened
+// it, until the mouse moves)
 function hoverFilter(): FilterSpecification {
-  return ["==", ["get", "i"], hovered.value ?? -1];
+  return [
+    "all",
+    ["==", ["get", "i"], hovered.value ?? -1],
+    ["!=", ["get", "content_id"], selectedId()],
+  ];
 }
 
 // Lines of sight from the open nuraghe to the sites it can see (none on the list): in mid-air
