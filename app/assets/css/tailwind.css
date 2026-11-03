@@ -21,6 +21,14 @@
   --color-subtle: #857a71; /* icons, the drawer handle: 3:1 on the panel */
 }
 
+/* Nuxt UI has its own text-muted (a lighter grey, 3.9:1 on the panel) that wins over ours: point
+   it at our secondary text colour, for our text and Nuxt UI's components alike */
+@layer theme {
+  :root {
+    --ui-text-muted: #5e554f;
+  }
+}
+
 @layer base {
   /* Browser surfaces in the palette */
   ::selection {
