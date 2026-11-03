@@ -96,6 +96,8 @@ export const MARKER_SIZE = 32;
 const HOVER_SCALE = 1.15;
 const PIN_RADIUS = 21; // the head, ring included: as wide as the old selected marker (1.3x)
 const PIN_TAIL = 13; // from the bottom of the head to the tip
+// How far the pin reaches above its site, for framing (TheMap's FIT_PADDING)
+export const PIN_HEIGHT = PIN_RADIUS * 2 + PIN_TAIL;
 // Room around the hover disc and the pin for their shadow; the layers offset them by this so
 // their bottom (the pin's tip) still sits on the site
 export const SHADOW_ROOM = 6;

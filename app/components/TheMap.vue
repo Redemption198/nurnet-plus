@@ -324,15 +324,16 @@ let stopWatchingResolution: (() => void) | undefined;
 
 // Framing places ("Mostra sulla mappa"): room around them for the markers and their names, on
 // top of the map's own padding (drawer, controls, brand button), and how close it may get
-const FIT_PADDING = { top: 48, bottom: 40, left: 64, right: 56 };
+// (above the places: room for the open site's pin, the tallest marker, with its shadow)
+const FIT_PADDING = { top: PIN_HEIGHT + SHADOW_ROOM + 4, bottom: 40, left: 64, right: 56 };
 const FIT_MAX_ZOOM = 14;
 // The places the map last framed, until the visitor moves the camera themselves: switching
 // between 2D and 3D frames them again
 let framedPoints: [number, number][] | null = null;
 
 // fitBounds frames places as if the map were flat: tilted, the near side is drawn bigger and the
-// far side smaller, and places on high ground are drawn higher, so some end up under the drawer
-// or off screen. This starts from its flat camera and corrects it on a copy of the map's camera,
+// far side smaller, and places on high ground are drawn higher (even untilted, the camera's
+// perspective pushes them outwards), so some end up under the drawer or off screen. This starts from its flat camera and corrects it on a copy of the map's camera,
 // where the places are projected as drawn (tilt and terrain), until they fill the free area
 // The map's camera (its "transform", in MapLibre 6 inside the internal `_camera`; its type isn't
 // exported, so this is the part used here). Without it, framing falls back to fitBounds
@@ -354,7 +355,7 @@ const boundsOf = (points: [number, number][]): [[number, number], [number, numbe
 ];
 
 // `pitch` and `bearing`: frame them for a tilt the map is about to take (the 3D button)
-function cameraForTilted(
+function cameraForPlaces(
   ml: MapLibreMap,
   points: [number, number][],
   pitch = ml.getPitch(),
@@ -717,13 +718,7 @@ function toggle3D() {
   // A network the map framed, untouched since: frame it again for the new tilt
   const camera =
     framedPoints && visibleSites().length
-      ? tilt
-        ? cameraForTilted(ml, framedPoints, pitch, bearing)
-        : ml.cameraForBounds(boundsOf(framedPoints), {
-            padding: FIT_PADDING,
-            maxZoom: FIT_MAX_ZOOM,
-            bearing,
-          })
+      ? cameraForPlaces(ml, framedPoints, pitch, bearing)
       : null;
   ml.easeTo({ ...camera, pitch, bearing, duration: 800 });
 }
@@ -799,8 +794,9 @@ onMounted(() => {
     // The drawer's latest size: the map applies it only once it stops moving, and on a site
     // opened from its URL it may not have yet
     ml.setPadding(toMapPadding(mapPadding.value));
-    framedPoints = request.points;
-    const camera = ml.getPitch() > TILTED ? cameraForTilted(ml, request.points) : null;
+    const points = request.points;
+    framedPoints = points;
+    const camera = cameraForPlaces(ml, points);
     if (camera) ml.easeTo({ ...camera, duration: 1200, essential: true });
     else
       ml.fitBounds(request.bounds, {
@@ -809,6 +805,18 @@ onMounted(() => {
         duration: 1200,
         essential: true,
       });
+    // The terrain where the camera arrives may load only now, raising the places on high
+    // ground: once it has, frame them again if they moved (unless the visitor took over)
+    ml.once("moveend", () =>
+      ml.once("idle", () => {
+        if (framedPoints !== points) return;
+        const settled = cameraForPlaces(ml, points);
+        if (!settled) return;
+        const shift = ml.project(settled.center).dist(ml.project(ml.getCenter()));
+        if (shift > 2 || Math.abs(settled.zoom - ml.getZoom()) > 0.02)
+          ml.easeTo({ ...settled, duration: 500, essential: true });
+      }),
+    );
   });
 
   watch(categoryFilter, () => {
