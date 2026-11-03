@@ -62,7 +62,7 @@ async function load() {
         Carica il video da {{ providerName }}
       </button>
       <p class="max-w-[34ch] text-xs text-pretty text-muted">
-        {{ owner }} riceverà il tuo indirizzo IP e potrà usare dei cookie.
+        {{ owner }} riceverà il tuo indirizzo IP e potrebbe usare dei cookie.
       </p>
     </div>
   </section>

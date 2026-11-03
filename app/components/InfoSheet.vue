@@ -22,19 +22,19 @@ const STATUSES = ["mantenuto", "diroccato", "non visibile"].map((value) => statu
 const TIPS = [
   {
     icon: "i-lucide-search",
-    text: "Cerca per nome del sito o del comune; la mappa mette in risalto i risultati.",
+    text: "Cerca un sito per nome o per comune: i risultati vengono evidenziati sulla mappa.",
   },
   {
     icon: "i-lucide-dices",
-    text: "«A caso» apre un sito qualsiasi, del tipo scelto se ne hai selezionato uno.",
+    text: "«A caso» ti propone un sito qualsiasi, del tipo selezionato se ne hai scelto uno.",
   },
   {
     icon: "i-lucide-mountain",
-    text: "«3D» inclina la mappa e mostra il rilievo: le linee di vista corrono da torre a torre.",
+    text: "«3D» inclina la mappa e fa emergere il rilievo, con le linee di vista tese da una torre all'altra.",
   },
   {
     icon: "i-lucide-navigation",
-    text: "«Indicazioni» apre il sito nell'app di mappe che usi, per partire da lì.",
+    text: "«Indicazioni» apre il sito nella tua app di mappe, da cui puoi avviare il percorso.",
   },
 ];
 </script>
@@ -81,11 +81,11 @@ const TIPS = [
           :style="{ paddingTop: `${headerHeight + 8}px` }"
         >
           <p class="text-pretty text-muted">
-            Un client non ufficiale per esplorare nuraghi, domus de janas, tombe dei giganti, pozzi
+            Un'app non ufficiale per esplorare nuraghi, domus de janas, tombe dei giganti, pozzi
             sacri e gli altri siti censiti dal
             <a :class="link" href="https://www.nurnet.net/" target="_blank" rel="noopener"
               >progetto NurNet</a
-            >, su una mappa veloce anche da telefono.
+            >, su una mappa agile anche dal telefono.
           </p>
 
           <section class="flex flex-col gap-y-3" aria-labelledby="info-legend">
@@ -140,8 +140,9 @@ const TIPS = [
               </li>
             </ul>
             <p class="text-pretty text-muted">
-              Calcolate da CRS4 sul modello del terreno: quanto si vede di una torre alta 15 m
-              dall'altra. Si aprono dalla pagina di un nuraghe.
+              Calcolate dal CRS4 sul modello digitale del terreno, indicano quanto di una torre alta
+              15 m sia visibile dall'altra. Le trovi nella scheda di ogni nuraghe, con «Mostra sulla
+              mappa».
             </p>
           </section>
 
@@ -165,57 +166,59 @@ const TIPS = [
           <section class="flex flex-col gap-y-2" aria-labelledby="info-privacy">
             <h3 id="info-privacy" class="text-base font-semibold">Privacy</h3>
             <p class="text-pretty">
-              NurNet+ non ha account, cookie né statistiche e non raccoglie nulla su di te. Per
-              mostrarti mappa, foto e video il browser si collega ad altri servizi, che vedono il
-              tuo indirizzo IP.
+              NurNet+ non prevede account, non usa cookie né statistiche e non raccoglie alcun dato
+              su di te. Per mostrarti mappa, foto e video, però, il browser si collega ad altri
+              servizi, che ricevono il tuo indirizzo IP.
             </p>
             <dl v-show="privacyOpen" id="info-privacy-details" class="flex flex-col">
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">La tua posizione</dt>
                 <dd class="text-pretty">
-                  Solo quando tocchi
+                  Viene usata solo se tocchi
                   <UIcon
                     name="i-lucide-locate-fixed"
                     class="inline-block size-4 align-[-0.2em]"
                     aria-hidden="true"
                   /><span class="sr-only">il pulsante «Mostra la mia posizione»</span> sulla mappa e
-                  dai il permesso al browser. Serve a mostrarti sulla mappa e resta sul dispositivo:
-                  non viene inviata a nessuno né salvata.
+                  lo consenti al browser. Serve a mostrarti dove sei: rimane sul dispositivo e non
+                  viene né inviata né conservata.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">Mappa, foto e dati</dt>
                 <dd class="text-pretty">
-                  La mappa arriva da OpenFreeMap (<a
+                  La mappa è fornita da OpenFreeMap (<a
                     :class="link"
                     href="https://openfreemap.org/privacy/"
                     target="_blank"
                     rel="noopener"
                     >informativa</a
-                  >) e il rilievo da Amazon Web Services: vedono la zona che stai guardando, non la
-                  tua posizione. Le foto arrivano da NurNet, che vede quali siti apri; l'app e i
-                  dati dei siti da GitHub Pages.
+                  >) e il rilievo da Amazon Web Services: conoscono la zona che stai guardando, non
+                  la tua posizione. Le foto provengono da NurNet, che sa quali siti apri; l'app e i
+                  dati dei siti sono ospitati su GitHub Pages.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">Video</dt>
                 <dd class="text-pretty">
-                  Solo quando tocchi «Carica il video»; da lì valgono le regole di YouTube (Google)
-                  o Facebook. La scelta vale finché non chiudi l'app.
+                  Vengono caricati solo se tocchi «Carica il video»; da quel momento si applicano le
+                  regole di YouTube (Google) o di Facebook. La scelta resta valida fino alla
+                  chiusura dell'app.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">Indicazioni</dt>
                 <dd class="text-pretty">
-                  Passano la posizione del sito all'app di mappe che usi. Il percorso lo calcola
-                  lei, con le sue regole sulla privacy.
+                  La posizione del sito viene passata alla tua app di mappe, che calcola il percorso
+                  secondo le proprie regole sulla privacy.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">Sul dispositivo</dt>
                 <dd class="text-pretty">
-                  Per funzionare offline, l'app tiene una copia di sé e dei dati dei siti nella
-                  memoria del browser. La cancelli dalle impostazioni del browser per questo sito.
+                  Per funzionare anche offline, l'app conserva una copia di sé e dei dati dei siti
+                  nella memoria del browser. Puoi eliminarla dalle impostazioni del browser relative
+                  a questo sito.
                 </dd>
               </div>
             </dl>
@@ -226,7 +229,7 @@ const TIPS = [
               aria-controls="info-privacy-details"
               @click="privacyOpen = !privacyOpen"
             >
-              {{ privacyOpen ? "Meno dettagli" : "Cosa passa ad altri servizi" }}
+              {{ privacyOpen ? "Mostra meno" : "Cosa viene condiviso con altri servizi" }}
               <UIcon
                 name="i-lucide-chevron-down"
                 class="size-4 transition-transform"
@@ -249,14 +252,14 @@ const TIPS = [
                     target="_blank"
                     rel="noopener"
                     >Geoportale NurNet</a
-                  >, realizzato dal CRS4 con la Fondazione Nurnet, con licenza
+                  >, realizzato dal CRS4 con la Fondazione Nurnet e distribuito con licenza
                   <a
                     :class="link"
                     href="https://creativecommons.org/licenses/by/4.0/deed.it"
                     target="_blank"
                     rel="noopener"
                     >CC BY 4.0</a
-                  >. NurNet+ è un'app indipendente, non ufficiale.
+                  >. NurNet+ è un'app indipendente e non ufficiale.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
