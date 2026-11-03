@@ -166,9 +166,9 @@ const TIPS = [
           <section class="flex flex-col gap-y-2" aria-labelledby="info-privacy">
             <h3 id="info-privacy" class="text-base font-semibold">Privacy</h3>
             <p class="text-pretty">
-              NurNet+ non prevede account, non usa cookie né statistiche e non raccoglie alcun dato
-              su di te. Per mostrarti mappa, foto e video, però, il browser si collega ad altri
-              servizi, che ricevono il tuo indirizzo IP.
+              NurNet+ non ha account, non usa cookie né statistiche e non raccoglie alcun dato su di
+              te. Per mostrarti mappa, foto e video, però, il browser si collega ad altri servizi,
+              che ricevono il tuo indirizzo IP.
             </p>
             <dl v-show="privacyOpen" id="info-privacy-details" class="flex flex-col">
               <div class="border-t border-line py-2.5">
@@ -194,22 +194,36 @@ const TIPS = [
                     rel="noopener"
                     >informativa</a
                   >) e il rilievo da Amazon Web Services: conoscono la zona che stai guardando, non
-                  la tua posizione. Le foto provengono da NurNet, che sa quali siti apri; l'app e i
-                  dati dei siti sono ospitati su GitHub Pages.
+                  la tua posizione. Le foto provengono da NurNet, che sa quali siti nuragici apri;
+                  l'app e i dati dei siti sono ospitati su GitHub Pages.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">Video</dt>
                 <dd class="text-pretty">
                   Vengono caricati solo se tocchi «Carica il video»; da quel momento si applicano le
-                  regole di YouTube (Google) o di Facebook. La scelta resta valida fino alla
-                  chiusura dell'app.
+                  regole di
+                  <a
+                    :class="link"
+                    href="https://support.google.com/youtube/answer/171780?hl=it"
+                    target="_blank"
+                    rel="noopener"
+                    >YouTube (Google)</a
+                  >
+                  o di
+                  <a
+                    :class="link"
+                    href="https://www.facebook.com/privacy/policy/"
+                    target="_blank"
+                    rel="noopener"
+                    >Facebook</a
+                  >. La scelta resta valida fino alla chiusura dell'app.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">Indicazioni</dt>
                 <dd class="text-pretty">
-                  La posizione del sito viene passata alla tua app di mappe, che calcola il percorso
+                  La posizione del sito viene inviata alla tua app di mappe, che calcola il percorso
                   secondo le proprie regole sulla privacy.
                 </dd>
               </div>
