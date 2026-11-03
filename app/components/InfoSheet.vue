@@ -34,7 +34,7 @@ const TIPS = [
   },
   {
     icon: "i-lucide-navigation",
-    text: "«Indicazioni» apre il percorso per il sito nell'app di mappe del telefono.",
+    text: "«Indicazioni» apre il sito nell'app di mappe che usi, per partire da lì.",
   },
 ];
 </script>
@@ -207,8 +207,8 @@ const TIPS = [
               <div class="border-t border-line py-2.5">
                 <dt class="text-xs font-semibold text-muted">Indicazioni</dt>
                 <dd class="text-pretty">
-                  Aprono Google Maps o Mappe di Apple con la posizione del sito. Il percorso lo
-                  calcolano loro, con le loro regole sulla privacy.
+                  Passano la posizione del sito all'app di mappe che usi. Il percorso lo calcola
+                  lei, con le sue regole sulla privacy.
                 </dd>
               </div>
               <div class="border-t border-line py-2.5">
@@ -216,19 +216,6 @@ const TIPS = [
                 <dd class="text-pretty">
                   Per funzionare offline, l'app tiene una copia di sé e dei dati dei siti nella
                   memoria del browser. La cancelli dalle impostazioni del browser per questo sito.
-                </dd>
-              </div>
-              <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Chi la cura</dt>
-                <dd class="text-pretty">
-                  Redemption198. Per domande, anche sulla privacy, apri una
-                  <a
-                    :class="link"
-                    href="https://github.com/Redemption198/nurnet-plus/issues/new"
-                    target="_blank"
-                    rel="noopener"
-                    >segnalazione su GitHub</a
-                  >.
                 </dd>
               </div>
             </dl>

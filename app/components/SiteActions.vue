@@ -7,13 +7,15 @@ const coordinates = computed(() => {
   return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
 });
 
-// Apple Maps on Apple devices (it opens the app), Google Maps elsewhere (app or web)
+// A geo: URI (RFC 5870), which the system hands to the map app the visitor uses, pinned and
+// named. Apple's systems don't open geo: links, so there it's Apple Maps
+const isApple = import.meta.client && /iPhone|iPad|Macintosh/.test(navigator.userAgent);
 const directionsUrl = computed(() => {
   const [lon, lat] = site.value?.coordinates ?? [0, 0];
-  const apple = import.meta.client && /iPhone|iPad|Macintosh/.test(navigator.userAgent);
-  return apple
+  const name = encodeURIComponent(site.value?.name ?? "");
+  return isApple
     ? `https://maps.apple.com/?daddr=${lat},${lon}`
-    : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+    : `geo:${lat},${lon}?q=${lat},${lon}(${name})`;
 });
 
 const { copy, copied, isSupported } = useClipboard({ copiedDuring: 2000 });
@@ -23,7 +25,7 @@ const { copy, copied, isSupported } = useClipboard({ copiedDuring: 2000 });
   <div v-if="site" class="flex flex-wrap items-center gap-2">
     <a
       :href="directionsUrl"
-      target="_blank"
+      :target="isApple ? '_blank' : undefined"
       rel="noopener"
       class="inline-flex min-h-11 items-center gap-x-2 rounded-full bg-terracotta px-5 font-semibold text-white shadow-[0_2px_6px_rgb(154_62_1/0.3)] transition hover:bg-terracotta-dark active:scale-[0.97]"
     >
