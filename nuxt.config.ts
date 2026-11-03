@@ -87,7 +87,7 @@ export default defineNuxtConfig({
     },
     workbox: {
       // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly
-      globPatterns: ["**/*.{js,css,html,svg,ico,woff2}", "icons-tileset.png"],
+      globPatterns: ["**/*.{js,css,html,svg,ico,woff2}"],
       additionalManifestEntries: [
         dataFileEntry("nurnet-index.json"),
         dataFileEntry("nurnet-details.json"),

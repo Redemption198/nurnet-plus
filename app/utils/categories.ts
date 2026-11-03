@@ -1,6 +1,6 @@
-// The site categories: one place for their names, colours and icons (map markers use the same
-// order in icons-tileset.png, see TheMap). Colours are dark enough for white text (4.5:1) and for
-// icons on the light panels (3:1)
+// The site categories: one place for their names, colours and icons, for the list and the map's
+// markers (mapMarkers.ts). Colours are dark enough for white text (4.5:1) and for icons on the
+// light panels (3:1)
 
 export interface Category {
   name: string;

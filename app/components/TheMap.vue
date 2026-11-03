@@ -17,7 +17,6 @@ setWorkerUrl(workerUrl);
 const props = defineProps<{ pois: NurnetPOI[] }>();
 
 const route = useRoute();
-const config = useRuntimeConfig();
 
 const site = useCurrentSite();
 const { openPOI } = useNurnetData();
@@ -41,46 +40,6 @@ const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const TERRAIN_TILES = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png";
 const TERRAIN_ATTRIBUTION =
   '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Terrain Tiles</a>';
-
-// icons-tileset.png is one row of 64px tiles, in this order
-const ICONS = ["dolmen", "domus", "tomba", "menhir", "villaggio", "acqua", "nuraghe", "unknown"];
-
-// category_id -> icon name ("unknown" for anything else)
-const iconForCategory: ExpressionSpecification = [
-  "match",
-  ["get", "category_id"],
-  ["70", "71", "72", "73"],
-  "menhir",
-  "30",
-  "domus",
-  ["60", "61", "62", "63"],
-  "tomba",
-  ["20", "21"],
-  "dolmen",
-  ["40", "41"],
-  "villaggio",
-  ["50", "51", "52"],
-  "acqua",
-  ["10", "11", "12", "13"],
-  "nuraghe",
-  "unknown",
-];
-
-async function addIcons(ml: MapLibreMap) {
-  const image = new Image();
-  image.src = `${config.app.baseURL}icons-tileset.png`;
-  await image.decode();
-
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 64;
-  const context = canvas.getContext("2d", { willReadFrequently: true })!;
-  ICONS.forEach((name, i) => {
-    context.clearRect(0, 0, 64, 64);
-    context.drawImage(image, i * 64, 0, 64, 64, 0, 0, 64, 64);
-    // pixelRatio 2: the 64px tiles are drawn at 32 css px, so they stay sharp on retina
-    ml.addImage(name, context.getImageData(0, 0, 64, 64), { pixelRatio: 2 });
-  });
-}
 
 // Recolour the basemap toward Sardinia: limestone ground, a muted sea, macchia greens.
 // Layer ids are from OpenFreeMap's "liberty" style; missing ones are skipped
@@ -138,15 +97,16 @@ function addTerrain(ml: MapLibreMap) {
 }
 
 // The selected POI's layer shows only the POI open in the drawer (none on the list)
+const selectedId = () => (route.path === "/" ? "" : (site.value?.content_id ?? ""));
 function selectedFilter(): FilterSpecification {
-  const id = route.path === "/" ? "" : (site.value?.content_id ?? "");
-  return ["==", ["get", "content_id"], id];
+  return ["==", ["get", "content_id"], selectedId()];
 }
 
 // The layer only exists once the style has loaded; addPois applies the filter itself
 function applySelection() {
-  if (mlMap.value?.getLayer("poi-selected"))
-    mlMap.value.setFilter("poi-selected", selectedFilter());
+  if (!mlMap.value?.getLayer("poi-selected")) return;
+  mlMap.value.setFilter("poi-selected", selectedFilter());
+  applyFocus();
 }
 
 // Markers of the category chosen in the drawer (all when none). to-string turns a missing
@@ -215,9 +175,11 @@ function addPois(ml: MapLibreMap) {
     // addLayer rejects `filter: null` (setFilter accepts it), so only pass one when set
     ...(categoryFilter.value && { filter: categoryLayerFilter()! }),
     layout: {
-      "icon-image": iconForCategory,
+      "icon-image": markerForCategory,
       "icon-anchor": "bottom",
       "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.5, 13, 0.75, 16, 0.9],
+      // Where markers overlap, the landmarks win (see applyFocus)
+      "symbol-sort-key": markerPriority,
       // Overlapping icons are hidden while zoomed out and come back when zooming in
       "icon-padding": 0,
       ...labelLayout(ml, LABEL_ZOOM),
@@ -225,16 +187,17 @@ function addPois(ml: MapLibreMap) {
     paint: LABEL_PAINT,
   });
 
-  // The selected POI, drawn again bigger and always visible, with its name a bit earlier
+  // The selected POI: a pin with its tip on the site, always visible, with its name a bit earlier
   ml.addLayer({
     id: "poi-selected",
     type: "symbol",
     source: "pois",
     filter: selectedFilter(),
     layout: {
-      "icon-image": iconForCategory,
+      "icon-image": pinForCategory,
       "icon-anchor": "bottom",
-      "icon-size": 1.3,
+      // The image has room for the shadow below the tip
+      "icon-offset": [0, SHADOW_ROOM],
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
       ...labelLayout(ml, 11),
@@ -243,7 +206,7 @@ function addPois(ml: MapLibreMap) {
     paint: LABEL_PAINT,
   });
 
-  // The site hovered or focused in the list: drawn again a bit bigger, always visible (even
+  // The site hovered or focused in the list: drawn again bigger and lifted, always visible (even
   // where markers overlap), with its name
   ml.addLayer({
     id: "poi-hover",
@@ -251,9 +214,9 @@ function addPois(ml: MapLibreMap) {
     source: "pois",
     filter: hoverFilter(),
     layout: {
-      "icon-image": iconForCategory,
+      "icon-image": hoverMarkerForCategory,
       "icon-anchor": "bottom",
-      "icon-size": 1.15,
+      "icon-offset": [0, SHADOW_ROOM],
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
       ...labelLayout(ml, 0),
@@ -326,10 +289,24 @@ function applyFocus() {
   const name: ExpressionSpecification = focus
     ? ["case", inFocus, ["get", "name"], ""]
     : ["get", "name"];
-  ml.setPaintProperty("pois", "icon-opacity", focus ? ["case", inFocus, 1, FADED_OPACITY] : 1);
+  // The open site is drawn as a pin (poi-selected): its disc would peek out behind the tip
+  const isOpen: ExpressionSpecification = ["==", ["get", "content_id"], selectedId()];
+  ml.setPaintProperty("pois", "icon-opacity", [
+    "case",
+    isOpen,
+    0,
+    ...(focus ? [inFocus, 1, FADED_OPACITY] : [1]),
+  ] as ExpressionSpecification);
   ml.setLayoutProperty("pois", "text-field", ["step", ["zoom"], "", LABEL_ZOOM, name]);
-  ml.setLayoutProperty("pois", "symbol-sort-key", focus ? ["case", inFocus, 0, 1] : 0);
+  // Then by category: markerPriority is below 100
+  ml.setLayoutProperty(
+    "pois",
+    "symbol-sort-key",
+    focus ? ["+", markerPriority, ["case", inFocus, 0, 100]] : markerPriority,
+  );
 }
+
+let stopWatchingResolution: (() => void) | undefined;
 
 // The ground heights used in the last update, to redraw when the terrain loads and changes them
 let usedGrounds: number[] = [];
@@ -654,7 +631,8 @@ onMounted(() => {
   mlMap.value = ml;
 
   ml.on("load", async () => {
-    await addIcons(ml);
+    await addMarkerImages(ml);
+    stopWatchingResolution = watchMarkerResolution(ml);
     warmBasemap(ml);
     addTerrain(ml);
     addPois(ml);
@@ -692,7 +670,10 @@ onMounted(() => {
   });
 });
 
-onUnmounted(() => mlMap.value?.remove());
+onUnmounted(() => {
+  stopWatchingResolution?.();
+  mlMap.value?.remove();
+});
 </script>
 
 <template>
