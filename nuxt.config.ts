@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { BRAND } from "./app/utils/brand";
+import { BRAND } from "./app/utils/brand.ts";
 
 const baseURL = process.env.NUXT_APP_BASE_URL ?? "/";
 
@@ -15,6 +15,12 @@ function dataFileEntry(file: string) {
 }
 
 export default defineNuxtConfig({
+  // Nuxt 5's defaults ahead of time: case-sensitive routes, typed pages, no Options API, Vite's
+  // environment API, no autoprefixer/cssnano (Tailwind's Lightning CSS prefixes and minifies)
+  future: {
+    compatibilityVersion: 5,
+  },
+
   modules: ["@vite-pwa/nuxt", "@vueuse/nuxt", "@nuxt/ui", "@nuxt/a11y", "@nuxtjs/seo"],
 
   // Development only: axe-core accessibility checks, logged to the console and DevTools
@@ -124,6 +130,9 @@ export default defineNuxtConfig({
     workbox: {
       // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly
       globPatterns: ["**/*.{js,css,html,svg,ico,woff2}"],
+      // No sourcemaps for the service worker, as for the app. vite-plugin-pwa follows the top-level
+      // build.sourcemap, which with Vite's environment API (Nuxt 5) is the server build's
+      sourcemap: false,
       additionalManifestEntries: [
         dataFileEntry("nurnet-index.json"),
         dataFileEntry("nurnet-details.json"),

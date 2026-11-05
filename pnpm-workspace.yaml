@@ -2,20 +2,8 @@ allowBuilds:
   esbuild: true
   vue-demi: true
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
-  vite-plus: 1.4.0
-# Nuxt 4.6.4 and its CLI 4.0.3 (which fixes `nuxt dev` crashing on 4.6.4), installed on
-# 2026-11-03 when they were younger than pnpm's minimum release age. Remove at the next update
-minimumReleaseAgeExclude:
-  - "@nuxt/cli@4.0.3"
-  - "@nuxt/kit@4.6.4"
-  - "@nuxt/nitro-server@4.6.4"
-  - "@nuxt/schema@4.6.4"
-  - "@nuxt/vite-builder@4.6.4"
-  - "@nuxt/vite-server@4.6.4"
-  - nitropack@2.13.6
-  - nuxt@4.6.4
-  - unrouting@0.3.2
+  vite: npm:@voidzero-dev/vite-plus-core@1.5.0
+  vite-plus: 1.5.0
 overrides:
   vite@*: "catalog:"
   # Dependabot GHSA-g7r4-m6w7-qqqr (esbuild dev server, Windows)
