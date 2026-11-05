@@ -3,6 +3,9 @@
 // - compact (the floating button on phones): the logo's tile is the button itself, so it covers
 //   as little of the map as possible, with an (i) badge so it reads as the guide, not a marker
 // - otherwise (the top of the panel on desktop): the wordmark, then the (i)
+// No `relative` of its own: the floating button is positioned by the page (absolute), and a
+// `relative` here won over it in the CSS, putting the button in the page's flow, where it pushed
+// the map 44px down. Absolute, it's also what places the (i) badge
 defineProps<{ compact?: boolean }>();
 const infoOpen = useInfoOpen();
 </script>
@@ -10,7 +13,7 @@ const infoOpen = useInfoOpen();
 <template>
   <button
     type="button"
-    class="relative flex min-h-11 cursor-pointer items-center rounded-2xl shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press"
+    class="flex min-h-11 cursor-pointer items-center rounded-2xl shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press"
     :class="
       compact
         ? 'size-11 justify-center'
