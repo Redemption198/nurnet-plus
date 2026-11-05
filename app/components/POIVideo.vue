@@ -55,10 +55,10 @@ async function load() {
     >
       <button
         type="button"
-        class="flex min-h-11 cursor-pointer items-center gap-x-2 rounded-full bg-white/80 px-5 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white press"
+        class="flex min-h-11 cursor-pointer items-center gap-x-2 rounded-full bg-surface/80 px-5 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-surface press"
         @click="load"
       >
-        <UIcon name="i-lucide-play" class="size-4.5 text-terracotta" aria-hidden="true" />
+        <UIcon name="i-lucide-play" class="size-4.5 text-terracotta-dark" aria-hidden="true" />
         Carica il video da {{ providerName }}
       </button>
       <p class="max-w-[34ch] text-xs text-pretty text-muted">

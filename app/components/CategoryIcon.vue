@@ -14,8 +14,11 @@ const ICONS = {
   IconTafone: resolveComponent("IconTafone"),
 };
 
+const isDark = useIsDark();
 const category = computed(() => categoryOf(props.categoryId));
-const fill = computed(() => props.color ?? category.value.color);
+const fill = computed(
+  () => props.color ?? (isDark.value ? category.value.darkColor : category.value.color),
+);
 </script>
 
 <template>

@@ -41,11 +41,23 @@ const splashLinks = SPLASH_DEVICES.flatMap(([width, height, ratio]) =>
   }),
 );
 
+// The browser and status bars take the map's sand colour, light or dark. Following the system,
+// a pair by media query: right from the first paint of the prerendered page. With the visitor's
+// own choice (info sheet), that one
+const colorMode = useColorMode();
+const themeColor = computed(() =>
+  colorMode.preference === "system"
+    ? [
+        { name: "theme-color", content: BRAND.sand, media: "(prefers-color-scheme: light)" },
+        { name: "theme-color", content: BRAND_DARK.sand, media: "(prefers-color-scheme: dark)" },
+      ]
+    : [{ name: "theme-color", content: colorMode.value === "dark" ? BRAND_DARK.sand : BRAND.sand }],
+);
+
 // Title, description, canonical and Open Graph come from `site` in nuxt.config (Nuxt SEO)
 useHead({
-  meta: [
-    // The browser and status bars take the map's sand colour
-    { name: "theme-color", content: BRAND.sand },
+  meta: () => [
+    ...themeColor.value,
     { name: "mobile-web-app-capable", content: "yes" },
     { name: "apple-mobile-web-app-title", content: "NurNet+" },
   ],

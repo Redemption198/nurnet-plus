@@ -26,6 +26,7 @@ function pointOut(poi: NurnetPOI | null, event?: PointerEvent | FocusEvent) {
 }
 onUnmounted(() => (hovered.value = null));
 const categoryFilter = useCategoryFilter();
+const isDark = useIsDark();
 const searchMatches = useSearchMatches();
 const mapView = useMapView();
 
@@ -134,7 +135,7 @@ const countLabel = computed(() => {
             placeholder="Cerca sito o comune…"
             aria-label="Cerca un sito o un comune"
             @focus="raiseForSearch"
-            class="h-11 w-full rounded-full bg-white/85 pr-11 pl-10 text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] placeholder:text-muted focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:appearance-none"
+            class="h-11 w-full rounded-full bg-surface/85 pr-11 pl-10 text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] placeholder:text-muted focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:appearance-none"
           />
           <!-- The browser's own clear button doesn't follow the palette: this one does -->
           <button
@@ -151,7 +152,7 @@ const countLabel = computed(() => {
         </div>
         <button
           type="button"
-          class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full bg-white/85 pr-4 pl-3 text-sm font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white press"
+          class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full bg-surface/85 pr-4 pl-3 text-sm font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-surface press"
           @click="openRandomPOI"
         >
           <UIcon name="i-lucide-dices" class="size-5 text-subtle" aria-hidden="true" />
@@ -173,19 +174,21 @@ const countLabel = computed(() => {
           class="flex h-11 shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition press"
           :class="
             categoryFilter === category.name
-              ? 'text-white'
-              : 'bg-white/85 text-basalt hover:bg-white'
+              ? 'text-white dark:text-sand'
+              : 'bg-surface/85 text-basalt hover:bg-surface'
           "
           :style="
-            categoryFilter === category.name ? { backgroundColor: category.color } : undefined
+            categoryFilter === category.name
+              ? { backgroundColor: isDark ? category.darkColor : category.color }
+              : undefined
           "
           :aria-pressed="categoryFilter === category.name"
           @click="categoryFilter = categoryFilter === category.name ? null : category.name"
         >
-          <!-- Same icons as the list: category colour, white on the selected chip -->
+          <!-- Same icons as the list: category colour, the chip's ink on the selected chip -->
           <CategoryIcon
             :category-id="category.ids[0]"
-            :color="categoryFilter === category.name ? '#fff' : undefined"
+            :color="categoryFilter === category.name ? 'currentColor' : undefined"
             class="size-4.5 shrink-0"
           />
           {{ category.name }}

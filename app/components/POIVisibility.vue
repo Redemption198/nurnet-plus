@@ -12,6 +12,7 @@ const siteHref = (id: string) => router.resolve(`/poi/${id}`).href;
 const fitPoints = useFitPoints();
 const highlighted = useHighlightedVisible();
 const canHover = useMediaQuery("(hover: hover)");
+const isDark = useIsDark();
 
 // Nearest first; long lists (up to ~90) start short
 const SHORT_LIST = 6;
@@ -167,7 +168,7 @@ function onBlur() {
                   class="block h-full rounded-full"
                   :style="{
                     width: `${(entry.height / 15) * 100}%`,
-                    backgroundColor: entry.level.color,
+                    backgroundColor: isDark ? entry.level.darkColor : entry.level.color,
                   }"
                 />
               </span>

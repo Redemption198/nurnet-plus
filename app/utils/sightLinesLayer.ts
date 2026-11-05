@@ -3,7 +3,7 @@ import {
   type CustomLayerInterface,
   type Map as MapLibreMap,
 } from "maplibre-gl";
-import { BRAND } from "./brand";
+import { BRAND, BRAND_DARK } from "./brand";
 
 // Lines of sight drawn in mid-air, from the top of one tower to the top of the other, with each
 // tower as a thin vertical stick. MapLibre's line layers are always draped on the terrain, hence
@@ -111,6 +111,7 @@ export function createSightLinesLayer(id: string) {
   let towerVertices = 0;
   let origin: [number, number, number] = [0, 0, 0];
   let highlight = -1;
+  let dark = false; // light lines and towers for the dark map
   let vertices: Float32Array | null = null; // to upload on the next render
   // For pick(): each line's ends (relative to `origin`) and its site, and the last frame's matrix
   let pickable: { a: number[]; b: number[]; id: number }[] = [];
@@ -120,6 +121,7 @@ export function createSightLinesLayer(id: string) {
   const layer: CustomLayerInterface & {
     setData: (lines: SightLine[], towers: Tower[]) => void;
     setHighlight: (id: number | null) => void;
+    setDark: (value: boolean) => void;
     pick: (x: number, y: number, tolerance?: number) => number | null;
   } = {
     id,
@@ -237,6 +239,12 @@ export function createSightLinesLayer(id: string) {
       return best;
     },
 
+    // The dark map's colours: each level's darkColor, light towers and highlight
+    setDark(value) {
+      dark = value;
+      map?.triggerRepaint();
+    },
+
     setHighlight(siteId) {
       highlight = siteId ?? -1;
       map?.triggerRepaint();
@@ -263,11 +271,13 @@ export function createSightLinesLayer(id: string) {
       gl.uniform4fv(
         uniforms.u_colors!,
         [
-          ...VISIBILITY_LEVELS.map((level, i) => rgba(level.color, [0.8, 0.7, 0.75][i]!)),
-          rgba(BRAND.basalt, 0.75), // towers
+          ...VISIBILITY_LEVELS.map((level, i) =>
+            rgba(dark ? level.darkColor : level.color, [0.8, 0.7, 0.75][i]!),
+          ),
+          rgba(ink(), 0.75), // towers
         ].flat(),
       );
-      gl.uniform4fv(uniforms.u_highlightColor!, rgba(BRAND.basalt, 1));
+      gl.uniform4fv(uniforms.u_highlightColor!, rgba(ink(), 1));
 
       gl.bindVertexArray(vao);
       gl.enable(gl.BLEND);
@@ -291,6 +301,10 @@ export function createSightLinesLayer(id: string) {
       gl.deleteProgram(program);
     },
   };
+
+  function ink() {
+    return dark ? BRAND_DARK.basalt : BRAND.basalt;
+  }
 
   function toMercator([lon, lat, altitude]: [number, number, number]): [number, number, number] {
     const m = MercatorCoordinate.fromLngLat([lon, lat], altitude);

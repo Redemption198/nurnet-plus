@@ -61,9 +61,10 @@ export default defineNuxtConfig({
   // The PWA's service worker already precaches each release and swaps it in whole
   skewProtection: false,
 
-  // The app only has a light design: don't follow the system's dark mode
-  ui: {
-    colorMode: false,
+  // Light or dark as the system is (the .dark palette in tailwind.css), no toggle of our own
+  colorMode: {
+    preference: "system",
+    fallback: "light",
   },
 
   // Bundle the icons the app uses (from the locally installed sets) instead of fetching

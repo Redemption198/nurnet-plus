@@ -7,6 +7,12 @@ export const BRAND = {
   sand: "#f1e9dc",
 } as const;
 
+// Their dark-mode values (the .dark block of tailwind.css)
+export const BRAND_DARK = {
+  basalt: "#f1e9dc",
+  sand: "#1d1819",
+} as const;
+
 // "#312528" -> "49, 37, 40", for rgba() strings
 export function rgbChannels(hex: string) {
   const value = Number.parseInt(hex.slice(1), 16);

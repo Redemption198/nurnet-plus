@@ -46,7 +46,7 @@ async function shareSite() {
       :href="directionsUrl"
       :target="isApple ? '_blank' : undefined"
       rel="noopener"
-      class="inline-flex min-h-11 items-center gap-x-2 rounded-full bg-terracotta px-5 font-semibold text-white shadow-[0_2px_6px_rgb(154_62_1/0.3)] transition hover:bg-terracotta-dark press press-subtle"
+      class="inline-flex min-h-11 items-center gap-x-2 rounded-full bg-terracotta px-5 font-semibold text-white shadow-[0_2px_6px_rgb(154_62_1/0.3)] transition hover:bg-brand-deep press press-subtle"
     >
       <UIcon name="i-lucide-navigation" class="size-4.5" aria-hidden="true" />
       Indicazioni
