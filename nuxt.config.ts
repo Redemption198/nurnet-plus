@@ -100,7 +100,7 @@ export default defineNuxtConfig({
       theme_color: BRAND.sand,
       // Android's launch screen: the logo on terracotta, as the iOS launch screens and the splash
       background_color: BRAND.terracotta,
-      // scripts/app-icons: "any" is the rounded tile, as the favicon (desktop installs and other
+      // scripts/pwa-assets: "any" is the rounded tile, as the favicon (desktop installs and other
       // places that show the icon as it is); "maskable" is full bleed, for launchers that shape it
       icons: [
         {
