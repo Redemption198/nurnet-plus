@@ -94,7 +94,7 @@ function onBlur() {
       <button
         v-if="visible.length"
         type="button"
-        class="-mr-2 inline-flex min-h-11 items-center gap-x-1.5 rounded-full px-3 text-sm font-semibold text-terracotta-dark transition hover:bg-terracotta/10 active:scale-95"
+        class="-mr-2 inline-flex min-h-11 items-center gap-x-1.5 rounded-full px-3 text-sm font-semibold text-terracotta-dark transition hover:bg-terracotta/10 press"
         @click="showOnMap"
       >
         <UIcon name="i-lucide-map" class="size-4" aria-hidden="true" />

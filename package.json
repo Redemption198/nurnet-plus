@@ -8,6 +8,7 @@
     "generate-pwa-assets-base": "vp dlx pwa-asset-generator ./app/assets/nurnet-plus.svg ./public/pwa -b 'linear-gradient(to right bottom, #e86d10, #c44f01, #a84401)'",
     "generate-pwa-assets": "vp run generate-pwa-assets-base -- --splash-only --padding 'calc(50vh - min(18vw, 18vh, 100px)) calc(50vw - min(18vw, 18vh, 100px))'; vp run generate-pwa-assets-icon-only",
     "generate-pwa-assets-icon-only": "vp run generate-pwa-assets-base -- --icon-only",
+    "og-image": "vpx scripts/og-image/build.ts",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
     "postinstall": "nuxt prepare",
@@ -23,12 +24,14 @@
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.150",
     "@nuxt/a11y": "1.0.0-alpha.1",
+    "@nuxtjs/seo": "6.0.1",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^24.19.2",
     "@vite-pwa/nuxt": "^1.1.1",
     "@vueuse/core": "^15.0.0",
     "@vueuse/nuxt": "^15.0.0",
     "nuxt": "^4.6.4",
+    "nuxtseo-devtools-host": "^1.0.2",
     "typescript": "^5.9.3",
     "vite-plus": "catalog:",
     "vue-tsc": "^3.3.14"

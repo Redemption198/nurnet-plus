@@ -12,6 +12,8 @@ import villaggio from "../components/icons/IconVillaggioNuragico.vue?raw";
 import menhir from "../components/icons/IconMenhir.vue?raw";
 import acqua from "../components/icons/IconCultoAcqua.vue?raw";
 import nuraghe from "../components/icons/IconNurnetPlus.vue?raw";
+import { BRAND, rgbChannels } from "./brand";
+import tafone from "../components/icons/IconTafone.vue?raw";
 
 const COMPONENTS: Record<NonNullable<Category["icon"]>, string> = {
   IconNurnetPlus: nuraghe,
@@ -21,6 +23,7 @@ const COMPONENTS: Record<NonNullable<Category["icon"]>, string> = {
   IconMenhir: menhir,
   IconCultoAcqua: acqua,
   IconDolmen: dolmen,
+  IconTafone: tafone,
 };
 
 // The "?" of lucide's circle-help (the list's icon for sites without a pictogram), framed so it
@@ -92,7 +95,7 @@ export const markerPriority: ExpressionSpecification = [
 ] as ExpressionSpecification;
 
 // Sizes in css px. A disc is 32 px at icon-size 1, as the old 64 px tiles at pixelRatio 2
-export const MARKER_SIZE = 32;
+const MARKER_SIZE = 32;
 const HOVER_SCALE = 1.15;
 const PIN_RADIUS = 21; // the head, ring included: as wide as the old selected marker (1.3x)
 const PIN_TAIL = 13; // from the bottom of the head to the tip
@@ -102,7 +105,7 @@ export const PIN_HEIGHT = PIN_RADIUS * 2 + PIN_TAIL;
 // their bottom (the pin's tip) still sits on the site
 export const SHADOW_ROOM = 6;
 
-const INK = "49, 37, 40"; // basalt
+const INK = rgbChannels(BRAND.basalt);
 const RING = 2; // white ring, in disc-size units (32 px)
 const GLYPH = 0.84; // pictogram size relative to the disc inside the ring (the icons have their own margin)
 

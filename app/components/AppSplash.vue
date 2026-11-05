@@ -7,7 +7,6 @@ const props = defineProps<{ ready: boolean }>();
 const visible = ref(true);
 const root = ref<HTMLElement | null>(null);
 const mark = ref<HTMLElement | null>(null);
-const wordmark = ref<HTMLElement | null>(null);
 
 // The splash's animations, reverted (loop included) once it's gone
 let animations: gsap.Context | undefined;
@@ -58,9 +57,9 @@ onMounted(() => {
   // Already loaded (e.g. the page mounted again): the watcher below won't fire, so go now
   if (props.ready) return hide();
   animations = gsap.context(() => {
+    // The logo is already there, as on the launch screen, and only the logo: the name is in the
+    // app once it opens
     const dots = [...mark.value!.querySelectorAll("circle")];
-    // The logo is already there, as on the launch screen: only the name arrives
-    gsap.from(wordmark.value, { opacity: 0, y: 8, duration: 0.6, ease: "power3.out" });
     if (reduceMotion()) {
       // No movement: the logo glows softly instead
       gsap.to(dots, { opacity: 0.7, duration: 1.4, ease: "sine.inOut", repeat: -1, yoyo: true });
@@ -103,12 +102,6 @@ onUnmounted(() => animations?.revert());
     <div ref="mark" class="logo absolute top-1/2 left-1/2 -translate-1/2">
       <IconNurnetPlus class="size-full fill-white" aria-hidden="true" />
     </div>
-    <p
-      ref="wordmark"
-      class="wordmark absolute inset-x-0 text-center font-display text-3xl font-semibold tracking-tight text-white"
-    >
-      NurNet+
-    </p>
   </div>
 </template>
 
@@ -120,10 +113,5 @@ onUnmounted(() => animations?.revert());
 .logo {
   width: var(--logo);
   height: var(--logo);
-}
-
-/* Below the logo, which stays exactly centred */
-.wordmark {
-  top: calc(50% + var(--logo) / 2 + 1.25rem);
 }
 </style>

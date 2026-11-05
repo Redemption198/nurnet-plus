@@ -14,12 +14,14 @@ const privacyOpen = ref(false);
 
 const link = "font-semibold text-terracotta-dark underline underline-offset-2";
 const pill =
-  "flex min-h-11 items-center justify-center gap-x-2 rounded-full bg-white/80 px-4 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white active:scale-95";
+  "flex min-h-11 items-center justify-center gap-x-2 rounded-full bg-white/80 px-4 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white press";
 
 // The status values in the data, with the icons the site page uses (see statusOf)
 const STATUSES = ["mantenuto", "diroccato", "non visibile"].map((value) => statusOf(value)!);
 
-const TIPS = [
+// Mac or not: the rotation tip names its keys and gestures
+const isMac = useIsMac();
+const TIPS = computed(() => [
   {
     icon: "i-lucide-search",
     text: "Cerca un sito per nome o per comune: i risultati vengono evidenziati sulla mappa.",
@@ -33,10 +35,16 @@ const TIPS = [
     text: "«3D» inclina la mappa e fa emergere il rilievo, con le linee di vista tese da una torre all'altra.",
   },
   {
+    icon: "i-lucide-rotate-3d",
+    text: isMac.value
+      ? "Per ruotare la mappa usa due dita sul telefono; sul Mac trascina la bussola, ruota due dita sul trackpad (in Safari) o trascina la mappa tenendo premuto Control. Tocca la bussola per rimettere il nord in alto."
+      : "Per ruotare la mappa usa due dita sul telefono; al computer trascina la bussola, oppure la mappa con il tasto destro o tenendo premuto Ctrl. Tocca la bussola per rimettere il nord in alto.",
+  },
+  {
     icon: "i-lucide-navigation",
     text: "«Indicazioni» apre il sito nella tua app di mappe, da cui puoi avviare il percorso.",
   },
-];
+]);
 </script>
 
 <template>
@@ -60,17 +68,17 @@ const TIPS = [
           "
         >
           <div class="flex flex-col gap-y-1">
-            <BrandMark />
+            <BrandMark class="text-2xl" />
             <p class="text-sm text-muted">Esplora i siti della Sardegna nuragica</p>
           </div>
           <button
             type="button"
-            class="-mr-1 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted transition hover:bg-well active:scale-95"
+            class="-mr-1 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted transition hover:bg-well press"
             aria-label="Chiudi"
             @click="close"
           >
             <span class="flex size-9 items-center justify-center rounded-full bg-well/70">
-              <IconCancel class="size-4.5" />
+              <UIcon name="i-lucide-x" class="size-5" aria-hidden="true" />
             </span>
           </button>
         </header>

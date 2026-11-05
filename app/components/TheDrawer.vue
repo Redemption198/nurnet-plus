@@ -309,8 +309,14 @@ onDeactivated(() => lockPageScroll(false));
 <template>
   <div
     ref="drawer"
-    class="absolute z-2 flex flex-col rounded-2xl bg-panel/75 shadow-[0_6px_24px_rgb(49_37_40/0.16)] backdrop-blur-2xl select-none"
-    :class="lgAndGreater ? 'inset-4 w-1/3' : '-bottom-12 h-full w-full'"
+    class="absolute z-2 flex flex-col rounded-2xl shadow-[0_6px_24px_rgb(49_37_40/0.16)] backdrop-blur-2xl select-none"
+    :class="
+      lgAndGreater
+        ? // The side panel covers a third of the map, often the sea: more opaque, so its sand
+          // doesn't turn the sea's grey-blue
+          'inset-4 w-1/3 bg-panel/92'
+        : '-bottom-12 h-full w-full bg-panel/75'
+    "
     :style="{ '--drawer-header-h': `${headerHeight}px` }"
   >
     <!-- Each page's DrawerHeader (handle, title or search) is teleported here: over the scroll

@@ -11,6 +11,7 @@ const ICONS = {
   IconMenhir: resolveComponent("IconMenhir"),
   IconCultoAcqua: resolveComponent("IconCultoAcqua"),
   IconDolmen: resolveComponent("IconDolmen"),
+  IconTafone: resolveComponent("IconTafone"),
 };
 
 const category = computed(() => categoryOf(props.categoryId));

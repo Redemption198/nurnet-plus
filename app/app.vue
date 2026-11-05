@@ -41,20 +41,18 @@ const splashLinks = SPLASH_DEVICES.flatMap(([width, height, ratio]) =>
   }),
 );
 
+// Title, description, canonical and Open Graph come from `site` in nuxt.config (Nuxt SEO)
 useHead({
-  title: "NurNet+",
   meta: [
-    {
-      name: "description",
-      content:
-        "La mappa dei siti della Sardegna nuragica: nuraghi, domus de janas, tombe dei giganti e altri, dai dati del progetto NurNet.",
-    },
     // The browser and status bars take the map's sand colour
-    { name: "theme-color", content: "#f1e9dc" },
+    { name: "theme-color", content: BRAND.sand },
     { name: "mobile-web-app-capable", content: "yes" },
     { name: "apple-mobile-web-app-title", content: "NurNet+" },
   ],
   link: [
+    // The logo on its tile (public/favicon.svg), sharp at any size; the PNG, rendered from it, for
+    // browsers without SVG favicons
+    { rel: "icon", type: "image/svg+xml", href: `${config.app.baseURL}favicon.svg` },
     { rel: "icon", type: "image/png", sizes: "196x196", href: asset("favicon-196.png") },
     { rel: "apple-touch-icon", href: asset("apple-icon-180.png") },
     ...splashLinks,

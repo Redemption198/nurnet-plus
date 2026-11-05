@@ -5,13 +5,27 @@ const { items, openPOI, retry } = useNurnetData();
 
 // The URL decides which site is open: a shared link, a reload, back/forward. Sites opened from the
 // app are already open by the time the route changes
+const toast = useToast();
 watch(
   [() => route.params.id, items],
   ([id, list]) => {
     if (!list || site.value?.content_id === id) return;
-    const poi = list.find((item) => item.content_id === id);
-    if (poi) openPOI(poi, { navigate: false });
-    else void navigateTo("/", { replace: true });
+    // Ids are upper case (NUR3551), but a link may have been lowercased on its way here: open the
+    // site anyway, at its own URL
+    const wanted = String(id).toUpperCase();
+    const poi = list.find((item) => item.content_id.toUpperCase() === wanted);
+    if (poi) {
+      openPOI(poi, { navigate: false });
+      if (poi.content_id !== id) void navigateTo(`/poi/${poi.content_id}`, { replace: true });
+      return;
+    }
+    // A link to a site that isn't in the data (any more): say so, rather than just showing the map
+    void navigateTo("/", { replace: true });
+    toast.add({
+      title: "Sito non trovato",
+      description: "Il link non corrisponde a nessun sito della mappa.",
+      icon: "i-lucide-map-pin-off",
+    });
   },
   { immediate: true },
 );
@@ -20,7 +34,8 @@ const poi = computed(() => (site.value?.content_id === route.params.id ? site.va
 const category = computed(() => categoryOf(poi.value?.category_id));
 const status = computed(() => statusOf(poi.value?.stato));
 
-// Tab title and link previews: "Nuraghe Losa · NurNet+", "Nuraghe complesso ad Abbasanta…"
+// Tab title and link previews: "Nuraghe Losa · NurNet+" (the site name comes from the title
+// template), "Nuraghe complesso ad Abbasanta…"
 const place = computed(() => [poi.value?.comune, poi.value?.regione].filter(Boolean).join(", "));
 const description = computed(() => {
   if (!poi.value) return undefined;
@@ -30,7 +45,7 @@ const description = computed(() => {
   return `${kind}${place.value ? ` ${preposition} ${place.value}` : ""}, sulla mappa di NurNet+.`;
 });
 useSeoMeta({
-  title: () => (poi.value ? `${poi.value.name} · NurNet+` : "NurNet+"),
+  title: () => poi.value?.name,
   ogTitle: () => poi.value?.name,
   description,
   ogDescription: description,
@@ -71,12 +86,12 @@ const { y: contentY } = useScroll(scroller);
           {{ poi.name }}
         </h2>
         <NuxtLink
-          class="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-well active:scale-95"
+          class="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-well press"
           to="/"
           aria-label="Chiudi"
         >
           <span class="flex size-9 items-center justify-center rounded-full bg-well/70">
-            <IconCancel class="size-4.5" />
+            <UIcon name="i-lucide-x" class="size-5" aria-hidden="true" />
           </span>
         </NuxtLink>
       </div>

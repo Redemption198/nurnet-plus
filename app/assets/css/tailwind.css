@@ -25,11 +25,20 @@
   --color-subtle: #857a71; /* icons, the drawer handle: 3:1 on the panel */
 }
 
-/* Nuxt UI has its own text-muted (a lighter grey, 3.9:1 on the panel) that wins over ours: point
-   it at our secondary text colour, for our text and Nuxt UI's components alike */
+/* Nuxt UI's components take the palette, not Tailwind's orange and stone (app.config's colours):
+   - primary: terracotta, 4.6:1 under white text, where orange-500 was 2.9:1
+   - text: basalt; secondary text: our muted, which also beats Nuxt UI's own text-muted (a lighter
+     grey, 3.9:1 on the panel) for our text
+   - neutral surfaces (soft buttons) and borders: the well and the dividers */
 @layer theme {
   :root {
+    --ui-primary: var(--color-terracotta);
+    --ui-text: var(--color-basalt);
+    --ui-text-highlighted: var(--color-basalt);
     --ui-text-muted: #5e554f;
+    --ui-bg-elevated: var(--color-well);
+    --ui-bg-accented: var(--color-line);
+    --ui-border: var(--color-line);
   }
 }
 
@@ -60,6 +69,27 @@
     var(--color-terracotta),
     var(--color-brand-deep)
   );
+}
+
+/* Buttons shrink a little while pressed. That pulls their edge out from under the pointer, and a
+   press released off the button isn't a click: pressed near the border, nothing happened. While
+   pressed, an invisible margin keeps the button's whole area (the scale makes the button the
+   containing block of its ::after, so it needs no `relative`). press-subtle: for wide pills, where
+   5% is a lot of movement */
+@utility press {
+  &:active {
+    scale: var(--press-scale, 0.95);
+  }
+
+  &:active::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+}
+
+@utility press-subtle {
+  --press-scale: 0.97;
 }
 
 /* Hide scrollbars on horizontal strips (chips, photos) that are scrolled by touch or trackpad */

@@ -37,10 +37,11 @@ const raiseForSearch = () => (drawerState.value.request = "top");
 const inCategory = (poi: NurnetPOI) =>
   !categoryFilter.value || categoryOf(poi.category_id).name === categoryFilter.value;
 
-// Random site, within the selected category if there is one
+// Random site, within the selected category if there is one, and not one of the last sites seen
+const recentSites = useRecentSites();
 function openRandomPOI() {
   const pool = categoryFilter.value ? props.mapData.filter(inCategory) : props.mapData;
-  const poi = pool[Math.floor(Math.random() * pool.length)];
+  const poi = pickRandomSite(pool, recentSites.value);
   if (poi) openPOI(poi);
 }
 
@@ -150,7 +151,7 @@ const countLabel = computed(() => {
         </div>
         <button
           type="button"
-          class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full bg-white/85 pr-4 pl-3 text-sm font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white active:scale-95"
+          class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full bg-white/85 pr-4 pl-3 text-sm font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white press"
           @click="openRandomPOI"
         >
           <UIcon name="i-lucide-dices" class="size-5 text-subtle" aria-hidden="true" />
@@ -169,7 +170,7 @@ const countLabel = computed(() => {
           v-for="category in CATEGORIES"
           :key="category.name"
           type="button"
-          class="flex h-11 shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition active:scale-95"
+          class="flex h-11 shrink-0 cursor-pointer items-center gap-x-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition press"
           :class="
             categoryFilter === category.name
               ? 'text-white'

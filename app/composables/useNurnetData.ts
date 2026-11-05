@@ -2,7 +2,7 @@ import DataWorker from "~/workers/data-worker.ts?worker";
 import type { WorkerReply, WorkerRequest } from "~/workers/data-worker.ts";
 
 // Only nuraghi have line-of-sight data
-export const isNuraghe = (category: string | null) => /^1[0-3]$/.test(category ?? "");
+const isNuraghe = (category: string | null) => /^1[0-3]$/.test(category ?? "");
 
 // One worker for the whole app: it loads the data once and answers searches and details.
 // Browser-only (started in useNurnetData on the client), so this module state is never shared
@@ -60,6 +60,7 @@ export function useNurnetData() {
   const config = useRuntimeConfig();
   const router = useRouter();
   const site = useCurrentSite();
+  const recentSites = useRecentSites();
 
   if (import.meta.client && !worker) {
     const url = (file: string) => new URL(`${config.app.baseURL}${file}`, location.href).href;
@@ -111,6 +112,7 @@ export function useNurnetData() {
       visible: [],
       visibleStatus: isNuraghe(poi.category_id) ? "loading" : "none",
     };
+    recentSites.value = addRecentSite(recentSites.value, poi.content_id);
     if (navigate) void router.push(`/poi/${poi.content_id}`);
     if (isNuraghe(poi.category_id)) void loadVisible(poi);
     void loadDetails(poi);

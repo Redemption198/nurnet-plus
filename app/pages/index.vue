@@ -4,6 +4,24 @@ const SearchResults = resolveComponent("SearchResults");
 const route = useRoute();
 
 const { items: mapData, error, reload } = useNurnetData();
+
+// Structured data: Nuxt SEO adds WebSite and WebPage; this says the page is a free web app, built
+// on the NurNet data (CC BY 4.0)
+useSchemaOrg([
+  defineSoftwareApp({
+    name: "NurNet+",
+    applicationCategory: "TravelApplication",
+    operatingSystem: "Web, Android, iOS",
+    offers: { price: 0, priceCurrency: "EUR" },
+    isAccessibleForFree: true,
+    isBasedOn: {
+      "@type": "Dataset",
+      name: "Geoportale NurNet",
+      url: "https://nurnet.crs4.it/nurnetgeo/",
+      license: "https://creativecommons.org/licenses/by/4.0/",
+    },
+  }),
+]);
 </script>
 
 <template>

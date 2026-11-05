@@ -3,6 +3,7 @@ import {
   type CustomLayerInterface,
   type Map as MapLibreMap,
 } from "maplibre-gl";
+import { BRAND } from "./brand";
 
 // Lines of sight drawn in mid-air, from the top of one tower to the top of the other, with each
 // tower as a thin vertical stick. MapLibre's line layers are always draped on the terrain, hence
@@ -263,10 +264,10 @@ export function createSightLinesLayer(id: string) {
         uniforms.u_colors!,
         [
           ...VISIBILITY_LEVELS.map((level, i) => rgba(level.color, [0.8, 0.7, 0.75][i]!)),
-          rgba("#312528", 0.75), // towers
+          rgba(BRAND.basalt, 0.75), // towers
         ].flat(),
       );
-      gl.uniform4fv(uniforms.u_highlightColor!, rgba("#312528", 1));
+      gl.uniform4fv(uniforms.u_highlightColor!, rgba(BRAND.basalt, 1));
 
       gl.bindVertexArray(vao);
       gl.enable(gl.BLEND);

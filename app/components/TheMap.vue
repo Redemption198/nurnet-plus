@@ -49,7 +49,7 @@ const TERRAIN_ATTRIBUTION =
 // Layer ids are from OpenFreeMap's "liberty" style; missing ones are skipped
 type PaintProperty = Parameters<MapLibreMap["setPaintProperty"]>[1];
 const BASEMAP_COLORS: Record<string, [PaintProperty, string]> = {
-  background: ["background-color", "#f1e9dc"],
+  background: ["background-color", BRAND.sand],
   water: ["fill-color", "#9ec5d6"],
   park: ["fill-color", "#d6dfbf"],
   landcover_wood: ["fill-color", "hsla(90, 28%, 60%, 0.55)"],
@@ -83,19 +83,22 @@ function addTerrain(ml: MapLibreMap) {
       id: "hillshade",
       type: "hillshade",
       source: "terrain",
-      paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#47515f" },
+      // Shadows in a warm basalt grey, not the default slate, so the relief stays in the palette
+      paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#4d413e" },
     },
     firstSymbolLayer,
   );
 
   // Exaggerated a bit: Sardinia's relief is gentle and would look flat at 1x
   ml.setTerrain({ source: "terrain", exaggeration: 1.5 });
+  // In 3D: a soft Mediterranean sky, and a horizon and haze of warm limestone (the map's sand,
+  // lighter), so the distance fades into the palette rather than into a cool grey
   ml.setSky({
-    "sky-color": "#a8d4f5",
-    "horizon-color": "#e2e8f0",
+    "sky-color": "#b3d3e0",
+    "horizon-color": "#f3ece1",
     "sky-horizon-blend": 0.5,
     "horizon-fog-blend": 0.6,
-    "fog-color": "#e2e8f0",
+    "fog-color": "#efe6d8",
     "fog-ground-blend": 0.4,
   });
 }
@@ -154,7 +157,7 @@ function labelLayout(ml: MapLibreMap, fromZoom: number) {
   };
 }
 const LABEL_PAINT = {
-  "text-color": "#312528",
+  "text-color": BRAND.basalt,
   "text-halo-color": "rgba(255, 255, 255, 0.9)",
   "text-halo-width": 1.5,
 };
@@ -258,7 +261,18 @@ const shownLevels = computed(() => {
   const levels = new Set((site.value?.visible ?? []).map((entry) => visibilityLevel(entry.height)));
   return VISIBILITY_LEVELS.filter((_, i) => levels.has(i));
 });
-const showsNetwork = computed(() => route.path !== "/" && (site.value?.visible.length ?? 0) > 0);
+
+// What the legend shows. While the next nuraghe's lines load (its list is empty until then), it
+// keeps the last levels, so going from one nuraghe to another changes the strip instead of
+// blinking it out and back in
+const legendLevels = shallowRef<(typeof VISIBILITY_LEVELS)[number][]>([]);
+watchEffect(() => {
+  if (route.path === "/") legendLevels.value = [];
+  else if (site.value?.visibleStatus !== "loading") legendLevels.value = shownLevels.value;
+});
+// The strip eases to the width of its items, so a level arriving or leaving resizes it smoothly
+const legendItems = useTemplateRef("legendItems");
+const { width: legendItemsWidth } = useElementSize(legendItems, undefined, { box: "border-box" });
 
 function visibilityEnds(): FeatureCollection<Point> {
   return {
@@ -499,7 +513,7 @@ function addSightLines(ml: MapLibreMap) {
     filter: ["==", ["get", "i"], -1],
     paint: {
       "circle-radius": 7,
-      "circle-color": "#312528",
+      "circle-color": BRAND.basalt,
       "circle-stroke-color": "#fff",
       "circle-stroke-width": 2.5,
       "circle-pitch-alignment": "map",
@@ -610,6 +624,74 @@ function showMyLocation() {
 // button at the top left (a 44px button 16px from the edges). Camera moves frame things in what
 // is left, so nothing lands under them
 const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+// The compass: its needle follows the map's rotation (bearing, degrees clockwise from north).
+// A click (or Enter) turns north back up; dragging it sideways, or the arrow keys on it, rotate
+// the map, the one way to rotate that a mouse shows (the map's own are a right-click or Ctrl
+// drag, or Shift with the arrow keys). Always there on desktop; on phones, where two fingers
+// rotate, only once the map is rotated, as in the phones' own maps
+const bearing = ref(0);
+const isMac = useIsMac();
+// The hidden ways to rotate, in the compass's tooltip, in the Mac's words there
+const compassTip = computed(() =>
+  isMac.value
+    ? "Clic: nord in alto · Trascina per ruotare (anche: ruota due dita sul trackpad in Safari, o Control + trascina sulla mappa)"
+    : "Clic: nord in alto · Trascina per ruotare (anche: tasto destro o Ctrl + trascina sulla mappa)",
+);
+const showsCompass = computed(() => isDesktop.value || Math.abs(bearing.value) > 0.5);
+let compassDrag: { x: number; bearing: number; moved: boolean } | null = null;
+let compassDragged = false;
+function onCompassDown(event: PointerEvent) {
+  if (!mlMap.value || event.button !== 0) return;
+  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  compassDrag = { x: event.clientX, bearing: mlMap.value.getBearing(), moved: false };
+}
+function onCompassMove(event: PointerEvent) {
+  if (!compassDrag) return;
+  const dx = event.clientX - compassDrag.x;
+  if (Math.abs(dx) > 3) compassDrag.moved = true;
+  // Like turning a dial: to the right, the map turns clockwise
+  if (compassDrag.moved) mlMap.value?.setBearing(compassDrag.bearing - dx * 0.6);
+}
+function onCompassUp() {
+  compassDragged = compassDrag?.moved ?? false;
+  compassDrag = null;
+}
+function onCompassClick() {
+  // The click that ends a drag isn't a request for north
+  if (compassDragged) return void (compassDragged = false);
+  mlMap.value?.easeTo({ bearing: 0, duration: 500 });
+}
+// Safari on the Mac: a two-finger twist on the trackpad rotates the map, as in Apple's Maps.
+// Safari reports it as gesture events (the rotation since the gesture began, in degrees) that
+// MapLibre doesn't listen to; other browsers on the Mac don't report the twist at all. On
+// iPhone and iPad, Safari sends them for two fingers on the screen too, which MapLibre already
+// turns into rotation: those are left to it
+type GestureEvent = UIEvent & { rotation: number };
+function rotateWithTrackpadTwist(ml: MapLibreMap, container: HTMLElement) {
+  let touches = 0;
+  const countTouches = (event: TouchEvent) => (touches = event.touches.length);
+  for (const type of ["touchstart", "touchend", "touchcancel"] as const)
+    container.addEventListener(type, countTouches, { passive: true });
+
+  let startBearing: number | null = null;
+  container.addEventListener("gesturestart", (event) => {
+    if (touches) return;
+    // Otherwise Safari zooms the whole page
+    event.preventDefault();
+    startBearing = ml.getBearing();
+  });
+  container.addEventListener("gesturechange", (event) => {
+    if (startBearing === null) return;
+    event.preventDefault();
+    // The map turns with the fingers: a clockwise twist turns it clockwise
+    ml.setBearing(startBearing - (event as GestureEvent).rotation);
+  });
+  container.addEventListener("gestureend", () => (startBearing = null));
+}
+
+const rotateBy = (degrees: number) =>
+  mlMap.value?.easeTo({ bearing: mlMap.value.getBearing() + degrees, duration: 250 });
 const OVERLAY_RIGHT = 16 + 48 + 8;
 const OVERLAY_TOP_MOBILE = 16 + 44 + 8;
 // The sight-lines legend at the bottom right (desktop): always kept clear, so the camera doesn't
@@ -846,6 +928,10 @@ onMounted(() => {
       maxPitch: 75,
       // A longer glide after a fling, closer to iOS maps (MapLibre's default deceleration is 2500)
       dragPan: { linearity: 0.3, maxSpeed: 2000, deceleration: 1800 },
+      // Rotating and tilting with the mouse (right button or Control + drag) turn the map around
+      // the point grabbed, which stays under the pointer, as panning keeps it (on the terrain too).
+      // MapLibre's default turns around the centre, so the grabbed place slid away
+      dragRotate: { around: "pointer" },
       // The map credits (OpenFreeMap, OpenMapTiles, OpenStreetMap, Terrain Tiles) are in the
       // "Informazioni" sheet, opened from the NurNet+ (i) button on the map / top of the drawer
       attributionControl: false,
@@ -907,6 +993,8 @@ onMounted(() => {
   ml.on("moveend", () => publishView(ml));
   // Whatever tilted the map (the button, a two-finger drag, a camera move), the button follows
   ml.on("pitchend", () => (is3D.value = ml.getPitch() > TILTED));
+  ml.on("rotate", () => (bearing.value = ml.getBearing()));
+  rotateWithTrackpadTwist(ml, map.value!);
 
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
   ml.on("movestart", (event) => {
@@ -953,11 +1041,11 @@ onUnmounted(() => {
       class="flex flex-col items-center overflow-hidden rounded-2xl bg-panel/80 shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
     >
       <MapControlsButton aria-label="Ingrandisci" @click.prevent="zoomBy(1)">
-        <IconPlus class="size-6" />
+        <UIcon name="i-lucide-plus" class="size-6" aria-hidden="true" />
       </MapControlsButton>
 
       <MapControlsButton aria-label="Riduci" @click.prevent="zoomBy(-1)">
-        <IconMinus class="size-6" />
+        <UIcon name="i-lucide-minus" class="size-6" aria-hidden="true" />
       </MapControlsButton>
 
       <MapControlsButton
@@ -968,6 +1056,31 @@ onUnmounted(() => {
         @click.prevent="toggle3D()"
       >
         3D
+      </MapControlsButton>
+
+      <MapControlsButton
+        v-if="showsCompass"
+        class="touch-none"
+        aria-label="Bussola: orienta la mappa a nord. Frecce sinistra e destra per ruotarla"
+        :title="isDesktop ? compassTip : undefined"
+        @pointerdown="onCompassDown"
+        @pointermove="onCompassMove"
+        @pointerup="onCompassUp"
+        @pointercancel="onCompassUp"
+        @click.prevent="onCompassClick"
+        @keydown.left.prevent="rotateBy(15)"
+        @keydown.right.prevent="rotateBy(-15)"
+      >
+        <!-- The needle: north in terracotta, pointing where north is on the rotated map -->
+        <svg
+          class="size-6"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          :style="{ rotate: `${-bearing}deg` }"
+        >
+          <path d="M12 2.5 15.5 12h-7z" :fill="BRAND.terracotta" />
+          <path d="M12 21.5 8.5 12h7z" class="fill-subtle" />
+        </svg>
       </MapControlsButton>
 
       <MapControlsButton
@@ -996,25 +1109,108 @@ onUnmounted(() => {
        at the bottom right, the near side of a tilted map where framed sites rarely end up, kept
        clear by the camera (OVERLAY_BOTTOM_DESKTOP). Only the levels the open nuraghe's lines have,
        and clicks go through it to the lines and markers -->
-  <ul
-    v-if="showsNetwork && !mapUnavailable"
-    aria-label="Legenda delle linee di vista"
-    class="pointer-events-none absolute right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-1 hidden h-8 items-center gap-x-3 rounded-full bg-panel/80 px-3 text-xs font-semibold text-basalt shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl lg:flex"
-  >
-    <li v-for="level in shownLevels" :key="level.label" class="flex items-center gap-x-1.5">
-      <svg class="h-2 w-5 shrink-0" viewBox="0 0 20 8" aria-hidden="true">
-        <line
-          x1="2"
-          y1="4"
-          x2="18"
-          y2="4"
-          :stroke="level.color"
-          stroke-width="3"
-          stroke-linecap="round"
-          :stroke-dasharray="level.dashed ? '4 3' : undefined"
-        />
-      </svg>
-      {{ level.label }}
-    </li>
-  </ul>
+  <Transition name="legend">
+    <div
+      v-if="legendLevels.length && !mapUnavailable"
+      class="legend pointer-events-none absolute right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-1 hidden h-8 justify-end overflow-hidden rounded-full bg-panel/80 text-xs font-semibold text-basalt shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl lg:flex"
+      :style="legendItemsWidth ? { width: `${legendItemsWidth}px` } : undefined"
+    >
+      <div ref="legendItems" class="flex w-max shrink-0 px-3">
+        <TransitionGroup
+          tag="ul"
+          name="legend-item"
+          aria-label="Legenda delle linee di vista"
+          class="relative flex h-8 items-center gap-x-3"
+        >
+          <li
+            v-for="level in legendLevels"
+            :key="level.label"
+            class="flex items-center gap-x-1.5 whitespace-nowrap"
+          >
+            <svg class="h-2 w-5 shrink-0" viewBox="0 0 20 8" aria-hidden="true">
+              <line
+                x1="2"
+                y1="4"
+                x2="18"
+                y2="4"
+                :stroke="level.color"
+                stroke-width="3"
+                stroke-linecap="round"
+                :stroke-dasharray="level.dashed ? '4 3' : undefined"
+              />
+            </svg>
+            {{ level.label }}
+          </li>
+        </TransitionGroup>
+      </div>
+    </div>
+  </Transition>
 </template>
+
+<style scoped>
+/* The legend strip, like Spotlight: it fades in with a little blur and scale, eases to the width
+   of its items, and the items blur in, slide to their places and fade out on their own */
+.legend {
+  transition: width 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.legend-enter-active,
+.legend-leave-active {
+  transition:
+    opacity 0.22s ease-out,
+    filter 0.22s ease-out,
+    scale 0.22s ease-out;
+}
+
+.legend-leave-active {
+  transition-duration: 0.16s;
+  transition-timing-function: ease-in;
+}
+
+.legend-enter-from,
+.legend-leave-to {
+  opacity: 0;
+  filter: blur(4px);
+  scale: 0.96;
+}
+
+.legend-item-move {
+  transition: translate 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.legend-item-enter-active {
+  transition:
+    opacity 0.26s ease-out 0.08s,
+    filter 0.26s ease-out 0.08s,
+    scale 0.26s ease-out 0.08s;
+}
+
+.legend-item-leave-active {
+  transition:
+    opacity 0.14s ease-in,
+    filter 0.14s ease-in;
+}
+
+.legend-item-enter-from,
+.legend-item-leave-to {
+  opacity: 0;
+  filter: blur(3px);
+  scale: 0.9;
+}
+
+/* Reduced motion: fades only, no resizing, sliding or blur */
+@media (prefers-reduced-motion: reduce) {
+  .legend,
+  .legend-item-move {
+    transition: none;
+  }
+
+  .legend-enter-from,
+  .legend-leave-to,
+  .legend-item-enter-from,
+  .legend-item-leave-to {
+    filter: none;
+    scale: 1;
+  }
+}
+</style>

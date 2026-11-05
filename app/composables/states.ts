@@ -1,6 +1,10 @@
 // The site open in the drawer, or null on the list
 export const useCurrentSite = () => useState<CurrentSite | null>("current-site", () => null);
 
+// Ids of the sites opened lately (however: the list, a link, back/forward, "A caso"), the latest
+// first, so "A caso" can avoid them. In memory only, for this visit
+export const useRecentSites = () => useState<string[]>("recent-sites", () => []);
+
 // The "Informazioni" sheet (about, credits)
 export const useInfoOpen = () => useState<boolean>("info-open", () => false);
 
@@ -74,3 +78,8 @@ export const useDrawerHeaderHeight = () => useState<number>("drawer-header-heigh
 
 // The site (index into the items) hovered or focused in the main list: the map points it out
 export const useHoveredSite = () => useState<number | null>("hovered-site", () => null);
+
+// A Mac (or an iPad asking for desktop sites, which says the same): for naming its keys and
+// gestures. False on the server, where there is no browser to ask
+export const useIsMac = () =>
+  computed(() => import.meta.client && /Macintosh|Mac OS X/.test(navigator.userAgent));

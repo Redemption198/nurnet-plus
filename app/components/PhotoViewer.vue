@@ -291,11 +291,11 @@ watch(
             </p>
             <button
               type="button"
-              class="pointer-events-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-white active:scale-95"
+              class="pointer-events-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-white press"
               aria-label="Chiudi"
               @click="close"
             >
-              <IconCancel class="h-4.5 w-4.5" />
+              <UIcon name="i-lucide-x" class="size-5" aria-hidden="true" />
             </button>
           </div>
 

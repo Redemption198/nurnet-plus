@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// Opens the (i) sheet. `compact` (the floating button on phones): just the mark, so it covers as
-// little of the map as possible; the full brand is at the top of the panel on desktop
+// Opens the (i) sheet.
+// - compact (the floating button on phones): the logo's tile is the button itself, so it covers
+//   as little of the map as possible, with an (i) badge so it reads as the guide, not a marker
+// - otherwise (the top of the panel on desktop): the wordmark, then the (i)
 defineProps<{ compact?: boolean }>();
 const infoOpen = useInfoOpen();
 </script>
@@ -8,12 +10,28 @@ const infoOpen = useInfoOpen();
 <template>
   <button
     type="button"
-    class="flex min-h-11 cursor-pointer items-center gap-x-1.5 rounded-2xl bg-panel/80 shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl transition active:scale-95"
-    :class="compact ? 'size-11 justify-center' : 'py-1.5 pr-2.5 pl-1.5'"
+    class="relative flex min-h-11 cursor-pointer items-center rounded-2xl shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press"
+    :class="
+      compact
+        ? 'size-11 justify-center'
+        : 'gap-x-2 bg-panel/80 py-1.5 pr-2.5 pl-3 backdrop-blur-2xl'
+    "
     aria-label="NurNet+: guida, legenda e crediti"
     @click="infoOpen = true"
   >
-    <BrandMark :wordmark="!compact" />
-    <UIcon v-if="!compact" name="i-lucide-info" class="size-4 text-subtle" aria-hidden="true" />
+    <template v-if="compact">
+      <BrandMark variant="symbol" />
+      <span
+        class="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-panel text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.25)]"
+        aria-hidden="true"
+      >
+        <UIcon name="i-lucide-info" class="size-3.5" />
+      </span>
+    </template>
+    <template v-else>
+      <!-- 22px: the smallest size at which the plus's five circles stay apart -->
+      <BrandMark variant="wordmark" class="text-[1.375rem]" />
+      <UIcon name="i-lucide-info" class="size-4 text-subtle" aria-hidden="true" />
+    </template>
   </button>
 </template>

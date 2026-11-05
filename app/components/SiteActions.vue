@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Getting to the open site: directions in the phone's maps app, and its coordinates to share
+// Getting to the open site and passing it on: directions in the phone's maps app, a link to it
+// (the system's share sheet, or the clipboard), and its coordinates
 const site = useCurrentSite();
 
 const coordinates = computed(() => {
@@ -19,6 +20,24 @@ const directionsUrl = computed(() => {
 });
 
 const { copy, copied, isSupported } = useClipboard({ copiedDuring: 2000 });
+
+// The link opens the app on this site. The share sheet where there is one (phones), otherwise
+// the link is copied
+const { share, isSupported: canShare } = useShare();
+const {
+  copy: copyLink,
+  copied: linkCopied,
+  isSupported: canCopyLink,
+} = useClipboard({ copiedDuring: 2000 });
+async function shareSite() {
+  const url = location.href;
+  if (canShare.value) {
+    // Closing the sheet without picking an app rejects: nothing to do
+    await share({ title: `${site.value?.name} · NurNet+`, url }).catch(() => {});
+  } else {
+    await copyLink(url);
+  }
+}
 </script>
 
 <template>
@@ -27,15 +46,28 @@ const { copy, copied, isSupported } = useClipboard({ copiedDuring: 2000 });
       :href="directionsUrl"
       :target="isApple ? '_blank' : undefined"
       rel="noopener"
-      class="inline-flex min-h-11 items-center gap-x-2 rounded-full bg-terracotta px-5 font-semibold text-white shadow-[0_2px_6px_rgb(154_62_1/0.3)] transition hover:bg-terracotta-dark active:scale-[0.97]"
+      class="inline-flex min-h-11 items-center gap-x-2 rounded-full bg-terracotta px-5 font-semibold text-white shadow-[0_2px_6px_rgb(154_62_1/0.3)] transition hover:bg-terracotta-dark press press-subtle"
     >
       <UIcon name="i-lucide-navigation" class="size-4.5" aria-hidden="true" />
       Indicazioni
     </a>
     <button
+      v-if="canShare || canCopyLink"
+      type="button"
+      class="inline-flex min-h-11 items-center gap-x-2 rounded-full px-4 text-sm font-semibold text-basalt transition hover:bg-well press press-subtle"
+      @click="shareSite"
+    >
+      <UIcon
+        :name="linkCopied ? 'i-lucide-check' : 'i-lucide-share-2'"
+        class="size-4 text-muted"
+        aria-hidden="true"
+      />
+      {{ linkCopied ? "Link copiato" : "Condividi" }}
+    </button>
+    <button
       v-if="isSupported"
       type="button"
-      class="inline-flex min-h-11 items-center gap-x-2 rounded-full px-4 text-sm font-semibold text-basalt tabular-nums transition hover:bg-well active:scale-[0.97]"
+      class="inline-flex min-h-11 items-center gap-x-2 rounded-full px-4 text-sm font-semibold text-basalt tabular-nums transition hover:bg-well press press-subtle"
       :aria-label="`Copia le coordinate: ${coordinates}`"
       @click="copy(coordinates)"
     >
@@ -47,6 +79,8 @@ const { copy, copied, isSupported } = useClipboard({ copiedDuring: 2000 });
       <span>{{ copied ? "Coordinate copiate" : coordinates }}</span>
     </button>
     <p v-else class="px-1 text-sm text-muted tabular-nums">{{ coordinates }}</p>
-    <span class="sr-only" aria-live="polite">{{ copied ? "Coordinate copiate" : "" }}</span>
+    <span class="sr-only" aria-live="polite">{{
+      copied ? "Coordinate copiate" : linkCopied ? "Link copiato" : ""
+    }}</span>
   </div>
 </template>
