@@ -420,8 +420,15 @@ let stopWatchingResolution: (() => void) | undefined;
 const FIT_PADDING = { top: PIN_HEIGHT + SHADOW_ROOM + 4, bottom: 40, left: 64, right: 56 };
 const FIT_MAX_ZOOM = 14;
 // The places the map last framed, until the visitor moves the camera themselves: switching
-// between 2D and 3D frames them again
+// between 2D and 3D frames them again, and so does the drawer moving (mobile)
 let framedPoints: [number, number][] | null = null;
+// Or the one place it last centred on (a site without a network, the visitor's position), kept
+// centred in what the drawer leaves visible as it moves
+let framedCenter: [number, number] | null = null;
+function forgetFraming() {
+  framedPoints = null;
+  framedCenter = null;
+}
 
 // fitBounds frames places as if the map were flat: tilted, the near side is drawn bigger and the
 // far side smaller, and places on high ground are drawn higher (even untilted, the camera's
@@ -646,19 +653,19 @@ const LOCATION_ERRORS: Record<number, string> = {
 
 // The zoom buttons: a camera change of the visitor's, like a pinch
 function zoomBy(step: number) {
-  framedPoints = null;
+  forgetFraming();
   if (step > 0) mlMap.value?.zoomIn();
   else mlMap.value?.zoomOut();
 }
 
 function showMyLocation() {
-  framedPoints = null;
+  forgetFraming();
   const ml = mlMap.value;
   if (!ml || !("geolocation" in navigator)) return;
   locating.value = true;
   locationError.value = null;
   navigator.geolocation.getCurrentPosition(
-    ({ coords }) => {
+    async ({ coords }) => {
       locating.value = false;
       const here: [number, number] = [coords.longitude, coords.latitude];
       const data: FeatureCollection<Point> = {
@@ -684,8 +691,20 @@ function showMyLocation() {
           },
         });
       }
+      // Lower the drawer (mobile), and fly to the visitor in the area it leaves, buttons on it
+      // included: the drawer reports its new size at once, the map would only take it up after
+      // the flight (see the mapPadding watcher)
       drawerState.value.request = "bottom";
-      ml.flyTo({ center: here, zoom: Math.max(ml.getZoom(), 12), duration: 1200, essential: true });
+      await nextTick();
+      forgetFraming();
+      framedCenter = here;
+      ml.flyTo({
+        center: here,
+        zoom: Math.max(ml.getZoom(), 12),
+        padding: toMapPadding(mapPadding.value),
+        duration: 1200,
+        essential: true,
+      });
     },
     (error) => {
       locating.value = false;
@@ -772,8 +791,11 @@ const rotateBy = (degrees: number) =>
   mlMap.value?.easeTo({ bearing: mlMap.value.getBearing() + degrees, duration: 250 });
 const OVERLAY_RIGHT = 16 + 48 + 8; // desktop: the column of buttons
 const OVERLAY_TOP_MOBILE = 16 + 44 + 8;
-// Mobile: the buttons riding above the drawer
-const OVERLAY_BOTTOM_MOBILE = 12 + 48 + 8;
+// Mobile: the buttons riding above the drawer (2D and compass at the left, location at the
+// right), at the bottom of the free area whatever the drawer's position. Always the same band,
+// shown or not, so the camera doesn't jump when the 2D or compass button comes and goes; framing
+// adds its own room below (FIT_PADDING), and at the top the map is hidden anyway
+const OVERLAY_BOTTOM_MOBILE = 12 + 48;
 // The sight-lines legend at the bottom right (desktop): always kept clear, so the camera doesn't
 // jump when lines appear
 const OVERLAY_BOTTOM_DESKTOP = 8 + 32 + 16;
@@ -861,9 +883,10 @@ function pointAt(ml: MapLibreMap, point: { x: number; y: number } | null) {
 // Close enough to see the site and its neighbours (and their names), not so close that the
 // visitor loses where on the island they are
 function focusSelectedPOI() {
-  framedPoints = null;
+  forgetFraming();
   const coordinates = site.value?.coordinates;
   if (!coordinates || !mlMap.value) return;
+  framedCenter = coordinates;
 
   mlMap.value.flyTo({
     center: coordinates as LngLatLike,
@@ -910,7 +933,10 @@ onMounted(() => {
   // Registered first: the drawer still reacts to selections if the map can't be created
   // Changing the padding is a camera move: it would cancel the inertia of a pan in progress (the
   // drawer collapses as soon as the user pans), so wait for the map to stop. It is applied without
-  // moving what is on screen: the point now in the middle of the new visible area becomes the centre
+  // moving what is on screen: the point now in the middle of the new visible area becomes the
+  // centre. Then, if the map still shows what it framed (the visitor hasn't moved it since), that is
+  // framed again in the new visible area, alongside the drawer: a network framed above the drawer
+  // in the middle spreads out over the map when the drawer goes down, and the reverse
   watch(mapPadding, () => {
     const ml = mlMap.value;
     if (!ml) return;
@@ -922,6 +948,10 @@ onMounted(() => {
         (padding.top + height - padding.bottom) / 2,
       ]);
       ml.jumpTo({ center, padding });
+
+      const camera = framedPoints ? cameraForPlaces(ml, framedPoints) : null;
+      if (camera) ml.easeTo({ ...camera, duration: 600, essential: true });
+      else if (framedCenter) ml.easeTo({ center: framedCenter, duration: 600, essential: true });
     };
     if (ml.isMoving()) ml.once("moveend", apply);
     else apply();
@@ -931,6 +961,7 @@ onMounted(() => {
   watch(
     () => site.value?.content_id,
     async () => {
+      forgetFraming();
       applySelection();
 
       // Raise the drawer to the middle on mobile (ignored on desktop), then show the POI in the
@@ -941,7 +972,13 @@ onMounted(() => {
     },
   );
 
-  watch(() => route.path, applySelection);
+  watch(
+    () => route.path,
+    (path) => {
+      if (path === "/") forgetFraming();
+      applySelection();
+    },
+  );
 
   // The lines follow the open nuraghe once its line-of-sight data arrives, and go on the list
   watch(
@@ -966,6 +1003,7 @@ onMounted(() => {
     // opened from its URL it may not have yet
     ml.setPadding(toMapPadding(mapPadding.value));
     const points = request.points;
+    forgetFraming();
     framedPoints = points;
     const camera = cameraForPlaces(ml, points);
     if (camera) ml.easeTo({ ...camera, duration: 1200, essential: true });
@@ -1108,7 +1146,7 @@ onMounted(() => {
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
   ml.on("movestart", (event) => {
     // Moved by the visitor (drag, pinch, wheel, keys), not by the app
-    if (event.originalEvent) framedPoints = null;
+    if (event.originalEvent) forgetFraming();
     if (event.originalEvent && drawerState.value.position !== "bottom") {
       drawerState.value.request = "bottom";
     }
@@ -1216,7 +1254,7 @@ onUnmounted(() => {
 
   <!-- Mobile: fewer buttons, riding on the drawer's top edge (TheDrawer's #drawer-float), within
        the thumb's reach. Zoom is a pinch. 3D and the compass only show when there is something to
-       undo (a tilted or rotated map), at the left; the location at the right. They follow the
+       undo (a tilted or rotated map), at the left: «2D» flattens the map; the location at the right. They follow the
        drawer down and to the middle, and fade away as it opens fully -->
   <Teleport v-if="!mapUnavailable && !isDesktop" defer to="#drawer-float">
     <div class="absolute inset-x-4 bottom-3 flex items-end justify-between gap-x-3">
@@ -1225,12 +1263,11 @@ onUnmounted(() => {
           <button
             v-if="is3D"
             type="button"
-            class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press bg-basalt text-sm font-bold text-panel"
-            aria-label="Vista 3D con il rilievo: tocca per tornare in piano"
-            aria-pressed="true"
+            class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press bg-panel/85 text-sm font-bold text-basalt backdrop-blur-2xl"
+            aria-label="Torna alla vista in piano (2D)"
             @click="toggle3D()"
           >
-            3D
+            2D
           </button>
         </Transition>
         <Transition name="float-button">

@@ -46,7 +46,7 @@ const TIPS = computed(() => [
     // On phones there is no 3D button until the map is tilted: the gesture tilts it
     text: isDesktop.value
       ? "«3D» inclina la mappa e fa emergere il rilievo, con le linee di vista tese da una torre all'altra."
-      : "Trascina in su con due dita per inclinare la mappa e far emergere il rilievo, con le linee di vista tese da una torre all'altra; «3D» la riporta in piano.",
+      : "Trascina in su con due dita per inclinare la mappa e far emergere il rilievo, con le linee di vista tese da una torre all'altra; «2D» la riporta in piano.",
   },
   {
     icon: "i-lucide-rotate-3d",
