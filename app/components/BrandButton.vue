@@ -13,11 +13,12 @@ const infoOpen = useInfoOpen();
 <template>
   <button
     type="button"
-    class="flex min-h-11 cursor-pointer items-center rounded-2xl shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press"
+    class="flex min-h-11 cursor-pointer items-center shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press"
     :class="
       compact
-        ? 'size-11 justify-center'
-        : 'gap-x-2 bg-panel/80 py-1.5 pr-2.5 pl-3 backdrop-blur-2xl'
+        ? // The tile's own corners (BrandMark), so the shadow follows its shape
+          'size-11 justify-center rounded-[22.5%]'
+        : 'gap-x-2 rounded-2xl bg-panel/80 py-1.5 pr-2.5 pl-3 backdrop-blur-2xl'
     "
     aria-label="NurNet+: guida, legenda e crediti"
     @click="infoOpen = true"
