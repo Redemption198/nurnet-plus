@@ -1,9 +1,6 @@
 import DataWorker from "~/workers/data-worker.ts?worker";
 import type { WorkerReply, WorkerRequest } from "~/workers/data-worker.ts";
 
-// Only nuraghi have line-of-sight data
-const isNuraghe = (category: string | null) => /^1[0-3]$/.test(category ?? "");
-
 // One worker for the whole app: it loads the data once and answers searches and details.
 // Browser-only (started in useNurnetData on the client), so this module state is never shared
 // between server renders

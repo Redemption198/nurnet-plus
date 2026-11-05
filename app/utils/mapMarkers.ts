@@ -12,8 +12,10 @@ import villaggio from "../components/icons/IconVillaggioNuragico.vue?raw";
 import menhir from "../components/icons/IconMenhir.vue?raw";
 import acqua from "../components/icons/IconCultoAcqua.vue?raw";
 import nuraghe from "../components/icons/IconNurnetPlus.vue?raw";
-import { BRAND, rgbChannels } from "./brand";
 import tafone from "../components/icons/IconTafone.vue?raw";
+import { BRAND, rgbChannels } from "./brand";
+// Imported, not auto-imported, so the tests can load this module
+import { CATEGORIES, type Category } from "./categories";
 
 const COMPONENTS: Record<NonNullable<Category["icon"]>, string> = {
   IconNurnetPlus: nuraghe,

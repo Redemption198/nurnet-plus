@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { CATEGORIES, categoryOf, statusOf } from "../app/utils/categories";
+import { CATEGORIES, categoryOf, isNuraghe, statusOf } from "../app/utils/categories";
 import { VISIBILITY_LEVELS, visibilityLevel } from "../app/utils/visibilityLevels";
 
 describe("categoryOf", () => {
@@ -17,6 +17,15 @@ describe("categoryOf", () => {
   it("gives every id to one category only", () => {
     const ids = CATEGORIES.flatMap((category) => category.ids);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("isNuraghe", () => {
+  it("is true for the Nuraghe category's ids only (the ones with line-of-sight data)", () => {
+    expect(CATEGORIES[0]!.name).toBe("Nuraghe");
+    for (const id of ["10", "11", "12", "13"]) expect(isNuraghe(id)).toBe(true);
+    for (const id of ["1", "14", "110", "30", "", null, undefined])
+      expect(isNuraghe(id)).toBe(false);
   });
 });
 

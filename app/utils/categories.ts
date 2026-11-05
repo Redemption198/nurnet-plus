@@ -88,6 +88,10 @@ const byId = new Map(CATEGORIES.flatMap((category) => category.ids.map((id) => [
 export const categoryOf = (categoryId: string | null | undefined): Category =>
   byId.get(categoryId ?? "") ?? UNKNOWN;
 
+// Only nuraghi have line-of-sight data
+export const isNuraghe = (categoryId: string | null | undefined) =>
+  categoryOf(categoryId) === CATEGORIES[0];
+
 // What the conservation status means to a visitor, from the free-text values in the data
 export function statusOf(stato: string | null | undefined) {
   const value = (stato ?? "").trim().toLowerCase();

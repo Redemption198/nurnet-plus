@@ -208,9 +208,7 @@ export function createSightLinesLayer(id: string) {
     pick(x, y, tolerance = 8) {
       if (!lastMatrix || !pickable.length) return null;
       const m = lastMatrix;
-      const canvas = map.getCanvas();
-      const width = canvas.width / devicePixelRatio;
-      const height = canvas.height / devicePixelRatio;
+      const { width, height } = cssSize();
       const toScreen = ([px, py, pz]: number[]) => {
         const w = m[3]! * px! + m[7]! * py! + m[11]! * pz! + m[15]!;
         if (w <= 0) return null; // behind the camera
@@ -260,12 +258,8 @@ export function createSightLinesLayer(id: string) {
       gl.useProgram(program);
       lastMatrix = translate(args.defaultProjectionData.mainMatrix as ArrayLike<number>, origin);
       gl.uniformMatrix4fv(uniforms.u_matrix!, false, lastMatrix);
-      const canvas = map.getCanvas();
-      gl.uniform2f(
-        uniforms.u_viewport!,
-        canvas.width / devicePixelRatio,
-        canvas.height / devicePixelRatio,
-      );
+      const { width, height } = cssSize();
+      gl.uniform2f(uniforms.u_viewport!, width, height);
       gl.uniform1f(uniforms.u_highlight!, highlight);
       gl.uniform4f(uniforms.u_widths!, 2, 1.5, 1.2, 2);
       gl.uniform4fv(
@@ -301,6 +295,14 @@ export function createSightLinesLayer(id: string) {
       gl.deleteProgram(program);
     },
   };
+
+  // The map's size in css px. Not the canvas's pixels over devicePixelRatio: MapLibre lowers its
+  // pixel ratio when the canvas would pass maxCanvasSize (4096 px, e.g. a large window on a 5K
+  // screen), and then lines came out too wide and pick() missed them
+  function cssSize() {
+    const canvas = map.getCanvas();
+    return { width: canvas.clientWidth, height: canvas.clientHeight };
+  }
 
   function ink() {
     return dark ? BRAND_DARK.basalt : BRAND.basalt;
