@@ -418,6 +418,18 @@ let stopWatchingResolution: (() => void) | undefined;
 // top of the map's own padding (drawer, controls, brand button), and how close it may get
 // (above the places: room for the open site's pin, the tallest marker, with its shadow)
 const FIT_PADDING = { top: PIN_HEIGHT + SHADOW_ROOM + 4, bottom: 40, left: 64, right: 56 };
+// On phones the map's padding already keeps full-width bands for buttons that only sit in the
+// corners (the logo at the top left, the floating buttons above the drawer), which the side margins
+// above keep places clear of: there, the room above and below overlaps those bands instead of
+// adding to them, so a network gets the height between the logo and the drawer
+function fitPadding() {
+  if (isDesktop.value) return FIT_PADDING;
+  return {
+    ...FIT_PADDING,
+    top: Math.max(0, FIT_PADDING.top - OVERLAY_TOP_MOBILE),
+    bottom: Math.max(0, FIT_PADDING.bottom - OVERLAY_BOTTOM_MOBILE),
+  };
+}
 const FIT_MAX_ZOOM = 14;
 // The places the map last framed, until the visitor moves the camera themselves: switching
 // between 2D and 3D frames them again, and so does the drawer moving (mobile)
@@ -462,8 +474,9 @@ function cameraForPlaces(
   pitch = ml.getPitch(),
   bearing = ml.getBearing(),
 ) {
+  const fit = fitPadding();
   const flat = ml.cameraForBounds(boundsOf(points), {
-    padding: FIT_PADDING,
+    padding: fit,
     maxZoom: FIT_MAX_ZOOM,
     bearing,
   });
@@ -481,10 +494,10 @@ function cameraForPlaces(
   const { width, height } = ml.getContainer().getBoundingClientRect();
   // The free area, where the places must end up
   const area = {
-    left: left + FIT_PADDING.left,
-    right: width - right - FIT_PADDING.right,
-    top: top + FIT_PADDING.top,
-    bottom: height - bottom - FIT_PADDING.bottom,
+    left: left + fit.left,
+    right: width - right - fit.right,
+    top: top + fit.top,
+    bottom: height - bottom - fit.bottom,
   };
   if (area.right <= area.left || area.bottom <= area.top) return null;
   const places = points.map((point) => LngLat.convert(point));
@@ -1009,7 +1022,7 @@ onMounted(() => {
     if (camera) ml.easeTo({ ...camera, duration: 1200, essential: true });
     else
       ml.fitBounds(request.bounds, {
-        padding: FIT_PADDING,
+        padding: fitPadding(),
         maxZoom: FIT_MAX_ZOOM,
         duration: 1200,
         essential: true,
