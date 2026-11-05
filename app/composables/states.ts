@@ -5,6 +5,9 @@ export const useCurrentSite = () => useState<CurrentSite | null>("current-site",
 // first, so "A caso" can avoid them. In memory only, for this visit
 export const useRecentSites = () => useState<string[]>("recent-sites", () => []);
 
+// The loading splash (AppSplash) is up: the status bar keeps its orange meanwhile (app.vue)
+export const useSplashVisible = () => useState<boolean>("splash-visible", () => true);
+
 // The "Informazioni" sheet (about, credits)
 export const useInfoOpen = () => useState<boolean>("info-open", () => false);
 

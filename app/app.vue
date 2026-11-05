@@ -11,15 +11,23 @@ const splashLinks = SPLASH_SCREENS.map(({ file, media }) => ({
 
 // The browser and status bars take the map's sand colour, light or dark. Following the system,
 // a pair by media query: right from the first paint of the prerendered page. With the visitor's
-// own choice (info sheet), that one
+// own choice (info sheet), that one. While the splash is up, its orange (prerendered with it)
 const colorMode = useColorMode();
+const splashVisible = useSplashVisible();
 const themeColor = computed(() =>
-  colorMode.preference === "system"
-    ? [
-        { name: "theme-color", content: BRAND.sand, media: "(prefers-color-scheme: light)" },
-        { name: "theme-color", content: BRAND_DARK.sand, media: "(prefers-color-scheme: dark)" },
-      ]
-    : [{ name: "theme-color", content: colorMode.value === "dark" ? BRAND_DARK.sand : BRAND.sand }],
+  splashVisible.value
+    ? [{ name: "theme-color", content: SPLASH_STATUS_BAR }]
+    : colorMode.preference === "system"
+      ? [
+          { name: "theme-color", content: BRAND.sand, media: "(prefers-color-scheme: light)" },
+          { name: "theme-color", content: BRAND_DARK.sand, media: "(prefers-color-scheme: dark)" },
+        ]
+      : [
+          {
+            name: "theme-color",
+            content: colorMode.value === "dark" ? BRAND_DARK.sand : BRAND.sand,
+          },
+        ],
 );
 
 // Title, description, canonical and Open Graph come from `site` in nuxt.config (Nuxt SEO)
@@ -36,6 +44,17 @@ useHead({
     { rel: "icon", type: "image/png", sizes: "196x196", href: asset("favicon-196.png") },
     { rel: "apple-touch-icon", href: asset("apple-icon-180.png") },
     ...splashLinks,
+  ],
+  script: [
+    {
+      // An app on the iPhone or iPad home screen starts below the status bar, but its launch
+      // screen covers the whole screen. --status-bar: the bar's height, measured before the first
+      // paint, so the splash reaches up behind it and its logo sits where the launch screen's
+      // does (AppSplash). iOS only (navigator.standalone), where the screen size is fixed in
+      // portrait; elsewhere it stays unset
+      innerHTML:
+        "if(navigator.standalone){var s=screen,l=innerWidth>innerHeight,h=l?Math.min(s.width,s.height):Math.max(s.width,s.height);document.documentElement.style.setProperty('--status-bar',Math.max(0,Math.min(80,h-innerHeight))+'px')}",
+    },
   ],
 });
 </script>

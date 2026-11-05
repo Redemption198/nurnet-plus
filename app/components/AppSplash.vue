@@ -5,6 +5,8 @@ import gsap from "gsap";
 const props = defineProps<{ ready: boolean }>();
 
 const visible = ref(true);
+// The status bar's orange (app.vue) lasts as long as the splash, and goes as it starts to fade
+const splashVisible = useSplashVisible();
 const root = ref<HTMLElement | null>(null);
 const mark = ref<HTMLElement | null>(null);
 
@@ -15,6 +17,7 @@ const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matche
 function hide() {
   animations?.revert();
   visible.value = false;
+  splashVisible.value = false;
 }
 
 // The logo (a nuraghe seen from above: a central tower and four around it), in its 64-unit
@@ -74,6 +77,7 @@ watch(
   (ready) => {
     if (!ready || !visible.value) return;
     if (!animations) return hide();
+    splashVisible.value = false;
     animations.add(() =>
       gsap.to(root.value, {
         opacity: 0,
@@ -90,12 +94,15 @@ onUnmounted(() => animations?.revert());
 </script>
 
 <template>
-  <!-- Drawn like the PWA launch screens (package.json's generate-pwa-assets): the brand gradient
-       and the logo centred, min(36vw, 36vh, 200px) wide, so one follows the other seamlessly -->
+  <!-- Drawn like the iOS launch screens (scripts/pwa-assets): the brand gradient over the whole
+       screen and the logo centred on it, min(36%, 36%, 200px) of its width and height, so one
+       follows the other seamlessly. On an iPhone's home screen the page starts below the status
+       bar: the splash reaches up behind it by its height (--status-bar, app.vue), so the gradient
+       and the logo stay where the launch screen drew them -->
   <div
     v-if="visible"
     ref="root"
-    class="splash fixed inset-0 z-50 bg-brand"
+    class="splash fixed inset-x-0 bottom-0 z-50 bg-brand"
     role="status"
     aria-label="Caricamento dei siti"
   >
@@ -107,11 +114,13 @@ onUnmounted(() => animations?.revert());
 
 <style scoped>
 .splash {
-  --logo: min(36vw, 36vh, 200px);
+  top: calc(-1 * var(--status-bar, 0px));
+  /* The logo's size from the splash's own box: the whole screen, status bar included */
+  container-type: size;
 }
 
 .logo {
-  width: var(--logo);
-  height: var(--logo);
+  width: min(36cqw, 36cqh, 200px);
+  height: min(36cqw, 36cqh, 200px);
 }
 </style>
