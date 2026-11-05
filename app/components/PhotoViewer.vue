@@ -291,7 +291,7 @@ watch(
             </p>
             <button
               type="button"
-              class="pointer-events-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-white press"
+              class="pointer-events-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-surface press"
               aria-label="Chiudi"
               @click="close"
             >
@@ -307,7 +307,7 @@ watch(
           <button
             v-if="current > 0"
             type="button"
-            class="pointer-events-auto absolute top-1/2 left-4 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-white pointer-fine:flex"
+            class="pointer-events-auto absolute top-1/2 left-4 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-surface pointer-fine:flex"
             aria-label="Foto precedente"
             @click="go(-1)"
           >
@@ -316,7 +316,7 @@ watch(
           <button
             v-if="current < photos.length - 1"
             type="button"
-            class="pointer-events-auto absolute top-1/2 right-4 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-white pointer-fine:flex"
+            class="pointer-events-auto absolute top-1/2 right-4 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-surface pointer-fine:flex"
             aria-label="Foto successiva"
             @click="go(1)"
           >

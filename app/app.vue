@@ -45,7 +45,8 @@ const splashLinks = SPLASH_DEVICES.flatMap(([width, height, ratio]) =>
 useHead({
   meta: [
     // The browser and status bars take the map's sand colour
-    { name: "theme-color", content: BRAND.sand },
+    { name: "theme-color", content: BRAND.sand, media: "(prefers-color-scheme: light)" },
+    { name: "theme-color", content: BRAND_DARK.sand, media: "(prefers-color-scheme: dark)" },
     { name: "mobile-web-app-capable", content: "yes" },
     { name: "apple-mobile-web-app-title", content: "NurNet+" },
   ],

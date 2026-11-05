@@ -111,6 +111,7 @@ export function createSightLinesLayer(id: string) {
   let towerVertices = 0;
   let origin: [number, number, number] = [0, 0, 0];
   let highlight = -1;
+  let ink: string = BRAND.basalt; // towers and the highlighted line
   let vertices: Float32Array | null = null; // to upload on the next render
   // For pick(): each line's ends (relative to `origin`) and its site, and the last frame's matrix
   let pickable: { a: number[]; b: number[]; id: number }[] = [];
@@ -120,6 +121,7 @@ export function createSightLinesLayer(id: string) {
   const layer: CustomLayerInterface & {
     setData: (lines: SightLine[], towers: Tower[]) => void;
     setHighlight: (id: number | null) => void;
+    setInk: (color: string) => void;
     pick: (x: number, y: number, tolerance?: number) => number | null;
   } = {
     id,
@@ -237,6 +239,12 @@ export function createSightLinesLayer(id: string) {
       return best;
     },
 
+    // The towers' and the highlighted line's colour (light on the dark map)
+    setInk(color) {
+      ink = color;
+      map?.triggerRepaint();
+    },
+
     setHighlight(siteId) {
       highlight = siteId ?? -1;
       map?.triggerRepaint();
@@ -264,10 +272,10 @@ export function createSightLinesLayer(id: string) {
         uniforms.u_colors!,
         [
           ...VISIBILITY_LEVELS.map((level, i) => rgba(level.color, [0.8, 0.7, 0.75][i]!)),
-          rgba(BRAND.basalt, 0.75), // towers
+          rgba(ink, 0.75), // towers
         ].flat(),
       );
-      gl.uniform4fv(uniforms.u_highlightColor!, rgba(BRAND.basalt, 1));
+      gl.uniform4fv(uniforms.u_highlightColor!, rgba(ink, 1));
 
       gl.bindVertexArray(vao);
       gl.enable(gl.BLEND);

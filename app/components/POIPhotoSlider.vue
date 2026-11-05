@@ -54,7 +54,7 @@ function scrollPage(direction: number) {
     <button
       v-if="!arrivedState.left"
       type="button"
-      class="absolute top-1/2 left-6 hidden h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt opacity-0 shadow-md backdrop-blur-md transition group-hover:opacity-100 hover:bg-white focus-visible:opacity-100 pointer-fine:flex"
+      class="absolute top-1/2 left-6 hidden h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt opacity-0 shadow-md backdrop-blur-md transition group-hover:opacity-100 hover:bg-surface focus-visible:opacity-100 pointer-fine:flex"
       aria-label="Foto precedenti"
       @click="scrollPage(-1)"
     >
@@ -63,7 +63,7 @@ function scrollPage(direction: number) {
     <button
       v-if="!arrivedState.right"
       type="button"
-      class="absolute top-1/2 right-6 hidden h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt opacity-0 shadow-md backdrop-blur-md transition group-hover:opacity-100 hover:bg-white focus-visible:opacity-100 pointer-fine:flex"
+      class="absolute top-1/2 right-6 hidden h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt opacity-0 shadow-md backdrop-blur-md transition group-hover:opacity-100 hover:bg-surface focus-visible:opacity-100 pointer-fine:flex"
       aria-label="Foto successive"
       @click="scrollPage(1)"
     >

@@ -14,7 +14,7 @@ const privacyOpen = ref(false);
 
 const link = "font-semibold text-terracotta-dark underline underline-offset-2";
 const pill =
-  "flex min-h-11 items-center justify-center gap-x-2 rounded-full bg-white/80 px-4 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-white press";
+  "flex min-h-11 items-center justify-center gap-x-2 rounded-full bg-surface/80 px-4 font-semibold text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] transition hover:bg-surface press";
 
 // The status values in the data, with the icons the site page uses (see statusOf)
 const STATUSES = ["mantenuto", "diroccato", "non visibile"].map((value) => statusOf(value)!);
@@ -54,7 +54,7 @@ const TIPS = computed(() => [
     title="NurNet+"
     description="Come leggere la mappa, come usarla, privacy e crediti"
     :ui="{
-      overlay: 'bg-basalt/25 backdrop-blur-[2px]',
+      overlay: 'bg-basalt/25 backdrop-blur-[2px] dark:bg-black/50',
       content: 'max-w-md divide-y-0 rounded-3xl bg-panel/90 shadow-xl ring-0 backdrop-blur-2xl',
     }"
   >

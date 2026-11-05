@@ -23,6 +23,7 @@
   --color-line: #d3c8b9; /* dividers */
   --color-muted: #5e554f; /* secondary text: 5.8:1 on the panel */
   --color-subtle: #857a71; /* icons, the drawer handle: 3:1 on the panel */
+  --color-surface: #fff; /* pills and the search field, translucent over the panel and the map */
 }
 
 /* Nuxt UI's components take the palette, not Tailwind's orange and stone (app.config's colours):
@@ -35,11 +36,37 @@
     --ui-primary: var(--color-terracotta);
     --ui-text: var(--color-basalt);
     --ui-text-highlighted: var(--color-basalt);
-    --ui-text-muted: #5e554f;
+    --ui-text-muted: var(--color-muted);
     --ui-bg-elevated: var(--color-well);
     --ui-bg-accented: var(--color-line);
     --ui-border: var(--color-line);
   }
+}
+
+/* Dark mode, following the system (Nuxt UI's color mode puts .dark on <html>): the same names,
+   flipped. Basalt stays the text colour, so it turns light; the panels turn to a warm near-black.
+   Unlayered, so it wins over Nuxt UI's own .dark variables */
+.dark {
+  --color-terracotta-dark: #f0873a; /* text links: light on the dark panels (6:1) */
+  --color-basalt: #f1e9dc;
+  --color-sand: #1d1819;
+  --color-panel: #272022;
+  --color-well: #3a3133;
+  --color-line: #4a3f40;
+  --color-muted: #bcafa4;
+  --color-subtle: #8f8378;
+  --color-surface: #3a3133;
+
+  --ui-primary: var(--color-terracotta);
+  --ui-text: var(--color-basalt);
+  --ui-text-highlighted: var(--color-basalt);
+  --ui-text-muted: var(--color-muted);
+  --ui-bg: var(--color-panel);
+  --ui-bg-elevated: var(--color-well);
+  --ui-bg-accented: var(--color-line);
+  --ui-border: var(--color-line);
+
+  color-scheme: dark;
 }
 
 @layer base {

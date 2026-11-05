@@ -40,7 +40,14 @@ const mapUnavailable = ref(false);
 const mapOffline = ref(false);
 
 // Free sources, no API keys: OpenFreeMap vector tiles and the AWS Terrain Tiles dataset
-const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+// liberty in light mode (recoloured below), their dark style in dark mode
+const STYLE_URLS = {
+  light: "https://tiles.openfreemap.org/styles/liberty",
+  dark: "https://tiles.openfreemap.org/styles/dark",
+};
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === "dark");
+const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
 const TERRAIN_TILES = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png";
 const TERRAIN_ATTRIBUTION =
   '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Terrain Tiles</a>';
@@ -58,6 +65,8 @@ const BASEMAP_COLORS: Record<string, [PaintProperty, string]> = {
 };
 
 function warmBasemap(ml: MapLibreMap) {
+  // The dark style is used as it comes
+  if (isDark.value) return;
   for (const [layer, [property, color]] of Object.entries(BASEMAP_COLORS)) {
     if (ml.getLayer(layer)) ml.setPaintProperty(layer, property, color);
   }
@@ -84,7 +93,10 @@ function addTerrain(ml: MapLibreMap) {
       type: "hillshade",
       source: "terrain",
       // Shadows in a warm basalt grey, not the default slate, so the relief stays in the palette
-      paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#4d413e" },
+      paint: {
+        "hillshade-exaggeration": isDark.value ? 0.25 : 0.35,
+        "hillshade-shadow-color": isDark.value ? "#000" : "#4d413e",
+      },
     },
     firstSymbolLayer,
   );
@@ -93,12 +105,13 @@ function addTerrain(ml: MapLibreMap) {
   ml.setTerrain({ source: "terrain", exaggeration: 1.5 });
   // In 3D: a soft Mediterranean sky, and a horizon and haze of warm limestone (the map's sand,
   // lighter), so the distance fades into the palette rather than into a cool grey
+  // (in dark mode: a night sky, and a haze of the dark map's ground)
   ml.setSky({
-    "sky-color": "#b3d3e0",
-    "horizon-color": "#f3ece1",
+    "sky-color": isDark.value ? "#14181f" : "#b3d3e0",
+    "horizon-color": isDark.value ? "#2a2526" : "#f3ece1",
     "sky-horizon-blend": 0.5,
     "horizon-fog-blend": 0.6,
-    "fog-color": "#efe6d8",
+    "fog-color": isDark.value ? "#1d1819" : "#efe6d8",
     "fog-ground-blend": 0.4,
   });
 }
@@ -156,11 +169,14 @@ function labelLayout(ml: MapLibreMap, fromZoom: number) {
     "text-optional": true,
   };
 }
-const LABEL_PAINT = {
-  "text-color": BRAND.basalt,
-  "text-halo-color": "rgba(255, 255, 255, 0.9)",
-  "text-halo-width": 1.5,
-};
+// Basalt on a white halo; in dark mode, light text on a dark halo
+function labelPaint() {
+  return {
+    "text-color": isDark.value ? BRAND_DARK.basalt : BRAND.basalt,
+    "text-halo-color": isDark.value ? "rgba(29, 24, 25, 0.9)" : "rgba(255, 255, 255, 0.9)",
+    "text-halo-width": 1.5,
+  };
+}
 
 function addPois(ml: MapLibreMap) {
   ml.addSource("pois", {
@@ -192,7 +208,7 @@ function addPois(ml: MapLibreMap) {
       "icon-padding": 0,
       ...labelLayout(ml, LABEL_ZOOM),
     },
-    paint: LABEL_PAINT,
+    paint: labelPaint(),
   });
 
   // The selected POI: a pin with its tip on the site, always visible, with its name a bit earlier
@@ -211,7 +227,7 @@ function addPois(ml: MapLibreMap) {
       ...labelLayout(ml, 11),
       "text-size": 13,
     },
-    paint: LABEL_PAINT,
+    paint: labelPaint(),
   });
 
   // The site hovered or focused in the list: drawn again bigger and lifted, always visible (even
@@ -232,7 +248,7 @@ function addPois(ml: MapLibreMap) {
       "text-allow-overlap": true,
       "text-ignore-placement": true,
     },
-    paint: { ...LABEL_PAINT, "text-halo-width": 2 },
+    paint: { ...labelPaint(), "text-halo-width": 2 },
   });
 }
 
@@ -534,9 +550,11 @@ function addSightLines(ml: MapLibreMap) {
       "text-allow-overlap": true,
       "text-ignore-placement": true,
     },
-    paint: { ...LABEL_PAINT, "text-halo-width": 2 },
+    paint: { ...labelPaint(), "text-halo-width": 2 },
   });
+}
 
+function watchTerrainHeights(ml: MapLibreMap) {
   // Whenever the map has finished loading (terrain tiles included, e.g. after a zoom or the switch
   // to 3D), redo the heights if the terrain now gives different ones. Only then: an update
   // repaints, which would otherwise end in "idle" again
@@ -918,7 +936,7 @@ onMounted(() => {
   try {
     ml = new MapLibreMap({
       container: map.value!,
-      style: STYLE_URL,
+      style: styleUrl(),
       // Sardinia, framed in the area the drawer leaves visible
       bounds: [
         [8.1, 38.85],
@@ -956,15 +974,28 @@ onMounted(() => {
     mapOffline.value = false;
   });
 
-  ml.on("load", async () => {
+  // Everything of ours on top of the basemap's style. A new style (the light / dark switch) drops
+  // it all, so it's added again then
+  async function addOurLayers() {
     await addMarkerImages(ml);
-    stopWatchingResolution = watchMarkerResolution(ml);
     warmBasemap(ml);
     addTerrain(ml);
     addPois(ml);
+    sightLines.setInk(isDark.value ? BRAND_DARK.basalt : BRAND.basalt);
     addSightLines(ml);
     updateSightLines(); // also applies the markers' focus
+  }
+
+  ml.on("load", async () => {
+    await addOurLayers();
+    stopWatchingResolution = watchMarkerResolution(ml);
+    watchTerrainHeights(ml);
     publishView(ml);
+
+    watch(isDark, () => {
+      ml.once("style.load", () => void addOurLayers());
+      ml.setStyle(styleUrl(), { diff: false });
+    });
 
     // A site opened from its URL before the map was ready: raise the drawer and show it
     if (route.path !== "/" && site.value) {
@@ -1050,7 +1081,7 @@ onUnmounted(() => {
 
       <MapControlsButton
         class="text-sm font-bold"
-        :class="is3D ? 'bg-basalt !text-white hover:!bg-basalt' : '!text-muted'"
+        :class="is3D ? 'bg-basalt !text-panel hover:!bg-basalt' : '!text-muted'"
         aria-label="Vista 3D con il rilievo"
         :aria-pressed="is3D"
         @click.prevent="toggle3D()"
