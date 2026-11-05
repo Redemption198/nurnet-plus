@@ -22,6 +22,7 @@ const STATUSES = ["mantenuto", "diroccato", "non visibile"].map((value) => statu
 // Mac or not: the rotation tip names its keys and gestures
 const isMac = useIsMac();
 const isDark = useIsDark();
+const isDesktop = useMediaQuery("(min-width: 1024px)");
 
 // Light or dark: the system's (the default), or the visitor's own, kept on the device. At dusk
 // the system may turn dark while the light map still reads better outdoors
@@ -42,7 +43,10 @@ const TIPS = computed(() => [
   },
   {
     icon: "i-lucide-mountain",
-    text: "«3D» inclina la mappa e fa emergere il rilievo, con le linee di vista tese da una torre all'altra.",
+    // On phones there is no 3D button until the map is tilted: the gesture tilts it
+    text: isDesktop.value
+      ? "«3D» inclina la mappa e fa emergere il rilievo, con le linee di vista tese da una torre all'altra."
+      : "Trascina in su con due dita per inclinare la mappa e far emergere il rilievo, con le linee di vista tese da una torre all'altra; «3D» la riporta in piano.",
   },
   {
     icon: "i-lucide-rotate-3d",

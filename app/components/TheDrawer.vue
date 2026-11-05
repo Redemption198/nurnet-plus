@@ -6,6 +6,10 @@ import { breakpointsTailwind } from "@vueuse/core";
 if (import.meta.client) gsap.registerPlugin(InertiaPlugin);
 
 const drawer = ref<HTMLElement | null>(null);
+// The map's buttons on mobile ride on the drawer's top edge (TheMap teleports them here): a layer
+// moved with the drawer by the same tweens, and faded out as the drawer reaches the top
+const float = ref<HTMLElement | null>(null);
+const sheets = () => [drawer.value, float.value].filter((el): el is HTMLElement => !!el);
 const drawerContent = ref<HTMLElement | null>(null);
 provideDrawerScroller(drawerContent);
 
@@ -57,20 +61,34 @@ function settle(position: DrawerPosition) {
   if (position !== "top") updateMapPadding(positionY(position));
 }
 
+// The buttons' opacity for a drawer offset: full from the middle down, gone at the top
+function floatAlpha(y: number) {
+  const top = positionY("top");
+  return Math.min(1, Math.max(0, (y - top) / (positionY("middle") - top)));
+}
+
+// After the drawer's tween (which overwrites every tween of its targets), the buttons' fade
+function fadeFloat(position: DrawerPosition) {
+  const autoAlpha = position === "top" ? 0 : 1;
+  if (reducedMotion.value === "reduce") gsap.set(float.value, { autoAlpha });
+  else animate(() => gsap.to(float.value, { autoAlpha, duration: 0.3, overwrite: "auto" }));
+}
+
 function moveTo(position: DrawerPosition) {
   settle(position);
   if (reducedMotion.value === "reduce") {
-    gsap.set(drawer.value, { y: positionY(position) });
-    return;
+    gsap.set(sheets(), { y: positionY(position) });
+  } else {
+    animate(() =>
+      gsap.to(sheets(), {
+        y: positionY(position),
+        duration: 0.6,
+        ease: "expo.out",
+        overwrite: true,
+      }),
+    );
   }
-  animate(() =>
-    gsap.to(drawer.value, {
-      y: positionY(position),
-      duration: 0.6,
-      ease: "expo.out",
-      overwrite: true,
-    }),
-  );
+  fadeFloat(position);
 }
 
 // Positions requested by the rest of the app (e.g. the map raises the drawer for a site)
@@ -153,7 +171,7 @@ function moveGesture(clientX: number, clientY: number, event: Event) {
     gesture.mode = Math.abs(dx) > Math.abs(dy) ? "scroll" : gestureMode(gesture.target, dy);
     if (gesture.mode === "sheet") {
       // Catch the sheet mid-animation, like iOS
-      gsap.killTweensOf(drawer.value);
+      gsap.killTweensOf(sheets());
       gesture.startDrawerY = Number(gsap.getProperty(drawer.value, "y"));
       InertiaPlugin.track(drawer.value!, "y");
     }
@@ -169,6 +187,7 @@ function moveGesture(clientX: number, clientY: number, event: Event) {
   if (y < min) y = min - rubberBand(min - y);
   else if (y > max) y = max + rubberBand(y - max);
   gsap.set(drawer.value, { y });
+  gsap.set(float.value, { y, autoAlpha: floatAlpha(y) });
 }
 
 function endGesture() {
@@ -180,14 +199,15 @@ function endGesture() {
     const y = Number(gsap.getProperty(drawer.value, "y"));
     const target = closestPosition(y + velocity * 0.2);
     settle(target);
-    if (reducedMotion.value === "reduce") gsap.set(drawer.value, { y: positionY(target) });
+    if (reducedMotion.value === "reduce") gsap.set(sheets(), { y: positionY(target) });
     else
       animate(() =>
-        gsap.to(drawer.value, {
+        gsap.to(sheets(), {
           inertia: { y: { velocity, end: positionY(target) }, duration: { min: 0.35, max: 0.8 } },
           overwrite: true,
         }),
       );
+    fadeFloat(target);
 
     // A mouse drag ends with a click on whatever is under the pointer: swallow it
     // (a moved touch never produces one, so only for the mouse)
@@ -244,23 +264,24 @@ function setupForScreen(animateIn: boolean) {
   if (lgAndGreater.value) {
     // Desktop: a fixed side panel, no transform at all (it also breaks nested blur in Firefox)
     gesture = null;
-    gsap.killTweensOf(drawer.value);
-    gsap.set(drawer.value, { clearProps: "transform" });
+    gsap.killTweensOf(sheets());
+    gsap.set(sheets(), { clearProps: "transform,opacity,visibility" });
     updateMapPadding(0);
     return;
   }
 
   settle("bottom");
+  gsap.set(float.value, { autoAlpha: 1 });
   if (animateIn && reducedMotion.value !== "reduce") {
     animate(() =>
       gsap.fromTo(
-        drawer.value,
+        sheets(),
         { y: window.innerHeight },
         { y: positionY("bottom"), duration: 0.8, ease: "expo.out" },
       ),
     );
   } else {
-    gsap.set(drawer.value, { y: positionY("bottom") });
+    gsap.set(sheets(), { y: positionY("bottom") });
   }
 }
 
@@ -277,7 +298,8 @@ useEventListener(window, "resize", () => {
   }
   // Detents are fractions of the screen height: re-place the drawer
   const position = drawerState.value.position;
-  gsap.set(drawer.value, { y: positionY(position) });
+  gsap.set(sheets(), { y: positionY(position) });
+  gsap.set(float.value, { autoAlpha: position === "top" ? 0 : 1 });
   settle(position);
 });
 
@@ -335,4 +357,11 @@ onDeactivated(() => lockPageScroll(false));
       <slot></slot>
     </div>
   </div>
+  <!-- Mobile: a strip whose bottom edge is the drawer's top edge (the drawer's box starts 3rem
+       down: -bottom-12, full height); the buttons in it grow upwards. Only they take clicks -->
+  <div
+    id="drawer-float"
+    ref="float"
+    class="pointer-events-none absolute inset-x-0 top-0 z-2 h-12 lg:hidden"
+  ></div>
 </template>

@@ -769,8 +769,10 @@ function rotateWithTrackpadTwist(ml: MapLibreMap, container: HTMLElement) {
 
 const rotateBy = (degrees: number) =>
   mlMap.value?.easeTo({ bearing: mlMap.value.getBearing() + degrees, duration: 250 });
-const OVERLAY_RIGHT = 16 + 48 + 8;
+const OVERLAY_RIGHT = 16 + 48 + 8; // desktop: the column of buttons
 const OVERLAY_TOP_MOBILE = 16 + 44 + 8;
+// Mobile: the buttons riding above the drawer
+const OVERLAY_BOTTOM_MOBILE = 12 + 48 + 8;
 // The sight-lines legend at the bottom right (desktop): always kept clear, so the camera doesn't
 // jump when lines appear
 const OVERLAY_BOTTOM_DESKTOP = 8 + 32 + 16;
@@ -778,8 +780,8 @@ const OVERLAY_BOTTOM_DESKTOP = 8 + 32 + 16;
 function toMapPadding([top, right, bottom, left]: number[]) {
   return {
     top: top! + (isDesktop.value ? 0 : OVERLAY_TOP_MOBILE),
-    right: right! + OVERLAY_RIGHT,
-    bottom: bottom! + (isDesktop.value ? OVERLAY_BOTTOM_DESKTOP : 0),
+    right: right! + (isDesktop.value ? OVERLAY_RIGHT : 0),
+    bottom: bottom! + (isDesktop.value ? OVERLAY_BOTTOM_DESKTOP : OVERLAY_BOTTOM_MOBILE),
     left: left!,
   };
 }
@@ -1131,16 +1133,16 @@ onUnmounted(() => {
   <p
     v-else-if="mapOffline"
     role="status"
-    class="absolute top-[max(1rem,env(safe-area-inset-top))] right-18 left-4 z-1 rounded-2xl bg-panel p-4 text-center text-sm font-semibold text-basalt shadow-sm max-lg:top-[calc(max(1rem,env(safe-area-inset-top))+3.5rem)] lg:left-auto lg:w-96"
+    class="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 left-4 z-1 rounded-2xl bg-panel p-4 lg:right-18 text-center text-sm font-semibold text-basalt shadow-sm max-lg:top-[calc(max(1rem,env(safe-area-inset-top))+3.5rem)] lg:left-auto lg:w-96"
   >
     La mappa non si è caricata: controlla la connessione. Puoi comunque cercare e consultare i siti
     dalla lista.
   </p>
 
-  <!-- The space beside the buttons (as wide as the location error, when shown) must leave
-       clicks and drags to the map, so only the items themselves take them -->
+  <!-- Desktop: a column at the top right. The space beside the buttons (as wide as the location
+       error, when shown) must leave clicks and drags to the map, so only the items take them -->
   <div
-    v-if="!mapUnavailable"
+    v-if="!mapUnavailable && isDesktop"
     class="pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-1 flex flex-col items-end gap-y-2 *:pointer-events-auto"
   >
     <div
@@ -1211,6 +1213,75 @@ onUnmounted(() => {
     </p>
   </div>
 
+  <!-- Mobile: fewer buttons, riding on the drawer's top edge (TheDrawer's #drawer-float), within
+       the thumb's reach. Zoom is a pinch. 3D and the compass only show when there is something to
+       undo (a tilted or rotated map), at the left; the location at the right. They follow the
+       drawer down and to the middle, and fade away as it opens fully -->
+  <Teleport v-if="!mapUnavailable && !isDesktop" defer to="#drawer-float">
+    <div class="absolute inset-x-4 bottom-3 flex items-end justify-between gap-x-3">
+      <div class="flex gap-x-2">
+        <Transition name="float-button">
+          <button
+            v-if="is3D"
+            type="button"
+            class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press bg-basalt text-sm font-bold text-panel"
+            aria-label="Vista 3D con il rilievo: tocca per tornare in piano"
+            aria-pressed="true"
+            @click="toggle3D()"
+          >
+            3D
+          </button>
+        </Transition>
+        <Transition name="float-button">
+          <button
+            v-if="showsCompass"
+            type="button"
+            class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press touch-none bg-panel/85 backdrop-blur-2xl"
+            aria-label="Bussola: orienta la mappa a nord"
+            @pointerdown="onCompassDown"
+            @pointermove="onCompassMove"
+            @pointerup="onCompassUp"
+            @pointercancel="onCompassUp"
+            @click="onCompassClick"
+          >
+            <svg
+              class="size-6"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              :style="{ rotate: `${-bearing}deg` }"
+            >
+              <path d="M12 2.5 15.5 12h-7z" :fill="BRAND.terracotta" />
+              <path d="M12 21.5 8.5 12h7z" class="fill-subtle" />
+            </svg>
+          </button>
+        </Transition>
+      </div>
+
+      <div class="flex flex-col items-end gap-y-2">
+        <p
+          v-if="locationError"
+          role="alert"
+          class="pointer-events-auto max-w-56 rounded-2xl bg-panel/90 px-3 py-2 text-xs font-semibold text-basalt shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
+        >
+          {{ locationError }}
+        </p>
+        <button
+          type="button"
+          class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press bg-panel/85 text-subtle backdrop-blur-2xl"
+          aria-label="Mostra la mia posizione"
+          :disabled="locating"
+          @click="showMyLocation()"
+        >
+          <UIcon
+            :name="locating ? 'i-lucide-loader-circle' : 'i-lucide-locate-fixed'"
+            class="size-5.5"
+            :class="{ 'animate-spin': locating }"
+          />
+        </button>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- The key to the lines of sight (desktop; on mobile the rows in the drawer say it): a strip
        at the bottom right, the near side of a tilted map where framed sites rarely end up, kept
        clear by the camera (OVERLAY_BOTTOM_DESKTOP). Only the levels the open nuraghe's lines have,
@@ -1254,6 +1325,26 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Mobile 3D and compass buttons: they pop in when the map is tilted or rotated, and out when
+   it's back flat and north up */
+.float-button-enter-active {
+  transition:
+    opacity 0.2s ease-out,
+    scale 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.float-button-leave-active {
+  transition:
+    opacity 0.15s ease-in,
+    scale 0.15s ease-in;
+}
+
+.float-button-enter-from,
+.float-button-leave-to {
+  opacity: 0;
+  scale: 0.6;
+}
+
 /* The legend strip, like Spotlight: it fades in with a little blur and scale, eases to the width
    of its items, and the items blur in, slide to their places and fade out on their own */
 .legend {
