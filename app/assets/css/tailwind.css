@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* dark: utilities follow the .dark class (the system's mode, or the visitor's choice in the info
+   sheet), not the system's media query */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* NurNet+ palette: colours taken from the sites themselves. Components use these names, not
    Tailwind's grey scales, so the whole app's tone changes here */
 @theme {
@@ -55,7 +59,7 @@
   --color-line: #4a3f40;
   --color-muted: #bcafa4;
   --color-subtle: #8f8378;
-  --color-surface: #3a3133;
+  --color-surface: #4a3f41; /* a step above the well, so pills and fields stand off it */
 
   --ui-primary: var(--color-terracotta);
   --ui-text: var(--color-basalt);

@@ -21,6 +21,16 @@ const STATUSES = ["mantenuto", "diroccato", "non visibile"].map((value) => statu
 
 // Mac or not: the rotation tip names its keys and gestures
 const isMac = useIsMac();
+const isDark = useIsDark();
+
+// Light or dark: the system's (the default), or the visitor's own, kept on the device. At dusk
+// the system may turn dark while the light map still reads better outdoors
+const colorMode = useColorMode();
+const APPEARANCES = [
+  { value: "system", label: "Automatico", icon: "i-lucide-sun-moon" },
+  { value: "light", label: "Chiaro", icon: "i-lucide-sun" },
+  { value: "dark", label: "Scuro", icon: "i-lucide-moon" },
+];
 const TIPS = computed(() => [
   {
     icon: "i-lucide-search",
@@ -138,7 +148,7 @@ const TIPS = computed(() => [
                     y1="4"
                     x2="30"
                     y2="4"
-                    :stroke="level.color"
+                    :stroke="isDark ? level.darkColor : level.color"
                     stroke-width="3"
                     stroke-linecap="round"
                     :stroke-dasharray="level.dashed ? '5 4' : undefined"
@@ -151,6 +161,37 @@ const TIPS = computed(() => [
               Calcolate dal CRS4 sul modello digitale del terreno, indicano quanto di una torre alta
               15 m sia visibile dall'altra. Le trovi nella scheda di ogni nuraghe, con «Mostra sulla
               mappa».
+            </p>
+          </section>
+
+          <section class="flex flex-col gap-y-3" aria-labelledby="info-appearance">
+            <h3 id="info-appearance" class="text-base font-semibold">Aspetto</h3>
+            <div
+              class="grid grid-cols-3 gap-x-1 rounded-full bg-well/70 p-1"
+              role="radiogroup"
+              aria-labelledby="info-appearance"
+            >
+              <button
+                v-for="appearance in APPEARANCES"
+                :key="appearance.value"
+                type="button"
+                role="radio"
+                :aria-checked="colorMode.preference === appearance.value"
+                class="flex min-h-11 cursor-pointer items-center justify-center gap-x-1.5 rounded-full px-2 font-semibold transition press press-subtle"
+                :class="
+                  colorMode.preference === appearance.value
+                    ? 'bg-surface text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)]'
+                    : 'text-muted hover:text-basalt'
+                "
+                @click="colorMode.preference = appearance.value"
+              >
+                <UIcon :name="appearance.icon" class="size-4.5 shrink-0" aria-hidden="true" />
+                {{ appearance.label }}
+              </button>
+            </div>
+            <p v-if="colorMode.preference === 'system'" class="text-pretty text-muted">
+              Chiaro o scuro come il dispositivo. All'aperto, al tramonto, «Chiaro» può leggersi
+              meglio.
             </p>
           </section>
 
@@ -239,8 +280,8 @@ const TIPS = computed(() => [
                 <dt class="text-xs font-semibold text-muted">Sul dispositivo</dt>
                 <dd class="text-pretty">
                   Per funzionare anche offline, l'app conserva una copia di sé e dei dati dei siti
-                  nella memoria del browser. Puoi eliminarla dalle impostazioni del browser relative
-                  a questo sito.
+                  nella memoria del browser, insieme all'aspetto scelto (chiaro o scuro), se ne hai
+                  scelto uno. Puoi eliminarla dalle impostazioni del browser relative a questo sito.
                 </dd>
               </div>
             </dl>

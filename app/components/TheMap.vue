@@ -45,8 +45,7 @@ const STYLE_URLS = {
   light: "https://tiles.openfreemap.org/styles/liberty",
   dark: "https://tiles.openfreemap.org/styles/dark",
 };
-const colorMode = useColorMode();
-const isDark = computed(() => colorMode.value === "dark");
+const isDark = useIsDark();
 const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
 const TERRAIN_TILES = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png";
 const TERRAIN_ATTRIBUTION =
@@ -64,11 +63,62 @@ const BASEMAP_COLORS: Record<string, [PaintProperty, string]> = {
   landcover_sand: ["fill-color", "#f2e3c4"],
 };
 
+// The same for OpenFreeMap's "dark" style, which comes in neutral greys: the ground of the dark
+// panels (the sand token, dark), a deep sea that still reads as water (1.6:1 on the ground),
+// warm roads in the panels' basalt, and town names in the muted text colour (8:1)
+const ROAD = "#5a4a44";
+const LABEL_HALO = "rgba(29, 24, 25, 0.85)";
+const BASEMAP_DARK: Record<string, Partial<Record<PaintProperty, string>>> = {
+  background: { "background-color": BRAND_DARK.sand },
+  water: { "fill-color": "#253f52" },
+  waterway: { "line-color": "#253f52" },
+  water_name: { "text-color": "#7d9bb0", "text-halo-color": "#1d2a33" },
+  landcover_ice_shelf: { "fill-color": BRAND_DARK.sand },
+  landcover_glacier: { "fill-color": BRAND_DARK.sand },
+  landuse_residential: { "fill-color": "#241e1f" },
+  landcover_wood: { "fill-color": "#22231a" },
+  landuse_park: { "fill-color": "#22231a" },
+  building: { "fill-color": "#2a2224", "fill-outline-color": "#332a2c" },
+  "aeroway-area": { "fill-color": "#241e1f" },
+  "aeroway-runway": { "line-color": "#3a3133" },
+  "aeroway-taxiway": { "line-color": "#2e2628" },
+  "aeroway-runway-casing": { "line-color": "#3a3133" },
+  road_area_pier: { "fill-color": BRAND_DARK.sand },
+  road_pier: { "line-color": BRAND_DARK.sand },
+  highway_path: { "line-color": "#2e2628" },
+  highway_minor: { "line-color": "#352c2d" },
+  highway_major_casing: { "line-color": "#2e2628" },
+  highway_major_inner: { "line-color": "#4a3d39" },
+  highway_major_subtle: { "line-color": "#4a3d39" },
+  highway_motorway_casing: { "line-color": "#2e2628" },
+  highway_motorway_inner: { "line-color": ROAD },
+  highway_motorway_subtle: { "line-color": ROAD },
+  railway: { "line-color": "#3a3133" },
+  railway_minor: { "line-color": "#3a3133" },
+  railway_transit: { "line-color": "#3a3133" },
+  railway_dashline: { "line-color": BRAND_DARK.sand },
+  railway_minor_dashline: { "line-color": BRAND_DARK.sand },
+  railway_transit_dashline: { "line-color": BRAND_DARK.sand },
+  highway_name_other: { "text-color": "#9c8f85", "text-halo-color": LABEL_HALO },
+  highway_name_motorway: { "text-color": "#9c8f85", "text-halo-color": LABEL_HALO },
+  boundary_state: { "line-color": "#4a3f40" },
+  "boundary_country_z0-4": { "line-color": "#4a3f40" },
+  "boundary_country_z5-": { "line-color": "#4a3f40" },
+};
+// Every place label (place_town, place_city...): the muted text colour on a dark halo
+const PLACE_LABEL = { "text-color": "#bcafa4", "text-halo-color": LABEL_HALO };
+
 function warmBasemap(ml: MapLibreMap) {
-  // The dark style is used as it comes
-  if (isDark.value) return;
-  for (const [layer, [property, color]] of Object.entries(BASEMAP_COLORS)) {
-    if (ml.getLayer(layer)) ml.setPaintProperty(layer, property, color);
+  if (!isDark.value) {
+    for (const [layer, [property, color]] of Object.entries(BASEMAP_COLORS)) {
+      if (ml.getLayer(layer)) ml.setPaintProperty(layer, property, color);
+    }
+    return;
+  }
+  for (const layer of ml.getStyle().layers) {
+    const paint = BASEMAP_DARK[layer.id] ?? (layer.id.startsWith("place_") ? PLACE_LABEL : null);
+    for (const [property, color] of Object.entries(paint ?? {}))
+      ml.setPaintProperty(layer.id, property, color);
   }
 }
 
@@ -85,33 +135,38 @@ function addTerrain(ml: MapLibreMap) {
     attribution: TERRAIN_ATTRIBUTION,
   });
 
-  // Hillshading goes under the first label layer so text stays on top
+  // Hillshading goes under the first label layer so text stays on top. On the dark map it goes
+  // under the sea: the seabed's relief, lit, glowed brighter than the island's
   const firstSymbolLayer = ml.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+  const below = isDark.value && ml.getLayer("water") ? "water" : firstSymbolLayer;
   ml.addLayer(
     {
       id: "hillshade",
       type: "hillshade",
       source: "terrain",
       // Shadows in a warm basalt grey, not the default slate, so the relief stays in the palette
-      paint: {
-        "hillshade-exaggeration": isDark.value ? 0.25 : 0.35,
-        "hillshade-shadow-color": isDark.value ? "#000" : "#4d413e",
-      },
+      paint: isDark.value
+        ? {
+            "hillshade-exaggeration": 0.4,
+            "hillshade-shadow-color": "#0e0a0b",
+            "hillshade-highlight-color": "rgba(241, 233, 220, 0.1)",
+          }
+        : { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#4d413e" },
     },
-    firstSymbolLayer,
+    below,
   );
 
   // Exaggerated a bit: Sardinia's relief is gentle and would look flat at 1x
   ml.setTerrain({ source: "terrain", exaggeration: 1.5 });
   // In 3D: a soft Mediterranean sky, and a horizon and haze of warm limestone (the map's sand,
   // lighter), so the distance fades into the palette rather than into a cool grey
-  // (in dark mode: a night sky, and a haze of the dark map's ground)
+  // (in dark mode: a night sky, and a haze of the dark map's own ground)
   ml.setSky({
     "sky-color": isDark.value ? "#14181f" : "#b3d3e0",
-    "horizon-color": isDark.value ? "#2a2526" : "#f3ece1",
+    "horizon-color": isDark.value ? "#221c1d" : "#f3ece1",
     "sky-horizon-blend": 0.5,
     "horizon-fog-blend": 0.6,
-    "fog-color": isDark.value ? "#1d1819" : "#efe6d8",
+    "fog-color": isDark.value ? BRAND_DARK.sand : "#efe6d8",
     "fog-ground-blend": 0.4,
   });
 }
@@ -290,6 +345,9 @@ watchEffect(() => {
 const legendItems = useTemplateRef("legendItems");
 const { width: legendItemsWidth } = useElementSize(legendItems, undefined, { box: "border-box" });
 
+const levelColor = (level: (typeof VISIBILITY_LEVELS)[number]) =>
+  isDark.value ? level.darkColor : level.color;
+
 function visibilityEnds(): FeatureCollection<Point> {
   return {
     type: "FeatureCollection",
@@ -299,7 +357,7 @@ function visibilityEnds(): FeatureCollection<Point> {
       properties: {
         i: entry.i,
         name: props.pois[entry.i]!.name,
-        color: VISIBILITY_LEVELS[visibilityLevel(entry.height)]!.color,
+        color: levelColor(VISIBILITY_LEVELS[visibilityLevel(entry.height)]!),
       },
     })),
   };
@@ -325,6 +383,7 @@ function groundAt(
 // Which markers stay at full strength, by priority: the open nuraghe's network, then the search
 // results. The rest fade and lose their names, and the ones in focus win where names collide
 const FADED_OPACITY = 0.3;
+const FADED_OPACITY_DARK = 0.15;
 function applyFocus() {
   const ml = mlMap.value;
   if (!ml?.getLayer("pois")) return;
@@ -341,7 +400,7 @@ function applyFocus() {
     "case",
     isOpen,
     0,
-    ...(focus ? [inFocus, 1, FADED_OPACITY] : [1]),
+    ...(focus ? [inFocus, 1, isDark.value ? FADED_OPACITY_DARK : FADED_OPACITY] : [1]),
   ] as ExpressionSpecification);
   ml.setLayoutProperty("pois", "text-field", ["step", ["zoom"], "", LABEL_ZOOM, name]);
   // Then by category: markerPriority is below 100
@@ -529,7 +588,7 @@ function addSightLines(ml: MapLibreMap) {
     filter: ["==", ["get", "i"], -1],
     paint: {
       "circle-radius": 7,
-      "circle-color": BRAND.basalt,
+      "circle-color": isDark.value ? BRAND_DARK.basalt : BRAND.basalt,
       "circle-stroke-color": "#fff",
       "circle-stroke-width": 2.5,
       "circle-pitch-alignment": "map",
@@ -981,7 +1040,7 @@ onMounted(() => {
     warmBasemap(ml);
     addTerrain(ml);
     addPois(ml);
-    sightLines.setInk(isDark.value ? BRAND_DARK.basalt : BRAND.basalt);
+    sightLines.setDark(isDark.value);
     addSightLines(ml);
     updateSightLines(); // also applies the markers' focus
   }
@@ -992,10 +1051,26 @@ onMounted(() => {
     watchTerrainHeights(ml);
     publishView(ml);
 
-    watch(isDark, () => {
-      ml.once("style.load", () => void addOurLayers());
-      ml.setStyle(styleUrl(), { diff: false });
-    });
+    // Light / dark switch: the other style is fetched first and only swapped in once it's here.
+    // Without a connection (the system turned dark at sunset, out in the field) the map keeps its
+    // style instead of going blank, and switches when the connection is back
+    let styleShown = styleUrl();
+    async function showStyle() {
+      const url = styleUrl();
+      if (url === styleShown) return;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`${response.status}`);
+        const style = await response.json();
+        if (url !== styleUrl()) return; // switched back meanwhile
+        styleShown = url;
+        ml.once("style.load", () => void addOurLayers());
+        ml.setStyle(style, { diff: false });
+      } catch {
+        window.addEventListener("online", () => void showStyle(), { once: true });
+      }
+    }
+    watch(isDark, () => void showStyle());
 
     // A site opened from its URL before the map was ready: raise the drawer and show it
     if (route.path !== "/" && site.value) {
@@ -1164,7 +1239,7 @@ onUnmounted(() => {
                 y1="4"
                 x2="18"
                 y2="4"
-                :stroke="level.color"
+                :stroke="levelColor(level)"
                 stroke-width="3"
                 stroke-linecap="round"
                 :stroke-dasharray="level.dashed ? '4 3' : undefined"
