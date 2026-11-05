@@ -117,8 +117,9 @@ function warmBasemap(ml: MapLibreMap) {
   }
   for (const layer of ml.getStyle().layers) {
     const paint = BASEMAP_DARK[layer.id] ?? (layer.id.startsWith("place_") ? PLACE_LABEL : null);
+    // Object.entries widens the keys to string: they are BASEMAP_DARK's paint properties
     for (const [property, color] of Object.entries(paint ?? {}))
-      ml.setPaintProperty(layer.id, property, color);
+      ml.setPaintProperty(layer.id, property as PaintProperty, color);
   }
 }
 
