@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import gsap from "gsap";
 import { InertiaPlugin } from "gsap/InertiaPlugin";
-import { breakpointsTailwind } from "@vueuse/core";
 
 if (import.meta.client) gsap.registerPlugin(InertiaPlugin);
 
@@ -18,8 +17,7 @@ const headerHeight = useDrawerHeaderHeight();
 const mapPadding = useMapPadding();
 const route = useRoute();
 
-const breakpoints = useBreakpoints(breakpointsTailwind);
-const lgAndGreater = breakpoints.greaterOrEqual("lg");
+const lgAndGreater = useIsDesktop();
 const reducedMotion = usePreferredReducedMotion();
 
 // All the drawer's tweens live in this context, reverted when the drawer goes away

@@ -22,7 +22,7 @@ const STATUSES = ["mantenuto", "diroccato", "non visibile"].map((value) => statu
 // Mac or not: the rotation tip names its keys and gestures
 const isMac = useIsMac();
 const isDark = useIsDark();
-const isDesktop = useMediaQuery("(min-width: 1024px)");
+const isDesktop = useIsDesktop();
 
 // Light or dark: the system's (the default), or the visitor's own, kept on the device. At dusk
 // the system may turn dark while the light map still reads better outdoors

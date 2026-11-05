@@ -61,12 +61,15 @@ const isURL = (value: string | undefined) => !!value && URL.canParse(value);
 const sourceHost = computed(() =>
   isURL(poi.value?.source) ? new URL(poi.value!.source!).hostname.replace(/^www\./, "") : null,
 );
+// The data's dates are days ("2020-04-20"), which Date reads as UTC midnight: shown in UTC too,
+// or west of Greenwich they'd read as the day before
 const added = computed(() =>
   poi.value?.date
     ? new Date(poi.value.date).toLocaleDateString("it-IT", {
         day: "numeric",
         month: "long",
         year: "numeric",
+        timeZone: "UTC",
       })
     : null,
 );

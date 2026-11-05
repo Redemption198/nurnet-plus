@@ -3,12 +3,6 @@
 // facts this site has; the first few always, the rest on request. The typology is in the meta line
 const site = useCurrentSite();
 
-// "341 m" up to a kilometre, then "25,6 km"
-function formatDistance(metres: number) {
-  if (metres < 1000) return `${metres} m`;
-  return `${(metres / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 })} km`;
-}
-
 interface Fact {
   icon: string;
   label: string;

@@ -38,12 +38,6 @@ watch(highlighted, (i) => {
   if (i !== null && !shown.value.some((entry) => entry.i === i)) showAll.value = true;
 });
 
-// "850 m" up to a kilometre, then "4,2 km"
-function formatDistance(metres: number) {
-  if (metres < 1000) return `${metres} m`;
-  return `${(metres / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 })} km`;
-}
-
 // The open nuraghe and all the sites it can see, framed on the map
 function showOnMap() {
   if (!site.value) return;

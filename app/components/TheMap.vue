@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
-  LngLat,
   MapLibreMap,
-  Point as ScreenPoint,
   setWorkerUrl,
   type ExpressionSpecification,
   type FilterSpecification,
@@ -39,138 +37,8 @@ const mapUnavailable = ref(false);
 // The basemap couldn't be loaded (no connection): the list still works
 const mapOffline = ref(false);
 
-// Free sources, no API keys: OpenFreeMap vector tiles and the AWS Terrain Tiles dataset
-// liberty in light mode (recoloured below), their dark style in dark mode
-const STYLE_URLS = {
-  light: "https://tiles.openfreemap.org/styles/liberty",
-  dark: "https://tiles.openfreemap.org/styles/dark",
-};
 const isDark = useIsDark();
 const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
-const TERRAIN_TILES = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png";
-const TERRAIN_ATTRIBUTION =
-  '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Terrain Tiles</a>';
-
-// Recolour the basemap toward Sardinia: limestone ground, a muted sea, macchia greens.
-// Layer ids are from OpenFreeMap's "liberty" style; missing ones are skipped
-type PaintProperty = Parameters<MapLibreMap["setPaintProperty"]>[1];
-const BASEMAP_COLORS: Record<string, [PaintProperty, string]> = {
-  background: ["background-color", BRAND.sand],
-  water: ["fill-color", "#9ec5d6"],
-  park: ["fill-color", "#d6dfbf"],
-  landcover_wood: ["fill-color", "hsla(90, 28%, 60%, 0.55)"],
-  landcover_grass: ["fill-color", "#d3dbb4"],
-  landcover_sand: ["fill-color", "#f2e3c4"],
-};
-
-// The same for OpenFreeMap's "dark" style, which comes in neutral greys: the ground of the dark
-// panels (the sand token, dark), a deep sea that still reads as water (1.6:1 on the ground),
-// warm roads in the panels' basalt, and town names in the muted text colour (8:1)
-const ROAD = "#5a4a44";
-const LABEL_HALO = "rgba(29, 24, 25, 0.85)";
-const BASEMAP_DARK: Record<string, Partial<Record<PaintProperty, string>>> = {
-  background: { "background-color": BRAND_DARK.sand },
-  water: { "fill-color": "#253f52" },
-  waterway: { "line-color": "#253f52" },
-  water_name: { "text-color": "#7d9bb0", "text-halo-color": "#1d2a33" },
-  landcover_ice_shelf: { "fill-color": BRAND_DARK.sand },
-  landcover_glacier: { "fill-color": BRAND_DARK.sand },
-  landuse_residential: { "fill-color": "#241e1f" },
-  landcover_wood: { "fill-color": "#22231a" },
-  landuse_park: { "fill-color": "#22231a" },
-  building: { "fill-color": "#2a2224", "fill-outline-color": "#332a2c" },
-  "aeroway-area": { "fill-color": "#241e1f" },
-  "aeroway-runway": { "line-color": "#3a3133" },
-  "aeroway-taxiway": { "line-color": "#2e2628" },
-  "aeroway-runway-casing": { "line-color": "#3a3133" },
-  road_area_pier: { "fill-color": BRAND_DARK.sand },
-  road_pier: { "line-color": BRAND_DARK.sand },
-  highway_path: { "line-color": "#2e2628" },
-  highway_minor: { "line-color": "#352c2d" },
-  highway_major_casing: { "line-color": "#2e2628" },
-  highway_major_inner: { "line-color": "#4a3d39" },
-  highway_major_subtle: { "line-color": "#4a3d39" },
-  highway_motorway_casing: { "line-color": "#2e2628" },
-  highway_motorway_inner: { "line-color": ROAD },
-  highway_motorway_subtle: { "line-color": ROAD },
-  railway: { "line-color": "#3a3133" },
-  railway_minor: { "line-color": "#3a3133" },
-  railway_transit: { "line-color": "#3a3133" },
-  railway_dashline: { "line-color": BRAND_DARK.sand },
-  railway_minor_dashline: { "line-color": BRAND_DARK.sand },
-  railway_transit_dashline: { "line-color": BRAND_DARK.sand },
-  highway_name_other: { "text-color": "#9c8f85", "text-halo-color": LABEL_HALO },
-  highway_name_motorway: { "text-color": "#9c8f85", "text-halo-color": LABEL_HALO },
-  boundary_state: { "line-color": "#4a3f40" },
-  "boundary_country_z0-4": { "line-color": "#4a3f40" },
-  "boundary_country_z5-": { "line-color": "#4a3f40" },
-};
-// Every place label (place_town, place_city...): the muted text colour on a dark halo
-const PLACE_LABEL = { "text-color": "#bcafa4", "text-halo-color": LABEL_HALO };
-
-function warmBasemap(ml: MapLibreMap) {
-  if (!isDark.value) {
-    for (const [layer, [property, color]] of Object.entries(BASEMAP_COLORS)) {
-      if (ml.getLayer(layer)) ml.setPaintProperty(layer, property, color);
-    }
-    return;
-  }
-  for (const layer of ml.getStyle().layers) {
-    const paint = BASEMAP_DARK[layer.id] ?? (layer.id.startsWith("place_") ? PLACE_LABEL : null);
-    // Object.entries widens the keys to string: they are BASEMAP_DARK's paint properties
-    for (const [property, color] of Object.entries(paint ?? {}))
-      ml.setPaintProperty(layer.id, property as PaintProperty, color);
-  }
-}
-
-function addTerrain(ml: MapLibreMap) {
-  // One source for the 3D terrain and the hillshading. MapLibre suggests separate ones, but a
-  // hillshade source of its own drew grey lines along tile edges (its tiles' borders weren't
-  // matched to their neighbours)
-  ml.addSource("terrain", {
-    type: "raster-dem",
-    tiles: [TERRAIN_TILES],
-    encoding: "terrarium",
-    tileSize: 256,
-    maxzoom: 14,
-    attribution: TERRAIN_ATTRIBUTION,
-  });
-
-  // Hillshading goes under the first label layer so text stays on top. On the dark map it goes
-  // under the sea: the seabed's relief, lit, glowed brighter than the island's
-  const firstSymbolLayer = ml.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
-  const below = isDark.value && ml.getLayer("water") ? "water" : firstSymbolLayer;
-  ml.addLayer(
-    {
-      id: "hillshade",
-      type: "hillshade",
-      source: "terrain",
-      // Shadows in a warm basalt grey, not the default slate, so the relief stays in the palette
-      paint: isDark.value
-        ? {
-            "hillshade-exaggeration": 0.4,
-            "hillshade-shadow-color": "#0e0a0b",
-            "hillshade-highlight-color": "rgba(241, 233, 220, 0.1)",
-          }
-        : { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#4d413e" },
-    },
-    below,
-  );
-
-  // Exaggerated a bit: Sardinia's relief is gentle and would look flat at 1x
-  ml.setTerrain({ source: "terrain", exaggeration: 1.5 });
-  // In 3D: a soft Mediterranean sky, and a horizon and haze of warm limestone (the map's sand,
-  // lighter), so the distance fades into the palette rather than into a cool grey
-  // (in dark mode: a night sky, and a haze of the dark map's own ground)
-  ml.setSky({
-    "sky-color": isDark.value ? "#14181f" : "#b3d3e0",
-    "horizon-color": isDark.value ? "#221c1d" : "#f3ece1",
-    "sky-horizon-blend": 0.5,
-    "horizon-fog-blend": 0.6,
-    "fog-color": isDark.value ? BRAND_DARK.sand : "#efe6d8",
-    "fog-ground-blend": 0.4,
-  });
-}
 
 // The selected POI's layer shows only the POI open in the drawer (none on the list)
 const selectedId = () => (route.path === "/" ? "" : (site.value?.content_id ?? ""));
@@ -413,6 +281,10 @@ function applyFocus() {
 }
 
 let stopWatchingResolution: (() => void) | undefined;
+// What the map sets up outside the component's own lifetime (after its "load", in callbacks), to
+// undo on unmount: the watchers in `lateEffects`, the listeners and fetches tied to `teardown`
+const lateEffects = effectScope();
+const teardown = new AbortController();
 
 // Framing places ("Mostra sulla mappa"): room around them for the markers and their names, on
 // top of the map's own padding (drawer, controls, brand button), and how close it may get
@@ -440,98 +312,6 @@ let framedCenter: [number, number] | null = null;
 function forgetFraming() {
   framedPoints = null;
   framedCenter = null;
-}
-
-// fitBounds frames places as if the map were flat: tilted, the near side is drawn bigger and the
-// far side smaller, and places on high ground are drawn higher (even untilted, the camera's
-// perspective pushes them outwards), so some end up under the drawer or off screen.
-// cameraForPlaces starts from its flat camera and corrects it on a copy of the map's camera,
-// where the places are projected as drawn (tilt and terrain), until they fill the free area
-
-// The map's camera (its "transform", in MapLibre 6 inside the internal `_camera`; its type isn't
-// exported, so this is the part used here). Without it, framing falls back to fitBounds
-interface CameraCopy {
-  center: LngLat;
-  zoom: number;
-  setCenter(center: LngLat): void;
-  setZoom(zoom: number): void;
-  setPitch(pitch: number): void;
-  setBearing(bearing: number): void;
-  locationToScreenPoint(place: LngLat, terrain?: MapLibreMap["terrain"]): ScreenPoint;
-  screenPointToLocation(point: ScreenPoint): LngLat;
-}
-
-// The bounds of a set of places
-const boundsOf = (points: [number, number][]): [[number, number], [number, number]] => [
-  [Math.min(...points.map((p) => p[0])), Math.min(...points.map((p) => p[1]))],
-  [Math.max(...points.map((p) => p[0])), Math.max(...points.map((p) => p[1]))],
-];
-
-// `pitch` and `bearing`: frame them for a tilt the map is about to take (the 3D button)
-function cameraForPlaces(
-  ml: MapLibreMap,
-  points: [number, number][],
-  pitch = ml.getPitch(),
-  bearing = ml.getBearing(),
-) {
-  const fit = fitPadding();
-  const flat = ml.cameraForBounds(boundsOf(points), {
-    padding: fit,
-    maxZoom: FIT_MAX_ZOOM,
-    bearing,
-  });
-  if (!flat?.center || flat.zoom == null) return null;
-
-  const transform = (ml as unknown as { _camera?: { transform?: { clone(): CameraCopy } } })._camera
-    ?.transform;
-  if (!transform) return null;
-  const camera = transform.clone();
-  camera.setPitch(pitch);
-  camera.setBearing(bearing);
-  camera.setCenter(LngLat.convert(flat.center));
-  camera.setZoom(flat.zoom);
-  const { top = 0, right = 0, bottom = 0, left = 0 } = ml.getPadding();
-  const { width, height } = ml.getContainer().getBoundingClientRect();
-  // The free area, where the places must end up
-  const area = {
-    left: left + fit.left,
-    right: width - right - fit.right,
-    top: top + fit.top,
-    bottom: height - bottom - fit.bottom,
-  };
-  if (area.right <= area.left || area.bottom <= area.top) return null;
-  const places = points.map((point) => LngLat.convert(point));
-
-  for (let step = 0; step < 8; step++) {
-    const drawn = places.map((place) =>
-      camera.locationToScreenPoint(place, ml.terrain ?? undefined),
-    );
-    const xs = drawn.map((p) => p.x);
-    const ys = drawn.map((p) => p.y);
-    const box = {
-      left: Math.min(...xs),
-      right: Math.max(...xs),
-      top: Math.min(...ys),
-      bottom: Math.max(...ys),
-    };
-    // Move what is drawn in the middle of the places to the middle of the free area
-    const shift = new ScreenPoint(
-      (box.left + box.right) / 2 - (area.left + area.right) / 2,
-      (box.top + box.bottom) / 2 - (area.top + area.bottom) / 2,
-    );
-    const middle = camera.locationToScreenPoint(camera.center);
-    camera.setCenter(camera.screenPointToLocation(middle.add(shift)));
-    // And zoom so they fill it (a single place, or places on a line, only by the other side)
-    const scales = [
-      (area.right - area.left) / Math.max(box.right - box.left, 1),
-      (area.bottom - area.top) / Math.max(box.bottom - box.top, 1),
-    ];
-    const zoom = Math.min(camera.zoom + Math.log2(Math.min(...scales)), FIT_MAX_ZOOM);
-    const done = Math.abs(zoom - camera.zoom) < 0.01 && shift.mag() < 1;
-    camera.setZoom(zoom);
-    if (done) break;
-  }
-  return { center: camera.center, zoom: camera.zoom };
 }
 
 // The ground heights used in the last update, to redraw when the terrain loads and changes them
@@ -733,7 +513,7 @@ function showMyLocation() {
 // What covers the map besides the drawer: the controls on the right, and on phones the brand
 // button at the top left (a 44px button 16px from the edges). Camera moves frame things in what
 // is left, so nothing lands under them
-const isDesktop = useMediaQuery("(min-width: 1024px)");
+const isDesktop = useIsDesktop();
 
 // The compass: its needle follows the map's rotation (bearing, degrees clockwise from north).
 // A click (or Enter) turns north back up; dragging it sideways, or the arrow keys on it, rotate
@@ -925,7 +705,7 @@ function toggle3D() {
   // A network the map framed, untouched since: frame it again for the new tilt
   const camera =
     framedPoints && visibleSites().length
-      ? cameraForPlaces(ml, framedPoints, pitch, bearing)
+      ? cameraForPlaces(ml, framedPoints, fitPadding(), FIT_MAX_ZOOM, pitch, bearing)
       : null;
   ml.easeTo({ ...camera, pitch, bearing, duration: 800 });
 }
@@ -962,7 +742,9 @@ onMounted(() => {
       ]);
       ml.jumpTo({ center, padding });
 
-      const camera = framedPoints ? cameraForPlaces(ml, framedPoints) : null;
+      const camera = framedPoints
+        ? cameraForPlaces(ml, framedPoints, fitPadding(), FIT_MAX_ZOOM)
+        : null;
       if (camera) ml.easeTo({ ...camera, duration: 600, essential: true });
       else if (framedCenter) ml.easeTo({ center: framedCenter, duration: 600, essential: true });
     };
@@ -1018,7 +800,7 @@ onMounted(() => {
     const points = request.points;
     forgetFraming();
     framedPoints = points;
-    const camera = cameraForPlaces(ml, points);
+    const camera = cameraForPlaces(ml, points, fitPadding(), FIT_MAX_ZOOM);
     if (camera) ml.easeTo({ ...camera, duration: 1200, essential: true });
     else
       ml.fitBounds(request.bounds, {
@@ -1032,7 +814,7 @@ onMounted(() => {
     ml.once("moveend", () =>
       ml.once("idle", () => {
         if (framedPoints !== points) return;
-        const settled = cameraForPlaces(ml, points);
+        const settled = cameraForPlaces(ml, points, fitPadding(), FIT_MAX_ZOOM);
         if (!settled) return;
         const shift = ml.project(settled.center).dist(ml.project(ml.getCenter()));
         if (shift > 2 || Math.abs(settled.zoom - ml.getZoom()) > 0.02)
@@ -1091,8 +873,8 @@ onMounted(() => {
   // it all, so it's added again then
   async function addOurLayers() {
     await addMarkerImages(ml);
-    warmBasemap(ml);
-    addTerrain(ml);
+    warmBasemap(ml, isDark.value);
+    addTerrain(ml, isDark.value);
     addPois(ml);
     sightLines.setDark(isDark.value);
     addSightLines(ml);
@@ -1113,7 +895,7 @@ onMounted(() => {
       const url = styleUrl();
       if (url === styleShown) return;
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: teardown.signal });
         if (!response.ok) throw new Error(`${response.status}`);
         const style = await response.json();
         if (url !== styleUrl()) return; // switched back meanwhile
@@ -1121,10 +903,15 @@ onMounted(() => {
         ml.once("style.load", () => void addOurLayers());
         ml.setStyle(style, { diff: false });
       } catch {
-        window.addEventListener("online", () => void showStyle(), { once: true });
+        // Nothing once the map is gone: an aborted signal adds no listener
+        window.addEventListener("online", () => void showStyle(), {
+          once: true,
+          signal: teardown.signal,
+        });
       }
     }
-    watch(isDark, () => void showStyle());
+    // Registered here, after the component's setup: in a scope of its own, stopped on unmount
+    lateEffects.run(() => watch(isDark, () => void showStyle()));
 
     // A site opened from its URL before the map was ready: raise the drawer and show it
     if (route.path !== "/" && site.value) {
@@ -1167,6 +954,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  lateEffects.stop();
+  teardown.abort();
+  clearTimeout(locationErrorTimer);
   stopWatchingResolution?.();
   mlMap.value?.remove();
 });
@@ -1231,16 +1021,7 @@ onUnmounted(() => {
         @keydown.left.prevent="rotateBy(15)"
         @keydown.right.prevent="rotateBy(-15)"
       >
-        <!-- The needle: north in terracotta, pointing where north is on the rotated map -->
-        <svg
-          class="size-6"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          :style="{ rotate: `${-bearing}deg` }"
-        >
-          <path d="M12 2.5 15.5 12h-7z" :fill="BRAND.terracotta" />
-          <path d="M12 21.5 8.5 12h7z" class="fill-subtle" />
-        </svg>
+        <CompassNeedle :bearing="bearing" />
       </MapControlsButton>
 
       <MapControlsButton
@@ -1295,15 +1076,7 @@ onUnmounted(() => {
             @pointercancel="onCompassUp"
             @click="onCompassClick"
           >
-            <svg
-              class="size-6"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              :style="{ rotate: `${-bearing}deg` }"
-            >
-              <path d="M12 2.5 15.5 12h-7z" :fill="BRAND.terracotta" />
-              <path d="M12 21.5 8.5 12h7z" class="fill-subtle" />
-            </svg>
+            <CompassNeedle :bearing="bearing" />
           </button>
         </Transition>
       </div>

@@ -38,6 +38,12 @@ function startWorker([indexUrl, detailsUrl, visibilityUrl]: NonNullable<typeof u
       pending.delete(data.requestId);
     }
   };
+  // The worker's own script didn't load or run (e.g. a chunk gone after a deploy): without this
+  // the app would wait for the index forever
+  worker.onerror = (event) => {
+    error.value = event.message || "Data worker failed";
+    console.error("NurNet data worker:", event.message);
+  };
   post({ type: "load", indexUrl, detailsUrl, visibilityUrl });
 }
 
