@@ -81,7 +81,8 @@ export default defineNuxtConfig({
   },
 
   icon: {
-    clientBundle: { scan: true },
+    // Icons named in .vue files are found by the scan; the ones named elsewhere are listed
+    clientBundle: { scan: true, icons: ["lucide:refresh-cw"] },
   },
 
   css: ["~/assets/css/tailwind.css"],
@@ -89,6 +90,11 @@ export default defineNuxtConfig({
   components: ["~/components", "~/components/icons"],
 
   pwa: {
+    // A new version waits until the visitor takes it from the "nuova versione" toast
+    // (useAppUpdates), rather than reloading the page under them mid-use
+    registerType: "prompt",
+    // Seconds between checks for a new version while the app stays open
+    client: { periodicSyncForUpdates: 3600 },
     manifest: {
       name: "NurNet+",
       short_name: "NurNet+",

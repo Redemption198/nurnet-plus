@@ -30,6 +30,9 @@ const themeColor = computed(() =>
         ],
 );
 
+// "È disponibile una nuova versione": a toast to switch to it (PWA service worker)
+useAppUpdates();
+
 // Title, description, canonical and Open Graph come from `site` in nuxt.config (Nuxt SEO)
 useHead({
   meta: () => [
@@ -60,7 +63,8 @@ useHead({
 </script>
 
 <template>
-  <UApp>
+  <!-- Toasts at the top (app.config toaster): the drawer owns the bottom of the screen -->
+  <UApp :toaster="{ position: 'top-right' }">
     <NuxtPage />
   </UApp>
 </template>

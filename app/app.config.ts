@@ -12,5 +12,26 @@ export default defineAppConfig({
         base: "min-h-11 rounded-full px-4 font-semibold",
       },
     },
+    // Notices ("Sito non trovato", a new version) on the app's panel material: translucent sand,
+    // blurred, the soft basalt shadow of the floating controls
+    toast: {
+      slots: {
+        root: "rounded-2xl bg-panel/90 shadow-[0_4px_16px_rgb(49_37_40/0.14)] ring-0 backdrop-blur-2xl",
+        title: "font-semibold text-basalt",
+        description: "text-pretty text-muted",
+      },
+    },
+    // Where the map's own notices go (TheMap's offline message): on phones full width under the
+    // brand button, clear of the drawer; on desktop at the top right, beside the map's buttons
+    toaster: {
+      variants: {
+        position: {
+          "top-right": {
+            viewport:
+              "right-4 left-4 w-auto sm:w-auto max-lg:top-[calc(max(1rem,env(safe-area-inset-top))+3.5rem)] lg:right-18 lg:left-auto lg:w-96",
+          },
+        },
+      },
+    },
   },
 });
