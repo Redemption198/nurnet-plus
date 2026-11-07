@@ -4,7 +4,11 @@
   },
   "locale": {
     "offer": "NurNet+ è anche in italiano",
-    "switch": "Passa all'italiano"
+    "switch": "Passa all'italiano",
+    "stay": "Resta in inglese",
+    "later": "Puoi cambiare lingua quando vuoi con {button}.",
+    "laterButton": "il pulsante delle informazioni",
+    "notNow": "Non ora"
   },
   "common": {
     "close": "Chiudi",

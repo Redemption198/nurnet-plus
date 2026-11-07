@@ -93,6 +93,13 @@
   }
 }
 
+/* Nuxt UI's buttons and toasts draw their own ring, a quarter of the primary colour (about 1.3:1
+   on the panels): they get the app's ring instead. Unlayered, so it wins over their utilities */
+:is([data-slot="base"], [data-slot="close"]):focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}
+
 @utility bg-brand {
   background-image: linear-gradient(
     to right bottom,

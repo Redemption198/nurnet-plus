@@ -11,6 +11,9 @@ export default defineAppConfig({
       slots: {
         base: "min-h-11 rounded-full px-4 font-semibold",
       },
+      // White on terracotta in both modes, as the app's own buttons: Nuxt UI's dark-mode text
+      // (near black) is 3.7:1 on it, under AA
+      compoundVariants: [{ color: "primary", variant: "solid", class: "text-white" }],
     },
     // Notices ("Sito non trovato", a new version) on the app's panel material: translucent sand,
     // blurred, the soft basalt shadow of the floating controls
@@ -19,6 +22,8 @@ export default defineAppConfig({
         root: "rounded-2xl bg-panel/90 shadow-[0_4px_16px_rgb(49_37_40/0.14)] ring-0 backdrop-blur-2xl",
         title: "font-semibold text-basalt",
         description: "text-pretty text-muted",
+        // The × as big a target as the rest (44px), its icon where it was
+        close: "-m-3 size-11 justify-center p-0",
       },
     },
     // Where the map's own notices go (TheMap's offline message): on phones full width under the
