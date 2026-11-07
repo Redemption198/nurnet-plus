@@ -183,6 +183,9 @@ export default defineNuxtConfig({
     // Old links to the POI page without an id
     "/poi": { redirect: baseURL },
     "/en/poi": { redirect: `${baseURL}en/` },
+    // Italian has no prefix (i18n), but /it/ is a natural guess: the Italian root. Deeper /it/
+    // paths (a site) go to their Italian address in middleware/italian-prefix.global.ts
+    "/it": { redirect: baseURL },
     // A site's page is the map with that site open: shareable, but not a page of its own for
     // search engines. noindex, nofollow, and out of the sitemap
     "/poi/**": { robots: false },
