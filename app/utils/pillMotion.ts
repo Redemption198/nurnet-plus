@@ -1,11 +1,12 @@
 import gsap from "gsap";
 
-// A notice that comes out of the brand button (the floating pill on phones) and goes back into it
-// when it's answered or closed: the language offer, whose text says the language can be changed
-// later with that button's (i). Where the pill isn't on screen (desktop, or covered by the raised
-// drawer) the toast keeps Nuxt UI's own slide. Visitors who ask for reduced motion get a fade.
-// A little elastic, as a drop squeezed out of the pill: the width leads and the height follows a
-// beat later, so it lands wide and thin, then fills out
+// A notice that comes out from under the brand button (the floating pill on phones) and goes back
+// under it when it's answered or closed: the language offer, whose text says the language can be
+// changed later with that button's (i). Where the pill isn't on screen (desktop, or covered by the
+// raised drawer) the toast keeps Nuxt UI's own slide. Visitors who ask for reduced motion get a
+// fade.
+// A little elastic, as a drop out of the pill's bottom: it drips down first, then spreads to its
+// width a beat later. The pill stays on top meanwhile, so the toast is seen leaving from beneath it
 
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -22,34 +23,69 @@ function visiblePill(toast: HTMLElement): HTMLElement | null {
   return top && pill.contains(top) ? pill : null;
 }
 
-// The toast's box mapped onto the pill's (origin at the toast's top left), a little inside it so
-// it buds from behind the logo rather than covering it
-function onPill(box: DOMRect, pill: DOMRect) {
-  const shrink = 0.7;
+// The toast's box mapped onto a sliver hidden behind the pill's lower half (origin at the toast's
+// top left): a little narrower than the pill, so it leaves through the bottom edge, between the
+// rounded corners
+function underPill(box: DOMRect, pill: DOMRect) {
+  const width = pill.width * 0.7;
+  const height = pill.height * 0.4;
   return {
-    x: pill.left + (pill.width * (1 - shrink)) / 2 - box.left,
-    y: pill.top + (pill.height * (1 - shrink)) / 2 - box.top,
-    scaleX: (pill.width * shrink) / box.width,
-    scaleY: (pill.height * shrink) / box.height,
+    x: pill.left + (pill.width - width) / 2 - box.left,
+    y: pill.bottom - height - 2 - box.top,
+    scaleX: width / box.width,
+    scaleY: height / box.height,
   };
 }
 
+// The pill drawn again above the toaster while the toast goes under it: the app is a stacking
+// context of its own (#__nuxt is isolated), which the toaster, in <body>, is always above, whatever
+// the pill's z-index. The pill itself stays where it is, unseen but still tappable. Returns the
+// copy; it's taken away (and the pill shown) by `uncover`
+let uncover: (() => void) | undefined;
+function coverPill(pill: HTMLElement) {
+  uncover?.();
+  const r = pill.getBoundingClientRect();
+  const cover = pill.cloneNode(true) as HTMLElement;
+  cover.removeAttribute("data-brand-pill");
+  cover.setAttribute("aria-hidden", "true");
+  cover.inert = true;
+  Object.assign(cover.style, {
+    position: "fixed",
+    top: `${r.top}px`,
+    left: `${r.left}px`,
+    margin: "0",
+    zIndex: "101",
+    pointerEvents: "none",
+    // Its CSS transition (press) would smooth GSAP's every frame
+    transition: "none",
+  });
+  document.body.append(cover);
+  // Without its transition, which would fade it back in as the copy goes: shown at once, read
+  // back (so that's the style the transition starts from), then its transition again
+  pill.style.transition = "none";
+  pill.style.opacity = "0";
+  uncover = () => {
+    cover.remove();
+    pill.style.opacity = "";
+    void getComputedStyle(pill).opacity;
+    pill.style.transition = "";
+    uncover = undefined;
+  };
+  return cover;
+}
+
 // The pill's answer: it squeezes as the toast leaves it, swells a little as the toast comes back.
-// Its CSS transition (press) would smooth GSAP's every frame, so it's off meanwhile
-function nudge(pill: HTMLElement, from: number) {
-  gsap.set(pill, { transition: "none" });
+// Then the copy gives way to the pill
+function nudge(cover: HTMLElement, from: number) {
   gsap.fromTo(
-    pill,
+    cover,
     { scale: from },
-    {
-      scale: 1,
-      duration: 0.6,
-      ease: "elastic.out(1, 0.45)",
-      overwrite: true,
-      clearProps: "scale,transform,transition",
-    },
+    { scale: 1, duration: 0.6, ease: "elastic.out(1, 0.45)", onComplete: () => uncover?.() },
   );
 }
+
+// The entrance, if it's still playing when the toast closes
+let entrance: gsap.core.Timeline | undefined;
 
 // Call as the toast is put in the page (a mutation observer), before it's painted
 export function emergeFromPill(toast: HTMLElement) {
@@ -62,31 +98,31 @@ export function emergeFromPill(toast: HTMLElement) {
     gsap.to(toast, { opacity: 1, duration: 0.2, ease: "power1.out", clearProps: "opacity" });
     return;
   }
-  // Squeezed onto the pill on the next frame (still before it's painted): Nuxt UI measures the
+  // Tucked under the pill on the next frame (still before it's painted): Nuxt UI measures the
   // toast's height as it mounts, which a scale now would shrink. Its transform transition (for
   // stacking) off while GSAP moves it
   requestAnimationFrame(() => {
-    const start = onPill(toast.getBoundingClientRect(), pill.getBoundingClientRect());
-    gsap.set(toast, { transformOrigin: "0 0", transition: "none", ...start });
-    gsap
+    const start = underPill(toast.getBoundingClientRect(), pill.getBoundingClientRect());
+    const cover = coverPill(pill);
+    gsap.set(toast, { transformOrigin: "0 0", transition: "none", opacity: 1, ...start });
+    // The words once the shape is there, so they're never seen squashed
+    gsap.set(toast.children, { opacity: 0 });
+    entrance = gsap
       .timeline({
-        defaults: { overwrite: "auto" },
         onComplete: () => {
           gsap.set(toast, { clearProps: "transform,transformOrigin,transition,opacity" });
         },
       })
-      .add(() => nudge(pill, 0.86), 0)
-      .to(toast, { opacity: 1, duration: 0.12, ease: "none" }, 0)
-      .to(toast, { x: 0, y: 0, duration: 0.5, ease: "back.out(1.4)" }, 0)
-      // A slight overshoot only: all of it goes right, towards the screen's edge
-      .to(toast, { scaleX: 1, duration: 0.5, ease: "back.out(1.15)" }, 0)
-      .to(toast, { scaleY: 1, duration: 0.75, ease: "elastic.out(1, 0.6)" }, 0.06)
-      // The words once the shape is there, so they're never seen squashed
-      .fromTo(
+      .add(() => nudge(cover, 0.9), 0)
+      // Down out of the pill's bottom, a small bounce as it lands
+      .to(toast, { y: 0, duration: 0.55, ease: "back.out(1.3)" }, 0)
+      .to(toast, { scaleY: 1, duration: 0.7, ease: "elastic.out(1, 0.6)" }, 0)
+      // Then out to its width: a slight overshoot only, all of it towards the screen's edge
+      .to(toast, { x: 0, scaleX: 1, duration: 0.5, ease: "back.out(1.15)" }, 0.12)
+      .to(
         toast.children,
-        { opacity: 0 },
         { opacity: 1, duration: 0.25, ease: "power1.out", clearProps: "opacity" },
-        0.22,
+        0.3,
       );
   });
 }
@@ -96,7 +132,7 @@ export function emergeFromPill(toast: HTMLElement) {
 export function returnToPill(toast: HTMLElement) {
   const pill = visiblePill(toast);
   if (!pill) return;
-  gsap.killTweensOf([toast, toast.children]);
+  entrance?.kill();
   gsap.set(toast, { clearProps: "transform,transformOrigin,opacity" });
   gsap.set(toast.children, { clearProps: "opacity" });
   const box = toast.getBoundingClientRect();
@@ -123,19 +159,24 @@ export function returnToPill(toast: HTMLElement) {
   document.body.append(ghost);
   toast.style.setProperty("visibility", "hidden", "important");
 
-  const done = () => ghost.remove();
   if (reduced()) {
-    gsap.to(ghost, { opacity: 0, duration: 0.2, ease: "power1.in", onComplete: done });
+    gsap.to(ghost, {
+      opacity: 0,
+      duration: 0.2,
+      ease: "power1.in",
+      onComplete: () => ghost.remove(),
+    });
     return;
   }
-  const end = onPill(box, pill.getBoundingClientRect());
+  const end = underPill(box, pill.getBoundingClientRect());
+  const cover = coverPill(pill);
   gsap.set(ghost, { transformOrigin: "0 0", x: 0, y: 0, scale: 1 });
-  // Faster than it came: the words go first, the height gives way, then the width is drawn in
+  // Faster than it came, the other way round: the words go, it narrows to the pill, then it's
+  // drawn up under it
   gsap
-    .timeline({ onComplete: done })
+    .timeline({ onComplete: () => ghost.remove() })
     .to(ghost.children, { opacity: 0, duration: 0.1, ease: "none" }, 0)
-    .to(ghost, { scaleY: end.scaleY, duration: 0.26, ease: "power2.in" }, 0.02)
-    .to(ghost, { scaleX: end.scaleX, x: end.x, y: end.y, duration: 0.34, ease: "back.in(1.2)" }, 0)
-    .to(ghost, { opacity: 0, duration: 0.08, ease: "none" }, 0.28)
-    .add(() => nudge(pill, 1.08), 0.3);
+    .to(ghost, { x: end.x, scaleX: end.scaleX, duration: 0.24, ease: "power2.in" }, 0)
+    .to(ghost, { y: end.y, scaleY: end.scaleY, duration: 0.26, ease: "back.in(1.2)" }, 0.1)
+    .add(() => nudge(cover, 1.08), 0.34);
 }
