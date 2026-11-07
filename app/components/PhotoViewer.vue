@@ -206,8 +206,8 @@ watch(
     fullscreen
     :transition="false"
     :overlay="false"
-    :title="`Foto di ${name}`"
-    description="Scorri per vedere le altre foto"
+    :title="$t('photos.of', { name })"
+    :description="$t('photos.swipeHint')"
     :ui="{ content: 'bg-transparent ring-0 shadow-none' }"
     :content="{ onOpenAutoFocus: (event: Event) => event.preventDefault() }"
     @update:open="(open: boolean) => !open && close()"
@@ -231,7 +231,7 @@ watch(
           :class="{ invisible: !settled }"
           tabindex="0"
           role="region"
-          :aria-label="`Foto di ${name}, ${current + 1} di ${photos.length}`"
+          :aria-label="$t('photos.position', { name, n: current + 1, total: photos.length })"
           @scroll.passive="updateCurrent"
           @click="onTrackClick"
         >
@@ -292,7 +292,7 @@ watch(
             <button
               type="button"
               class="pointer-events-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-surface press"
-              aria-label="Chiudi"
+              :aria-label="$t('common.close')"
               @click="close"
             >
               <UIcon name="i-lucide-x" class="size-5" aria-hidden="true" />
@@ -308,7 +308,7 @@ watch(
             v-if="current > 0"
             type="button"
             class="pointer-events-auto absolute top-1/2 left-4 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-surface pointer-fine:flex"
-            aria-label="Foto precedente"
+            :aria-label="$t('photos.previous')"
             @click="go(-1)"
           >
             <UIcon name="i-lucide-chevron-left" class="size-6" />
@@ -317,7 +317,7 @@ watch(
             v-if="current < photos.length - 1"
             type="button"
             class="pointer-events-auto absolute top-1/2 right-4 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt shadow-md backdrop-blur-md transition hover:bg-surface pointer-fine:flex"
-            aria-label="Foto successiva"
+            :aria-label="$t('photos.next')"
             @click="go(1)"
           >
             <UIcon name="i-lucide-chevron-right" class="size-6" />

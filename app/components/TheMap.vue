@@ -17,6 +17,8 @@ setWorkerUrl(workerUrl);
 const props = defineProps<{ pois: NurnetPOI[] }>();
 
 const route = useRoute();
+const isHome = useIsHome();
+const { t } = useI18n();
 
 const site = useCurrentSite();
 const { openPOI } = useNurnetData();
@@ -41,7 +43,7 @@ const isDark = useIsDark();
 const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
 
 // The selected POI's layer shows only the POI open in the drawer (none on the list)
-const selectedId = () => (route.path === "/" ? "" : (site.value?.content_id ?? ""));
+const selectedId = () => (isHome.value ? "" : (site.value?.content_id ?? ""));
 function selectedFilter(): FilterSpecification {
   return ["==", ["get", "content_id"], selectedId()];
 }
@@ -193,7 +195,7 @@ const TOWER_HEIGHT = 15; // metres, as in CRS4's model
 const sightLines = createSightLinesLayer("sight-lines");
 
 function visibleSites() {
-  const visible = route.path === "/" ? [] : (site.value?.visible ?? []);
+  const visible = isHome.value ? [] : (site.value?.visible ?? []);
   return visible.filter((entry) => props.pois[entry.i]);
 }
 // The visibility levels the open nuraghe's lines have, in their usual order, for the legend
@@ -207,7 +209,7 @@ const shownLevels = computed(() => {
 // blinking it out and back in
 const legendLevels = shallowRef<(typeof VISIBILITY_LEVELS)[number][]>([]);
 watchEffect(() => {
-  if (route.path === "/") legendLevels.value = [];
+  if (isHome.value) legendLevels.value = [];
   else if (site.value?.visibleStatus !== "loading") legendLevels.value = shownLevels.value;
 });
 // The strip eases to the width of its items, so a level arriving or leaving resizes it smoothly
@@ -257,7 +259,7 @@ function applyFocus() {
   const ml = mlMap.value;
   if (!ml?.getLayer("pois")) return;
   const network = visibleSites().map((entry) => entry.i);
-  const focus = network.length ? network : route.path === "/" ? searchMatches.value : null;
+  const focus = network.length ? network : isHome.value ? searchMatches.value : null;
   const inFocus: ExpressionSpecification = ["in", ["get", "i"], ["literal", focus ?? []]];
   // The zoom step must be the outermost expression
   const name: ExpressionSpecification = focus
@@ -438,10 +440,11 @@ function watchTerrainHeights(ml: MapLibreMap) {
 const locating = ref(false);
 const locationError = ref<string | null>(null);
 let locationErrorTimer: ReturnType<typeof setTimeout> | undefined;
+// By GeolocationPositionError code
 const LOCATION_ERRORS: Record<number, string> = {
-  1: "Permesso di posizione negato: attivalo nelle impostazioni del browser.",
-  2: "Posizione non disponibile al momento.",
-  3: "La posizione non è arrivata in tempo. Riprova.",
+  1: "map.locationDenied",
+  2: "map.locationUnavailable",
+  3: "map.locationTimeout",
 };
 
 // The zoom buttons: a camera change of the visitor's, like a pinch
@@ -501,7 +504,7 @@ function showMyLocation() {
     },
     (error) => {
       locating.value = false;
-      locationError.value = LOCATION_ERRORS[error.code] ?? "Posizione non disponibile.";
+      locationError.value = t(LOCATION_ERRORS[error.code] ?? "map.locationFailed");
       // A new error gets its full time on screen
       clearTimeout(locationErrorTimer);
       locationErrorTimer = setTimeout(() => (locationError.value = null), 6000);
@@ -523,11 +526,7 @@ const isDesktop = useIsDesktop();
 const bearing = ref(0);
 const isMac = useIsMac();
 // The hidden ways to rotate, in the compass's tooltip, in the Mac's words there
-const compassTip = computed(() =>
-  isMac.value
-    ? "Clic: nord in alto · Trascina per ruotare (anche: ruota due dita sul trackpad in Safari, o Control + trascina sulla mappa)"
-    : "Clic: nord in alto · Trascina per ruotare (anche: tasto destro o Ctrl + trascina sulla mappa)",
-);
+const compassTip = computed(() => t(isMac.value ? "map.compassTipMac" : "map.compassTip"));
 const showsCompass = computed(() => isDesktop.value || Math.abs(bearing.value) > 0.5);
 let compassDrag: { x: number; bearing: number; moved: boolean } | null = null;
 let compassDragged = false;
@@ -769,8 +768,8 @@ onMounted(() => {
 
   watch(
     () => route.path,
-    (path) => {
-      if (path === "/") forgetFraming();
+    () => {
+      if (isHome.value) forgetFraming();
       applySelection();
     },
   );
@@ -914,7 +913,7 @@ onMounted(() => {
     lateEffects.run(() => watch(isDark, () => void showStyle()));
 
     // A site opened from its URL before the map was ready: raise the drawer and show it
-    if (route.path !== "/" && site.value) {
+    if (!isHome.value && site.value) {
       drawerState.value.request = "middle";
       await nextTick();
       showOpenedSite();
@@ -969,16 +968,14 @@ onUnmounted(() => {
     v-if="mapUnavailable"
     class="absolute inset-x-4 top-4 z-1 rounded-2xl bg-panel p-4 text-center text-sm font-semibold text-basalt shadow-sm lg:left-auto lg:w-96"
   >
-    La mappa non è disponibile su questo dispositivo (WebGL non supportato), ma puoi cercare e
-    consultare i siti dalla lista.
+    {{ t("map.unavailable") }}
   </p>
   <p
     v-else-if="mapOffline"
     role="status"
     class="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 left-4 z-1 rounded-2xl bg-panel p-4 lg:right-18 text-center text-sm font-semibold text-basalt shadow-sm max-lg:top-[calc(max(1rem,env(safe-area-inset-top))+3.5rem)] lg:left-auto lg:w-96"
   >
-    La mappa non si è caricata: controlla la connessione. Puoi comunque cercare e consultare i siti
-    dalla lista.
+    {{ t("map.offline") }}
   </p>
 
   <!-- Desktop: a column at the top right. The space beside the buttons (as wide as the location
@@ -990,18 +987,18 @@ onUnmounted(() => {
     <div
       class="flex flex-col items-center overflow-hidden rounded-2xl bg-panel/80 shadow-[0_4px_16px_rgb(49_37_40/0.14)] backdrop-blur-2xl"
     >
-      <MapControlsButton aria-label="Ingrandisci" @click.prevent="zoomBy(1)">
+      <MapControlsButton :aria-label="t('map.zoomIn')" @click.prevent="zoomBy(1)">
         <UIcon name="i-lucide-plus" class="size-6" aria-hidden="true" />
       </MapControlsButton>
 
-      <MapControlsButton aria-label="Riduci" @click.prevent="zoomBy(-1)">
+      <MapControlsButton :aria-label="t('map.zoomOut')" @click.prevent="zoomBy(-1)">
         <UIcon name="i-lucide-minus" class="size-6" aria-hidden="true" />
       </MapControlsButton>
 
       <MapControlsButton
         class="text-sm font-bold"
         :class="is3D ? 'bg-basalt !text-panel hover:!bg-basalt' : '!text-muted'"
-        aria-label="Vista 3D con il rilievo"
+        :aria-label="t('map.view3d')"
         :aria-pressed="is3D"
         @click.prevent="toggle3D()"
       >
@@ -1011,7 +1008,7 @@ onUnmounted(() => {
       <MapControlsButton
         v-if="showsCompass"
         class="touch-none"
-        aria-label="Bussola: orienta la mappa a nord. Frecce sinistra e destra per ruotarla"
+        :aria-label="t('map.compassWithKeys')"
         :title="isDesktop ? compassTip : undefined"
         @pointerdown="onCompassDown"
         @pointermove="onCompassMove"
@@ -1025,7 +1022,7 @@ onUnmounted(() => {
       </MapControlsButton>
 
       <MapControlsButton
-        aria-label="Mostra la mia posizione"
+        :aria-label="t('map.myLocation')"
         :disabled="locating"
         @click.prevent="showMyLocation()"
       >
@@ -1058,7 +1055,7 @@ onUnmounted(() => {
             v-if="is3D"
             type="button"
             class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press bg-panel/85 text-sm font-bold text-basalt backdrop-blur-2xl"
-            aria-label="Torna alla vista in piano (2D)"
+            :aria-label="t('map.view2d')"
             @click="toggle3D()"
           >
             2D
@@ -1069,7 +1066,7 @@ onUnmounted(() => {
             v-if="showsCompass"
             type="button"
             class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press touch-none bg-panel/85 backdrop-blur-2xl"
-            aria-label="Bussola: orienta la mappa a nord"
+            :aria-label="t('map.compass')"
             @pointerdown="onCompassDown"
             @pointermove="onCompassMove"
             @pointerup="onCompassUp"
@@ -1092,7 +1089,7 @@ onUnmounted(() => {
         <button
           type="button"
           class="pointer-events-auto flex size-12 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgb(49_37_40/0.14)] transition press bg-panel/85 text-subtle backdrop-blur-2xl"
-          aria-label="Mostra la mia posizione"
+          :aria-label="t('map.myLocation')"
           :disabled="locating"
           @click="showMyLocation()"
         >
@@ -1120,7 +1117,7 @@ onUnmounted(() => {
         <TransitionGroup
           tag="ul"
           name="legend-item"
-          aria-label="Legenda delle linee di vista"
+          :aria-label="t('map.legend')"
           class="relative flex h-8 items-center gap-x-3"
         >
           <li
@@ -1140,7 +1137,7 @@ onUnmounted(() => {
                 :stroke-dasharray="level.dashed ? '4 3' : undefined"
               />
             </svg>
-            {{ level.label }}
+            {{ t(`visibilityLevels.${level.key}`) }}
           </li>
         </TransitionGroup>
       </div>

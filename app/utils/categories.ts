@@ -7,7 +7,10 @@ import { BRAND, BRAND_DARK } from "./brand";
 // map's markers keep `color`: their white ring carries them on the dark map
 
 export interface Category {
+  // The census's own name, in Italian: also the category's id (the filter, the markers' order)
   name: string;
+  // Its name in the UI's language: categories.<key> in i18n/locales
+  key: string;
   // The category_id values in the data that belong to it
   ids: string[];
   color: string;
@@ -29,6 +32,7 @@ export interface Category {
 export const CATEGORIES: Category[] = [
   {
     name: "Nuraghe",
+    key: "nuraghe",
     ids: ["10", "11", "12", "13"],
     color: BRAND.terracotta,
     darkColor: "#ed5f01",
@@ -36,6 +40,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Domus de janas",
+    key: "domusDeJanas",
     ids: ["30"],
     color: "#ad5d58",
     darkColor: "#bc7b77",
@@ -43,6 +48,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Tombe dei giganti",
+    key: "tombeDeiGiganti",
     ids: ["60", "61", "62", "63"],
     color: "#9e6842",
     darkColor: "#ba8159",
@@ -50,6 +56,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Villaggi",
+    key: "villaggi",
     ids: ["40", "41"],
     color: "#9d6b03",
     darkColor: "#c08304",
@@ -57,6 +64,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Unicum e Grotte Tafoni",
+    key: "unicumTafoni",
     ids: ["110", "101"],
     color: "#737571",
     darkColor: "#8c8e8b",
@@ -65,6 +73,7 @@ export const CATEGORIES: Category[] = [
   // Basalt in both modes: dark basalt on the light panels, light (the dark mode's text) on dark
   {
     name: "Menhir",
+    key: "menhir",
     ids: ["70", "71", "72", "73"],
     color: BRAND.basalt,
     darkColor: BRAND_DARK.basalt,
@@ -72,14 +81,29 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Culto dell'acqua",
+    key: "cultoAcqua",
     ids: ["50", "51", "52"],
     color: "#3a79ab",
     darkColor: "#5393c5",
     icon: "IconCultoAcqua",
   },
-  { name: "Dolmen", ids: ["20", "21"], color: "#7d7534", darkColor: "#9a9040", icon: "IconDolmen" },
+  {
+    name: "Dolmen",
+    key: "dolmen",
+    ids: ["20", "21"],
+    color: "#7d7534",
+    darkColor: "#9a9040",
+    icon: "IconDolmen",
+  },
   // Anything else, including sites without a category
-  { name: "Sconosciuto", ids: [], color: "#6b625b", darkColor: "#a39588", icon: null },
+  {
+    name: "Sconosciuto",
+    key: "unknown",
+    ids: [],
+    color: "#6b625b",
+    darkColor: "#a39588",
+    icon: null,
+  },
 ];
 
 const UNKNOWN = CATEGORIES.at(-1)!;
@@ -92,12 +116,15 @@ export const categoryOf = (categoryId: string | null | undefined): Category =>
 export const isNuraghe = (categoryId: string | null | undefined) =>
   categoryOf(categoryId) === CATEGORIES[0];
 
-// What the conservation status means to a visitor, from the free-text values in the data
+// What the conservation status means to a visitor, from the free-text values in the data. The
+// label is the census's word; the UI shows status.<key> (i18n/locales)
 export function statusOf(stato: string | null | undefined) {
   const value = (stato ?? "").trim().toLowerCase();
   if (["mantenuto", "manutenuto", "buono"].includes(value))
-    return { label: "Mantenuto", icon: "i-lucide-shield-check" };
-  if (value === "diroccato") return { label: "Diroccato", icon: "i-lucide-construction" };
-  if (value === "non visibile") return { label: "Non visibile", icon: "i-lucide-eye-off" };
+    return { label: "Mantenuto", key: "mantenuto", icon: "i-lucide-shield-check" };
+  if (value === "diroccato")
+    return { label: "Diroccato", key: "diroccato", icon: "i-lucide-construction" };
+  if (value === "non visibile")
+    return { label: "Non visibile", key: "nonVisibile", icon: "i-lucide-eye-off" };
   return null;
 }

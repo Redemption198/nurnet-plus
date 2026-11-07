@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const NuxtPage = resolveComponent("NuxtPage");
 const SearchResults = resolveComponent("SearchResults");
-const route = useRoute();
+const isHome = useIsHome();
 
 const { items: mapData, error, reload } = useNurnetData();
 
@@ -40,7 +40,7 @@ useSchemaOrg([
 
       <TheDrawer>
         <component
-          :is="route.path === '/' ? SearchResults : NuxtPage"
+          :is="isHome ? SearchResults : NuxtPage"
           v-if="mapData"
           :map-data="mapData"
         ></component>
@@ -50,9 +50,11 @@ useSchemaOrg([
             class="flex h-5/6 w-full flex-col items-center justify-center gap-y-4 px-8 text-center text-sm font-semibold text-muted"
             :class="{ 'animate-pulse': !error }"
           >
-            <p v-if="error">I siti non si sono caricati. Controlla la connessione.</p>
-            <p v-else>Caricamento…</p>
-            <UButton v-if="error" icon="i-lucide-rotate-cw" @click="reload">Riprova</UButton>
+            <p v-if="error">{{ $t("app.loadFailed") }}</p>
+            <p v-else>{{ $t("common.loading") }}</p>
+            <UButton v-if="error" icon="i-lucide-rotate-cw" @click="reload">{{
+              $t("common.retry")
+            }}</UButton>
           </div>
         </div>
       </TheDrawer>

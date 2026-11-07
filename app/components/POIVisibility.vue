@@ -8,11 +8,14 @@ const { items, openPOI, retry } = useNurnetData();
 // Real links (new tab, copy link, screen readers) whose clicks are handled here: NuxtLink would
 // navigate before a @click.prevent could stop it
 const router = useRouter();
-const siteHref = (id: string) => router.resolve(`/poi/${id}`).href;
+const localePath = useLocalePath();
+const siteHref = (id: string) =>
+  router.resolve(localePath({ name: "index-poi-id", params: { id } })).href;
 const fitPoints = useFitPoints();
 const highlighted = useHighlightedVisible();
 const canHover = useMediaQuery("(hover: hover)");
 const isDark = useIsDark();
+const { t, locale } = useI18n();
 
 // Nearest first; long lists (up to ~90) start short
 const SHORT_LIST = 6;
@@ -82,9 +85,8 @@ function onBlur() {
   >
     <div class="flex items-center justify-between gap-x-2">
       <h3 id="poi-visibility" class="text-base font-semibold text-basalt">
-        Visibili da qui<span v-if="visible.length" class="font-normal text-muted">
-          · {{ visible.length }}</span
-        >
+        {{ t("visibility.title")
+        }}<span v-if="visible.length" class="font-normal text-muted"> · {{ visible.length }}</span>
       </h3>
       <button
         v-if="visible.length"
@@ -93,7 +95,7 @@ function onBlur() {
         @click="showOnMap"
       >
         <UIcon name="i-lucide-map" class="size-4" aria-hidden="true" />
-        Mostra sulla mappa
+        {{ t("visibility.showOnMap") }}
       </button>
     </div>
 
@@ -101,7 +103,7 @@ function onBlur() {
       v-if="site.visibleStatus === 'loading'"
       class="flex flex-col"
       role="status"
-      aria-label="Caricamento dei siti visibili"
+      :aria-label="t('visibility.loading')"
     >
       <div v-for="n in 3" :key="n" class="flex items-center gap-x-3 border-t border-line py-3">
         <div class="size-6 animate-pulse rounded-full bg-well" />
@@ -113,19 +115,19 @@ function onBlur() {
       v-else-if="site.visibleStatus === 'error'"
       class="flex items-center gap-x-3 text-sm text-muted"
     >
-      <p class="flex-1">Le linee di vista non si sono caricate.</p>
+      <p class="flex-1">{{ t("visibility.failed") }}</p>
       <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="retry">
-        Riprova
+        {{ t("common.retry") }}
       </UButton>
     </div>
 
     <p v-else-if="!visible.length" class="text-sm text-muted">
-      Secondo il modello del terreno, da qui non si vede nessun altro nuraghe.
+      {{ t("visibility.none") }}
     </p>
 
     <template v-else>
       <p v-if="!canHover" class="text-xs text-muted">
-        Tocca un nuraghe per vederne la linea sulla mappa.
+        {{ t("visibility.tapHint") }}
       </p>
       <ul class="flex flex-col">
         <li
@@ -148,15 +150,21 @@ function onBlur() {
             <div class="min-w-0 flex-1">
               <p class="truncate text-[0.9375rem] font-semibold">{{ entry.poi.name }}</p>
               <p class="truncate text-xs text-muted">
-                {{ formatDistance(entry.distance)
+                {{ formatDistance(entry.distance, locale)
                 }}<template v-if="entry.poi.comune"> · {{ entry.poi.comune }}</template>
               </p>
             </div>
             <div
               class="flex w-24 shrink-0 flex-col items-end gap-y-1"
-              :title="`${entry.height.toLocaleString('it-IT', { maximumFractionDigits: 1 })} m su 15`"
+              :title="
+                t('visibility.height', {
+                  metres: entry.height.toLocaleString(locale, { maximumFractionDigits: 1 }),
+                })
+              "
             >
-              <span class="text-xs font-semibold text-muted">{{ entry.level.label }}</span>
+              <span class="text-xs font-semibold text-muted">{{
+                t(`visibilityLevels.${entry.level.key}`)
+              }}</span>
               <span class="h-1.5 w-full overflow-hidden rounded-full bg-well" aria-hidden="true">
                 <span
                   class="block h-full rounded-full"
@@ -174,7 +182,8 @@ function onBlur() {
             class="ml-2 inline-flex min-h-11 items-center gap-x-0.5 rounded-full bg-terracotta px-3 text-sm font-semibold text-white"
             @click.prevent="openPOI(entry.poi)"
           >
-            Apri<UIcon name="i-lucide-chevron-right" class="size-4" aria-hidden="true" />
+            {{ t("visibility.open")
+            }}<UIcon name="i-lucide-chevron-right" class="size-4" aria-hidden="true" />
           </a>
         </li>
       </ul>
@@ -186,7 +195,7 @@ function onBlur() {
         :aria-expanded="showAll"
         @click="showAll = !showAll"
       >
-        {{ showAll ? "Mostra meno" : `Mostra tutti (${visible.length})` }}
+        {{ showAll ? t("common.showLess") : t("visibility.showAll", { count: visible.length }) }}
         <UIcon
           name="i-lucide-chevron-down"
           class="size-4 transition-transform"
@@ -196,8 +205,7 @@ function onBlur() {
       </button>
 
       <p class="max-w-[60ch] text-xs text-pretty text-muted">
-        Linee di vista calcolate da CRS4 per NurNet sul modello del terreno: quanto si vede delle
-        torri (alte 15 m nel modello) l'una dall'altra.
+        {{ t("visibility.note") }}
       </p>
     </template>
   </section>

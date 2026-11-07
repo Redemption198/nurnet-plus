@@ -27,7 +27,7 @@ function scrollPage(direction: number) {
       class="scrollbar-hidden flex snap-x snap-mandatory scroll-px-4 gap-x-3 overflow-x-auto px-4 focus-visible:-outline-offset-2"
       tabindex="0"
       role="region"
-      :aria-label="`Foto di ${name}`"
+      :aria-label="$t('photos.of', { name })"
     >
       <button
         v-for="(photo, i) in photos"
@@ -35,7 +35,7 @@ function scrollPage(direction: number) {
         :ref="(el: unknown) => (thumbs[i] = el as HTMLElement)"
         type="button"
         class="shrink-0 cursor-zoom-in snap-start overflow-hidden rounded-2xl"
-        :aria-label="`Apri la foto ${i + 1} di ${photos.length} a schermo intero`"
+        :aria-label="$t('photos.openFullscreen', { n: i + 1, total: photos.length })"
         @click="viewerIndex = i"
       >
         <!-- Mediateca thumbnails are 300x300: a fixed square keeps the strip stable while they load -->
@@ -55,7 +55,7 @@ function scrollPage(direction: number) {
       v-if="!arrivedState.left"
       type="button"
       class="absolute top-1/2 left-6 hidden h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt opacity-0 shadow-md backdrop-blur-md transition group-hover:opacity-100 hover:bg-surface focus-visible:opacity-100 pointer-fine:flex"
-      aria-label="Foto precedenti"
+      :aria-label="$t('photos.previousPage')"
       @click="scrollPage(-1)"
     >
       <UIcon name="i-lucide-chevron-left" class="size-5" />
@@ -64,7 +64,7 @@ function scrollPage(direction: number) {
       v-if="!arrivedState.right"
       type="button"
       class="absolute top-1/2 right-6 hidden h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel/85 text-basalt opacity-0 shadow-md backdrop-blur-md transition group-hover:opacity-100 hover:bg-surface focus-visible:opacity-100 pointer-fine:flex"
-      aria-label="Foto successive"
+      :aria-label="$t('photos.nextPage')"
       @click="scrollPage(1)"
     >
       <UIcon name="i-lucide-chevron-right" class="size-5" />

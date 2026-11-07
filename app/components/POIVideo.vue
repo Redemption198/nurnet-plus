@@ -39,11 +39,11 @@ async function load() {
 
 <template>
   <section v-if="site?.youtube" class="flex flex-col gap-y-3" aria-labelledby="site-video">
-    <h3 id="site-video" class="text-base font-semibold text-basalt">Video</h3>
+    <h3 id="site-video" class="text-base font-semibold text-basalt">{{ $t("video.title") }}</h3>
     <iframe
       v-if="loaded[provider]"
       ref="player"
-      :title="`Video: ${site.name}`"
+      :title="$t('video.player', { name: site.name })"
       :src="playerSrc"
       class="aspect-video w-full rounded-2xl border-none bg-well"
       allow="autoplay; encrypted-media; picture-in-picture"
@@ -59,10 +59,10 @@ async function load() {
         @click="load"
       >
         <UIcon name="i-lucide-play" class="size-4.5 text-terracotta-dark" aria-hidden="true" />
-        Carica il video da {{ providerName }}
+        {{ $t("video.load", { provider: providerName }) }}
       </button>
       <p class="max-w-[34ch] text-xs text-pretty text-muted">
-        {{ owner }} riceverà il tuo indirizzo IP e potrebbe usare dei cookie.
+        {{ $t("video.notice", { owner }) }}
       </p>
     </div>
   </section>

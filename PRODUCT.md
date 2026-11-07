@@ -34,7 +34,7 @@ An independent, unofficial app built on NurNet's open data (CC BY 4.0). It has i
 - A 2D/3D map with terrain. "Show my location" runs only when the visitor taps it.
 - Privacy: no accounts, no cookies, no analytics. Location stays on the device. Videos load only when the visitor asks.
 - Terminology: the site categories and conservation states use the census's own names, such as "Nuraghe", "Domus de janas", "Tombe dei giganti", "Mantenuto", "Diroccato" and "Non visibile".
-- Language: Italian only for now. More languages may come later, so copy should not be hard-wired in ways that block translation.
+- Language: Italian (the default, at the root) and English (at `/en/`), both prerendered and indexed. The UI's copy lives in `i18n/locales`, never in the components; the census's own data (names, typologies, descriptions) stays in Italian. No redirect by browser language: the other language is offered once, and a visitor's choice is kept on the device.
 
 ## Brand Commitments
 

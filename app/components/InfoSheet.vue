@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The (i) sheet: how to read the map, how to use the app, privacy, and the credits
 const infoOpen = useInfoOpen();
+const { t, locale, setLocale } = useI18n();
 
 // Like the drawer: the header floats over the content, which scrolls under it, and turns into a
 // blurred bar once there is something under it
@@ -27,37 +28,33 @@ const isDesktop = useIsDesktop();
 // Light or dark: the system's (the default), or the visitor's own, kept on the device. At dusk
 // the system may turn dark while the light map still reads better outdoors
 const colorMode = useColorMode();
-const APPEARANCES = [
-  { value: "system", label: "Automatico", icon: "i-lucide-sun-moon" },
-  { value: "light", label: "Chiaro", icon: "i-lucide-sun" },
-  { value: "dark", label: "Scuro", icon: "i-lucide-moon" },
+const APPEARANCES = computed(() => [
+  { value: "system", label: t("info.appearanceSystem"), icon: "i-lucide-sun-moon" },
+  { value: "light", label: t("info.appearanceLight"), icon: "i-lucide-sun" },
+  { value: "dark", label: t("info.appearanceDark"), icon: "i-lucide-moon" },
+]);
+
+// The UI's language, each named in its own. The choice is kept on the device (utils/locale.ts),
+// and switches to the same page in that language (/en/ or the root)
+const LANGUAGES: { code: AppLocale; label: string; lang: string }[] = [
+  { code: "it", label: "Italiano", lang: "it" },
+  { code: "en", label: "English", lang: "en" },
 ];
+function chooseLanguage(code: AppLocale) {
+  rememberLocale(code);
+  void setLocale(code);
+}
+
 const TIPS = computed(() => [
-  {
-    icon: "i-lucide-search",
-    text: "Cerca un sito per nome o per comune: i risultati vengono evidenziati sulla mappa.",
-  },
-  {
-    icon: "i-lucide-dices",
-    text: "«A caso» ti propone un sito qualsiasi, del tipo selezionato se ne hai scelto uno.",
-  },
+  { icon: "i-lucide-search", text: t("info.tips.search") },
+  { icon: "i-lucide-dices", text: t("info.tips.random") },
   {
     icon: "i-lucide-mountain",
     // On phones there is no 3D button until the map is tilted: the gesture tilts it
-    text: isDesktop.value
-      ? "«3D» inclina la mappa e fa emergere il rilievo, con le linee di vista tese da una torre all'altra."
-      : "Trascina in su con due dita per inclinare la mappa e far emergere il rilievo, con le linee di vista tese da una torre all'altra; «2D» la riporta in piano.",
+    text: t(isDesktop.value ? "info.tips.tilt3d" : "info.tips.tiltGesture"),
   },
-  {
-    icon: "i-lucide-rotate-3d",
-    text: isMac.value
-      ? "Per ruotare la mappa usa due dita sul telefono; sul Mac trascina la bussola, ruota due dita sul trackpad (in Safari) o trascina la mappa tenendo premuto Control. Tocca la bussola per rimettere il nord in alto."
-      : "Per ruotare la mappa usa due dita sul telefono; al computer trascina la bussola, oppure la mappa con il tasto destro o tenendo premuto Ctrl. Tocca la bussola per rimettere il nord in alto.",
-  },
-  {
-    icon: "i-lucide-navigation",
-    text: "«Indicazioni» apre il sito nella tua app di mappe, da cui puoi avviare il percorso.",
-  },
+  { icon: "i-lucide-rotate-3d", text: t(isMac.value ? "info.tips.rotateMac" : "info.tips.rotate") },
+  { icon: "i-lucide-navigation", text: t("info.tips.directions") },
 ]);
 </script>
 
@@ -66,7 +63,7 @@ const TIPS = computed(() => [
   <UModal
     v-model:open="infoOpen"
     title="NurNet+"
-    description="Come leggere la mappa, come usarla, privacy e crediti"
+    :description="t('info.description')"
     :ui="{
       overlay: 'bg-basalt/25 backdrop-blur-[2px] dark:bg-black/50',
       content: 'max-w-md divide-y-0 rounded-3xl bg-panel/90 shadow-xl ring-0 backdrop-blur-2xl',
@@ -83,12 +80,12 @@ const TIPS = computed(() => [
         >
           <div class="flex flex-col gap-y-1">
             <BrandMark class="text-2xl" />
-            <p class="text-sm text-muted">Esplora i siti della Sardegna nuragica</p>
+            <p class="text-sm text-muted">{{ t("info.tagline") }}</p>
           </div>
           <button
             type="button"
             class="-mr-1 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted transition hover:bg-well press"
-            aria-label="Chiudi"
+            :aria-label="t('common.close')"
             @click="close"
           >
             <span class="flex size-9 items-center justify-center rounded-full bg-well/70">
@@ -102,16 +99,16 @@ const TIPS = computed(() => [
           class="scrollbar-hidden flex flex-col gap-y-6 overflow-y-auto overscroll-contain rounded-[inherit] px-4 pb-6 text-sm text-basalt"
           :style="{ paddingTop: `${headerHeight + 8}px` }"
         >
-          <p class="text-pretty text-muted">
-            Un'app non ufficiale per esplorare nuraghi, domus de janas, tombe dei giganti, pozzi
-            sacri e gli altri siti censiti dal
-            <a :class="link" href="https://www.nurnet.net/" target="_blank" rel="noopener"
-              >progetto NurNet</a
-            >, su una mappa agile anche dal telefono.
-          </p>
+          <i18n-t keypath="info.intro" tag="p" class="text-pretty text-muted">
+            <template #project>
+              <a :class="link" href="https://www.nurnet.net/" target="_blank" rel="noopener">{{
+                t("info.introProject")
+              }}</a>
+            </template>
+          </i18n-t>
 
           <section class="flex flex-col gap-y-3" aria-labelledby="info-legend">
-            <h3 id="info-legend" class="text-base font-semibold">Legenda</h3>
+            <h3 id="info-legend" class="text-base font-semibold">{{ t("info.legend") }}</h3>
             <ul class="grid grid-cols-2 gap-x-4 gap-y-2">
               <li
                 v-for="category in CATEGORIES"
@@ -119,11 +116,11 @@ const TIPS = computed(() => [
                 class="flex items-center gap-x-2"
               >
                 <CategoryIcon :category-id="category.ids[0]" class="size-5 shrink-0" />
-                {{ category.name }}
+                {{ t(`categories.${category.key}`) }}
               </li>
             </ul>
 
-            <h4 class="pt-2 text-xs font-semibold text-muted">Stato di conservazione</h4>
+            <h4 class="pt-2 text-xs font-semibold text-muted">{{ t("info.status") }}</h4>
             <ul class="flex flex-wrap gap-x-4 gap-y-1.5">
               <li
                 v-for="status in STATUSES"
@@ -135,11 +132,11 @@ const TIPS = computed(() => [
                   class="size-4.5 shrink-0 text-muted"
                   aria-hidden="true"
                 />
-                {{ status.label }}
+                {{ t(`status.${status.key}`) }}
               </li>
             </ul>
 
-            <h4 class="pt-2 text-xs font-semibold text-muted">Linee di vista tra nuraghi</h4>
+            <h4 class="pt-2 text-xs font-semibold text-muted">{{ t("info.sightLines") }}</h4>
             <ul class="flex flex-col gap-y-1.5">
               <li
                 v-for="level in VISIBILITY_LEVELS"
@@ -158,18 +155,14 @@ const TIPS = computed(() => [
                     :stroke-dasharray="level.dashed ? '5 4' : undefined"
                   />
                 </svg>
-                {{ level.label }}
+                {{ t(`visibilityLevels.${level.key}`) }}
               </li>
             </ul>
-            <p class="text-pretty text-muted">
-              Calcolate dal CRS4 sul modello digitale del terreno, indicano quanto di una torre alta
-              15 m sia visibile dall'altra. Le trovi nella scheda di ogni nuraghe, con «Mostra sulla
-              mappa».
-            </p>
+            <p class="text-pretty text-muted">{{ t("info.sightLinesNote") }}</p>
           </section>
 
           <section class="flex flex-col gap-y-3" aria-labelledby="info-appearance">
-            <h3 id="info-appearance" class="text-base font-semibold">Aspetto</h3>
+            <h3 id="info-appearance" class="text-base font-semibold">{{ t("info.appearance") }}</h3>
             <div
               class="grid grid-cols-3 gap-x-1 rounded-full bg-well/70 p-1"
               role="radiogroup"
@@ -194,13 +187,39 @@ const TIPS = computed(() => [
               </button>
             </div>
             <p v-if="colorMode.preference === 'system'" class="text-pretty text-muted">
-              Chiaro o scuro come il dispositivo. All'aperto, al tramonto, «Chiaro» può leggersi
-              meglio.
+              {{ t("info.appearanceHint") }}
             </p>
           </section>
 
+          <section class="flex flex-col gap-y-3" aria-labelledby="info-language">
+            <h3 id="info-language" class="text-base font-semibold">{{ t("info.language") }}</h3>
+            <div
+              class="grid grid-cols-2 gap-x-1 rounded-full bg-well/70 p-1"
+              role="radiogroup"
+              aria-labelledby="info-language"
+            >
+              <button
+                v-for="language in LANGUAGES"
+                :key="language.code"
+                type="button"
+                role="radio"
+                :lang="language.lang"
+                :aria-checked="locale === language.code"
+                class="flex min-h-11 cursor-pointer items-center justify-center rounded-full px-2 font-semibold transition press press-subtle"
+                :class="
+                  locale === language.code
+                    ? 'bg-surface text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)]'
+                    : 'text-muted hover:text-basalt'
+                "
+                @click="chooseLanguage(language.code)"
+              >
+                {{ language.label }}
+              </button>
+            </div>
+          </section>
+
           <section class="flex flex-col gap-y-3" aria-labelledby="info-tips">
-            <h3 id="info-tips" class="text-base font-semibold">Come si usa</h3>
+            <h3 id="info-tips" class="text-base font-semibold">{{ t("info.tips.title") }}</h3>
             <ul class="flex flex-col gap-y-2">
               <li v-for="tip in TIPS" :key="tip.icon" class="flex gap-x-2">
                 <UIcon
@@ -217,76 +236,67 @@ const TIPS = computed(() => [
                (TheMap), the services the map and the site pages load from, the videos (POIVideo),
                the offline cache (nuxt.config pwa) -->
           <section class="flex flex-col gap-y-2" aria-labelledby="info-privacy">
-            <h3 id="info-privacy" class="text-base font-semibold">Privacy</h3>
-            <p class="text-pretty">
-              NurNet+ non ha account, non usa cookie né statistiche e non raccoglie alcun dato su di
-              te. Per mostrarti mappa, foto e video, però, il browser si collega ad altri servizi,
-              che ricevono il tuo indirizzo IP.
-            </p>
+            <h3 id="info-privacy" class="text-base font-semibold">
+              {{ t("info.privacy.title") }}
+            </h3>
+            <p class="text-pretty">{{ t("info.privacy.summary") }}</p>
             <dl v-show="privacyOpen" id="info-privacy-details" class="flex flex-col">
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">La tua posizione</dt>
-                <dd class="text-pretty">
-                  Viene usata solo se tocchi
-                  <UIcon
-                    name="i-lucide-locate-fixed"
-                    class="inline-block size-4 align-[-0.2em]"
-                    aria-hidden="true"
-                  /><span class="sr-only">il pulsante «Mostra la mia posizione»</span> sulla mappa e
-                  lo consenti al browser. Serve a mostrarti dove sei: rimane sul dispositivo e non
-                  viene né inviata né conservata.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.privacy.location") }}</dt>
+                <i18n-t keypath="info.privacy.locationText" tag="dd" class="text-pretty">
+                  <template #button>
+                    <UIcon
+                      name="i-lucide-locate-fixed"
+                      class="inline-block size-4 align-[-0.2em]"
+                      aria-hidden="true"
+                    /><span class="sr-only">{{ t("info.privacy.locationButton") }}</span>
+                  </template>
+                </i18n-t>
               </div>
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Mappa, foto e dati</dt>
-                <dd class="text-pretty">
-                  La mappa è fornita da OpenFreeMap (<a
-                    :class="link"
-                    href="https://openfreemap.org/privacy/"
-                    target="_blank"
-                    rel="noopener"
-                    >informativa</a
-                  >) e il rilievo da Amazon Web Services: conoscono la zona che stai guardando, non
-                  la tua posizione. Le foto provengono da NurNet, che sa quali siti nuragici apri;
-                  l'app e i dati dei siti sono ospitati su GitHub Pages.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.privacy.map") }}</dt>
+                <i18n-t keypath="info.privacy.mapText" tag="dd" class="text-pretty">
+                  <template #policy>
+                    <a
+                      :class="link"
+                      href="https://openfreemap.org/privacy/"
+                      target="_blank"
+                      rel="noopener"
+                      >{{ t("info.privacy.mapPolicy") }}</a
+                    >
+                  </template>
+                </i18n-t>
               </div>
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Video</dt>
-                <dd class="text-pretty">
-                  Vengono caricati solo se tocchi «Carica il video»; da quel momento si applicano le
-                  regole di
-                  <a
-                    :class="link"
-                    href="https://support.google.com/youtube/answer/171780?hl=it"
-                    target="_blank"
-                    rel="noopener"
-                    >YouTube (Google)</a
-                  >
-                  o di
-                  <a
-                    :class="link"
-                    href="https://www.facebook.com/privacy/policy/"
-                    target="_blank"
-                    rel="noopener"
-                    >Facebook</a
-                  >. La scelta resta valida fino alla chiusura dell'app.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.privacy.video") }}</dt>
+                <i18n-t keypath="info.privacy.videoText" tag="dd" class="text-pretty">
+                  <template #youtube>
+                    <a
+                      :class="link"
+                      :href="`https://support.google.com/youtube/answer/171780?hl=${locale}`"
+                      target="_blank"
+                      rel="noopener"
+                      >YouTube (Google)</a
+                    >
+                  </template>
+                  <template #facebook>
+                    <a
+                      :class="link"
+                      href="https://www.facebook.com/privacy/policy/"
+                      target="_blank"
+                      rel="noopener"
+                      >Facebook</a
+                    >
+                  </template>
+                </i18n-t>
               </div>
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Indicazioni</dt>
-                <dd class="text-pretty">
-                  La posizione del sito viene inviata alla tua app di mappe, che calcola il percorso
-                  secondo le proprie regole sulla privacy.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.privacy.directions") }}</dt>
+                <dd class="text-pretty">{{ t("info.privacy.directionsText") }}</dd>
               </div>
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Sul dispositivo</dt>
-                <dd class="text-pretty">
-                  Per funzionare anche offline, l'app conserva una copia di sé e dei dati dei siti
-                  nella memoria del browser, insieme all'aspetto scelto (chiaro o scuro), se ne hai
-                  scelto uno. Puoi eliminarla dalle impostazioni del browser relative a questo sito.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.privacy.device") }}</dt>
+                <dd class="text-pretty">{{ t("info.privacy.deviceText") }}</dd>
               </div>
             </dl>
             <button
@@ -296,7 +306,7 @@ const TIPS = computed(() => [
               aria-controls="info-privacy-details"
               @click="privacyOpen = !privacyOpen"
             >
-              {{ privacyOpen ? "Mostra meno" : "Cosa viene condiviso con altri servizi" }}
+              {{ privacyOpen ? t("common.showLess") : t("info.privacy.more") }}
               <UIcon
                 name="i-lucide-chevron-down"
                 class="size-4 transition-transform"
@@ -307,68 +317,84 @@ const TIPS = computed(() => [
           </section>
 
           <section class="flex flex-col gap-y-2" aria-labelledby="info-credits">
-            <h3 id="info-credits" class="text-base font-semibold">Crediti</h3>
+            <h3 id="info-credits" class="text-base font-semibold">
+              {{ t("info.credits.title") }}
+            </h3>
             <dl class="flex flex-col">
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Dati</dt>
-                <dd>
-                  Dal
-                  <a
-                    :class="link"
-                    href="https://nurnet.crs4.it/nurnetgeo/"
-                    target="_blank"
-                    rel="noopener"
-                    >Geoportale NurNet</a
-                  >, realizzato dal CRS4 con la Fondazione Nurnet e distribuito con licenza
-                  <a
-                    :class="link"
-                    href="https://creativecommons.org/licenses/by/4.0/deed.it"
-                    target="_blank"
-                    rel="noopener"
-                    >CC BY 4.0</a
-                  >. NurNet+ è un'app indipendente e non ufficiale.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.credits.data") }}</dt>
+                <i18n-t keypath="info.credits.dataText" tag="dd">
+                  <template #geoportal>
+                    <a
+                      :class="link"
+                      href="https://nurnet.crs4.it/nurnetgeo/"
+                      target="_blank"
+                      rel="noopener"
+                      >Geoportale NurNet</a
+                    >
+                  </template>
+                  <template #license>
+                    <a
+                      :class="link"
+                      :href="`https://creativecommons.org/licenses/by/4.0/deed.${locale}`"
+                      target="_blank"
+                      rel="noopener"
+                      >CC BY 4.0</a
+                    >
+                  </template>
+                </i18n-t>
               </div>
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Foto</dt>
-                <dd>
-                  Dei rispettivi autori, pubblicate nella
-                  <a
-                    :class="link"
-                    href="https://www.nurnet.net/mediateca/"
-                    target="_blank"
-                    rel="noopener"
-                    >Mediateca NurNet</a
-                  >.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.credits.photos") }}</dt>
+                <i18n-t keypath="info.credits.photosText" tag="dd">
+                  <template #mediateca>
+                    <a
+                      :class="link"
+                      href="https://www.nurnet.net/mediateca/"
+                      target="_blank"
+                      rel="noopener"
+                      >Mediateca NurNet</a
+                    >
+                  </template>
+                </i18n-t>
               </div>
               <div class="border-t border-line py-2.5">
-                <dt class="text-xs font-semibold text-muted">Mappa</dt>
-                <dd>
-                  <a :class="link" href="https://openfreemap.org/" target="_blank" rel="noopener"
-                    >OpenFreeMap</a
-                  >,
-                  <a :class="link" href="https://openmaptiles.org/" target="_blank" rel="noopener"
-                    >© OpenMapTiles</a
-                  >, dati
-                  <a
-                    :class="link"
-                    href="https://www.openstreetmap.org/copyright"
-                    target="_blank"
-                    rel="noopener"
-                    >© OpenStreetMap</a
-                  >, rilievo
-                  <a
-                    :class="link"
-                    href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md"
-                    target="_blank"
-                    rel="noopener"
-                    >Terrain Tiles</a
-                  >. Realizzata con
-                  <a :class="link" href="https://maplibre.org/" target="_blank" rel="noopener"
-                    >MapLibre</a
-                  >.
-                </dd>
+                <dt class="text-xs font-semibold text-muted">{{ t("info.credits.map") }}</dt>
+                <i18n-t keypath="info.credits.mapText" tag="dd">
+                  <template #openfreemap>
+                    <a :class="link" href="https://openfreemap.org/" target="_blank" rel="noopener"
+                      >OpenFreeMap</a
+                    >
+                  </template>
+                  <template #openmaptiles>
+                    <a :class="link" href="https://openmaptiles.org/" target="_blank" rel="noopener"
+                      >© OpenMapTiles</a
+                    >
+                  </template>
+                  <template #openstreetmap>
+                    <a
+                      :class="link"
+                      href="https://www.openstreetmap.org/copyright"
+                      target="_blank"
+                      rel="noopener"
+                      >© OpenStreetMap</a
+                    >
+                  </template>
+                  <template #terrain>
+                    <a
+                      :class="link"
+                      href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md"
+                      target="_blank"
+                      rel="noopener"
+                      >Terrain Tiles</a
+                    >
+                  </template>
+                  <template #maplibre>
+                    <a :class="link" href="https://maplibre.org/" target="_blank" rel="noopener"
+                      >MapLibre</a
+                    >
+                  </template>
+                </i18n-t>
               </div>
             </dl>
           </section>
@@ -380,7 +406,8 @@ const TIPS = computed(() => [
               target="_blank"
               rel="noopener"
             >
-              <UIcon name="i-lucide-github" class="size-4" aria-hidden="true" /> Codice sorgente
+              <UIcon name="i-lucide-github" class="size-4" aria-hidden="true" />
+              {{ t("info.sourceCode") }}
             </a>
             <a
               :class="pill"
@@ -388,7 +415,8 @@ const TIPS = computed(() => [
               target="_blank"
               rel="noopener"
             >
-              <UIcon name="i-lucide-bug" class="size-4" aria-hidden="true" /> Segnala un problema
+              <UIcon name="i-lucide-bug" class="size-4" aria-hidden="true" />
+              {{ t("info.reportProblem") }}
             </a>
           </div>
         </div>

@@ -1,0 +1,196 @@
+{
+  "nuxtSiteConfig": {
+    "description": "Esplora i siti della Sardegna nuragica: nuraghi, domus de janas, tombe dei giganti e altri, dai dati del progetto NurNet."
+  },
+  "locale": {
+    "offer": "NurNet+ è anche in italiano",
+    "switch": "Passa all'italiano"
+  },
+  "common": {
+    "close": "Chiudi",
+    "retry": "Riprova",
+    "showLess": "Mostra meno",
+    "loading": "Caricamento…"
+  },
+  "app": {
+    "loadingSites": "Caricamento dei siti",
+    "loadFailed": "I siti non si sono caricati. Controlla la connessione.",
+    "brandButton": "NurNet+: guida, legenda e crediti",
+    "update": {
+      "title": "Nuova versione di NurNet+",
+      "description": "Aggiorna per usarla: la pagina si ricarica in un attimo.",
+      "action": "Aggiorna"
+    }
+  },
+  "categories": {
+    "nuraghe": "Nuraghe",
+    "domusDeJanas": "Domus de janas",
+    "tombeDeiGiganti": "Tombe dei giganti",
+    "villaggi": "Villaggi",
+    "unicumTafoni": "Unicum e Grotte Tafoni",
+    "menhir": "Menhir",
+    "cultoAcqua": "Culto dell'acqua",
+    "dolmen": "Dolmen",
+    "unknown": "Sconosciuto"
+  },
+  "status": {
+    "mantenuto": "Mantenuto",
+    "diroccato": "Diroccato",
+    "nonVisibile": "Non visibile"
+  },
+  "visibilityLevels": {
+    "high": "Ben visibile",
+    "medium": "Visibile",
+    "low": "Poco visibile"
+  },
+  "search": {
+    "placeholder": "Cerca sito o comune…",
+    "label": "Cerca un sito o un comune",
+    "clear": "Cancella la ricerca",
+    "random": "A caso",
+    "filterByType": "Filtra per tipo",
+    "noneFound": "Nessun sito trovato",
+    "noneInMap": "Nessun sito nella mappa",
+    "found": "{n} sito trovato | {n} siti trovati",
+    "inMap": "{n} sito nella mappa | {n} siti nella mappa",
+    "noMatchesFor": "Nessun sito per «{query}»",
+    "noMatchesHint": "Prova con il nome del comune o con meno lettere.",
+    "noneHere": "Nessun sito in questa parte della mappa",
+    "noneHereHint": "Sposta o allontana la mappa per vederne altri.",
+    "showAllTypes": "Mostra tutti i tipi"
+  },
+  "site": {
+    "notFound": "Sito non trovato",
+    "notFoundDescription": "Il link non corrisponde a nessun sito della mappa.",
+    "meta": "{kind}, sulla mappa di NurNet+.",
+    "metaInPlace": "{kind} a {place}, sulla mappa di NurNet+.",
+    "metaInPlaceStartingWithA": "{kind} ad {place}, sulla mappa di NurNet+.",
+    "unverified": "Non verificato",
+    "loadingDetails": "Caricamento di foto e descrizione",
+    "detailsFailed": "Foto e descrizione non si sono caricate.",
+    "description": "Descrizione",
+    "source": "Fonte: {source}",
+    "mediatecaPhotos": "Foto nella Mediateca NurNet",
+    "added": "Aggiunto a NurNet il {date}"
+  },
+  "actions": {
+    "directions": "Indicazioni",
+    "share": "Condividi",
+    "linkCopied": "Link copiato",
+    "copyCoordinates": "Copia le coordinate: {coordinates}",
+    "coordinatesCopied": "Coordinate copiate"
+  },
+  "context": {
+    "title": "Il sito",
+    "period": "Periodo",
+    "elevation": "Altitudine",
+    "elevationValue": "{metres} m s.l.m.",
+    "coast": "Dal mare",
+    "river": "Dal corso d'acqua",
+    "spring": "Dalla sorgente",
+    "geology": "Geologia",
+    "landUse": "Uso del suolo",
+    "fewer": "Meno dati",
+    "more": "Altri dati ({count})"
+  },
+  "video": {
+    "title": "Video",
+    "player": "Video: {name}",
+    "load": "Carica il video da {provider}",
+    "notice": "{owner} riceverà il tuo indirizzo IP e potrebbe usare dei cookie."
+  },
+  "visibility": {
+    "title": "Visibili da qui",
+    "showOnMap": "Mostra sulla mappa",
+    "loading": "Caricamento dei siti visibili",
+    "failed": "Le linee di vista non si sono caricate.",
+    "none": "Secondo il modello del terreno, da qui non si vede nessun altro nuraghe.",
+    "tapHint": "Tocca un nuraghe per vederne la linea sulla mappa.",
+    "height": "{metres} m su 15",
+    "open": "Apri",
+    "showAll": "Mostra tutti ({count})",
+    "note": "Linee di vista calcolate da CRS4 per NurNet sul modello del terreno: quanto si vede delle torri (alte 15 m nel modello) l'una dall'altra."
+  },
+  "photos": {
+    "of": "Foto di {name}",
+    "swipeHint": "Scorri per vedere le altre foto",
+    "position": "Foto di {name}, {n} di {total}",
+    "openFullscreen": "Apri la foto {n} di {total} a schermo intero",
+    "previous": "Foto precedente",
+    "next": "Foto successiva",
+    "previousPage": "Foto precedenti",
+    "nextPage": "Foto successive"
+  },
+  "map": {
+    "unavailable": "La mappa non è disponibile su questo dispositivo (WebGL non supportato), ma puoi cercare e consultare i siti dalla lista.",
+    "offline": "La mappa non si è caricata: controlla la connessione. Puoi comunque cercare e consultare i siti dalla lista.",
+    "zoomIn": "Ingrandisci",
+    "zoomOut": "Riduci",
+    "view3d": "Vista 3D con il rilievo",
+    "view2d": "Torna alla vista in piano (2D)",
+    "compass": "Bussola: orienta la mappa a nord",
+    "compassWithKeys": "Bussola: orienta la mappa a nord. Frecce sinistra e destra per ruotarla",
+    "compassTip": "Clic: nord in alto · Trascina per ruotare (anche: tasto destro o Ctrl + trascina sulla mappa)",
+    "compassTipMac": "Clic: nord in alto · Trascina per ruotare (anche: ruota due dita sul trackpad in Safari, o Control + trascina sulla mappa)",
+    "myLocation": "Mostra la mia posizione",
+    "legend": "Legenda delle linee di vista",
+    "locationDenied": "Permesso di posizione negato: attivalo nelle impostazioni del browser.",
+    "locationUnavailable": "Posizione non disponibile al momento.",
+    "locationTimeout": "La posizione non è arrivata in tempo. Riprova.",
+    "locationFailed": "Posizione non disponibile."
+  },
+  "info": {
+    "description": "Come leggere la mappa, come usarla, privacy e crediti",
+    "tagline": "Esplora i siti della Sardegna nuragica",
+    "intro": "Un'app non ufficiale per esplorare nuraghi, domus de janas, tombe dei giganti, pozzi sacri e gli altri siti censiti dal {project}, su una mappa agile anche dal telefono.",
+    "introProject": "progetto NurNet",
+    "legend": "Legenda",
+    "status": "Stato di conservazione",
+    "sightLines": "Linee di vista tra nuraghi",
+    "sightLinesNote": "Calcolate dal CRS4 sul modello digitale del terreno, indicano quanto di una torre alta 15 m sia visibile dall'altra. Le trovi nella scheda di ogni nuraghe, con «Mostra sulla mappa».",
+    "appearance": "Aspetto",
+    "appearanceSystem": "Automatico",
+    "appearanceLight": "Chiaro",
+    "appearanceDark": "Scuro",
+    "appearanceHint": "Chiaro o scuro come il dispositivo. All'aperto, al tramonto, «Chiaro» può leggersi meglio.",
+    "language": "Lingua",
+    "tips": {
+      "title": "Come si usa",
+      "search": "Cerca un sito per nome o per comune: i risultati vengono evidenziati sulla mappa.",
+      "random": "«A caso» ti propone un sito qualsiasi, del tipo selezionato se ne hai scelto uno.",
+      "tilt3d": "«3D» inclina la mappa e fa emergere il rilievo, con le linee di vista tese da una torre all'altra.",
+      "tiltGesture": "Trascina in su con due dita per inclinare la mappa e far emergere il rilievo, con le linee di vista tese da una torre all'altra; «2D» la riporta in piano.",
+      "rotate": "Per ruotare la mappa usa due dita sul telefono; al computer trascina la bussola, oppure la mappa con il tasto destro o tenendo premuto Ctrl. Tocca la bussola per rimettere il nord in alto.",
+      "rotateMac": "Per ruotare la mappa usa due dita sul telefono; sul Mac trascina la bussola, ruota due dita sul trackpad (in Safari) o trascina la mappa tenendo premuto Control. Tocca la bussola per rimettere il nord in alto.",
+      "directions": "«Indicazioni» apre il sito nella tua app di mappe, da cui puoi avviare il percorso."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "summary": "NurNet+ non ha account, non usa cookie né statistiche e non raccoglie alcun dato su di te. Per mostrarti mappa, foto e video, però, il browser si collega ad altri servizi, che ricevono il tuo indirizzo IP.",
+      "more": "Cosa viene condiviso con altri servizi",
+      "location": "La tua posizione",
+      "locationText": "Viene usata solo se tocchi {button} sulla mappa e lo consenti al browser. Serve a mostrarti dove sei: rimane sul dispositivo e non viene né inviata né conservata.",
+      "locationButton": "il pulsante «Mostra la mia posizione»",
+      "map": "Mappa, foto e dati",
+      "mapText": "La mappa è fornita da OpenFreeMap ({policy}) e il rilievo da Amazon Web Services: conoscono la zona che stai guardando, non la tua posizione. Le foto provengono da NurNet, che sa quali siti nuragici apri; l'app e i dati dei siti sono ospitati su GitHub Pages.",
+      "mapPolicy": "informativa",
+      "video": "Video",
+      "videoText": "Vengono caricati solo se tocchi «Carica il video»; da quel momento si applicano le regole di {youtube} o di {facebook}. La scelta resta valida fino alla chiusura dell'app.",
+      "directions": "Indicazioni",
+      "directionsText": "La posizione del sito viene inviata alla tua app di mappe, che calcola il percorso secondo le proprie regole sulla privacy.",
+      "device": "Sul dispositivo",
+      "deviceText": "Per funzionare anche offline, l'app conserva una copia di sé e dei dati dei siti nella memoria del browser, insieme all'aspetto e alla lingua scelti, se ne hai scelto uno. Puoi eliminarla dalle impostazioni del browser relative a questo sito."
+    },
+    "credits": {
+      "title": "Crediti",
+      "data": "Dati",
+      "dataText": "Dal {geoportal}, realizzato dal CRS4 con la Fondazione Nurnet e distribuito con licenza {license}. NurNet+ è un'app indipendente e non ufficiale.",
+      "photos": "Foto",
+      "photosText": "Dei rispettivi autori, pubblicate nella {mediateca}.",
+      "map": "Mappa",
+      "mapText": "{openfreemap}, {openmaptiles}, dati {openstreetmap}, rilievo {terrain}. Realizzata con {maplibre}."
+    },
+    "sourceCode": "Codice sorgente",
+    "reportProblem": "Segnala un problema"
+  }
+}

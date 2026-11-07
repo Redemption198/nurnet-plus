@@ -15,7 +15,7 @@ provideDrawerScroller(drawerContent);
 const drawerState = useDrawerState();
 const headerHeight = useDrawerHeaderHeight();
 const mapPadding = useMapPadding();
-const route = useRoute();
+const isHome = useIsHome();
 
 const lgAndGreater = useIsDesktop();
 const reducedMotion = usePreferredReducedMotion();
@@ -349,8 +349,8 @@ onDeactivated(() => lockPageScroll(false));
       ref="drawerContent"
       data-drawer-scroll
       class="scrollbar-hidden relative min-h-0 flex-1 overscroll-contain rounded-[inherit] focus-visible:-outline-offset-2"
-      :class="route.path === '/' ? '' : 'overflow-y-scroll pt-(--drawer-header-h)'"
-      :tabindex="route.path === '/' ? undefined : 0"
+      :class="isHome ? '' : 'overflow-y-scroll pt-(--drawer-header-h)'"
+      :tabindex="isHome ? undefined : 0"
     >
       <slot></slot>
     </div>

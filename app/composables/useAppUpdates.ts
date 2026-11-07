@@ -10,6 +10,7 @@ export function useAppUpdates() {
   const { $pwa } = useNuxtApp();
   if (!$pwa) return;
   const toast = useToast();
+  const { t } = useI18n();
 
   watch(
     () => $pwa.needRefresh,
@@ -17,14 +18,14 @@ export function useAppUpdates() {
       if (!ready) return;
       toast.add({
         id: "app-update",
-        title: "Nuova versione di NurNet+",
-        description: "Aggiorna per usarla: la pagina si ricarica in un attimo.",
+        title: t("app.update.title"),
+        description: t("app.update.description"),
         // Bundled by name in nuxt.config (icon.clientBundle): the scan doesn't reach this file
         icon: "i-lucide-refresh-cw",
         duration: 0,
         actions: [
           {
-            label: "Aggiorna",
+            label: t("app.update.action"),
             // Activates the new version and reloads the page, which keeps its URL (the open site).
             // The plugin reloads once the new version takes the page over; a page no version
             // controls yet (the first visit) is never taken over, so that one reloads here

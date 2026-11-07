@@ -5,10 +5,13 @@
 const props = defineProps<{ mapData: NurnetPOI[] }>();
 
 const { search, openPOI } = useNurnetData();
+const { t, locale } = useI18n();
 // Real links (new tab, copy link, screen readers) whose clicks are handled here: NuxtLink would
 // navigate before a @click.prevent could stop it
 const router = useRouter();
-const siteHref = (id: string) => router.resolve(`/poi/${id}`).href;
+const localePath = useLocalePath();
+const siteHref = (id: string) =>
+  router.resolve(localePath({ name: "index-poi-id", params: { id } })).href;
 
 // Hovering a row (mouse) or focusing it (keyboard) points the site out on the map, and pointing
 // at a marker on the map marks its row here, if it's among the rows drawn; a tap opens it
@@ -101,11 +104,10 @@ watch([debouncedQuery, categoryFilter], () => {
 });
 
 const countLabel = computed(() => {
-  if (!results.value.length)
-    return searching.value ? "Nessun sito trovato" : "Nessun sito nella mappa";
-  const n = results.value.length.toLocaleString("it-IT");
-  const what = results.value.length === 1 ? "sito" : "siti";
-  return searching.value ? `${n} ${what} trovati` : `${n} ${what} nella mappa`;
+  const count = results.value.length;
+  if (!count) return t(searching.value ? "search.noneFound" : "search.noneInMap");
+  const n = count.toLocaleString(locale.value);
+  return t(searching.value ? "search.found" : "search.inMap", { n }, count);
 });
 </script>
 
@@ -132,8 +134,8 @@ const countLabel = computed(() => {
             v-model="query"
             type="search"
             enterkeyhint="search"
-            placeholder="Cerca sito o comune…"
-            aria-label="Cerca un sito o un comune"
+            :placeholder="t('search.placeholder')"
+            :aria-label="t('search.label')"
             @focus="raiseForSearch"
             class="h-11 w-full rounded-full bg-surface/85 pr-11 pl-10 text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] placeholder:text-muted focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:appearance-none"
           />
@@ -142,7 +144,7 @@ const countLabel = computed(() => {
             v-if="query"
             type="button"
             class="absolute top-0 right-0 flex size-11 items-center justify-center rounded-full text-muted"
-            aria-label="Cancella la ricerca"
+            :aria-label="t('search.clear')"
             @click="query = ''"
           >
             <span class="flex size-6 items-center justify-center rounded-full bg-well">
@@ -156,7 +158,7 @@ const countLabel = computed(() => {
           @click="openRandomPOI"
         >
           <UIcon name="i-lucide-dices" class="size-5 text-subtle" aria-hidden="true" />
-          A caso
+          {{ t("search.random") }}
         </button>
       </div>
 
@@ -165,7 +167,7 @@ const countLabel = computed(() => {
       <div
         class="scrollbar-hidden -mx-4 mt-2 -mb-1 flex gap-x-2 overflow-x-auto px-4 py-1"
         role="group"
-        aria-label="Filtra per tipo"
+        :aria-label="t('search.filterByType')"
       >
         <button
           v-for="category in CATEGORIES"
@@ -191,7 +193,7 @@ const countLabel = computed(() => {
             :color="categoryFilter === category.name ? 'currentColor' : undefined"
             class="size-4.5 shrink-0"
           />
-          {{ category.name }}
+          {{ t(`categories.${category.key}`) }}
         </button>
       </div>
 
@@ -205,16 +207,18 @@ const countLabel = computed(() => {
     <div v-if="!results.length" class="flex flex-col items-center gap-y-3 px-8 pt-10 text-center">
       <IconNurnetPlus class="size-14 fill-subtle/40" aria-hidden="true" />
       <p class="font-semibold text-basalt">
-        <template v-if="searching">Nessun sito per «{{ debouncedQuery.trim() }}»</template>
-        <template v-else>Nessun sito in questa parte della mappa</template>
+        <template v-if="searching">{{
+          t("search.noMatchesFor", { query: debouncedQuery.trim() })
+        }}</template>
+        <template v-else>{{ t("search.noneHere") }}</template>
       </p>
       <p class="max-w-[34ch] text-sm text-pretty text-muted">
-        <template v-if="searching">Prova con il nome del comune o con meno lettere.</template>
-        <template v-else>Sposta o allontana la mappa per vederne altri.</template>
+        <template v-if="searching">{{ t("search.noMatchesHint") }}</template>
+        <template v-else>{{ t("search.noneHereHint") }}</template>
       </p>
       <div class="flex flex-wrap justify-center gap-2">
         <UButton v-if="searching" color="neutral" variant="soft" @click="query = ''">
-          Cancella la ricerca
+          {{ t("search.clear") }}
         </UButton>
         <UButton
           v-if="categoryFilter"
@@ -222,7 +226,7 @@ const countLabel = computed(() => {
           variant="soft"
           @click="categoryFilter = null"
         >
-          Mostra tutti i tipi
+          {{ t("search.showAllTypes") }}
         </UButton>
       </div>
     </div>

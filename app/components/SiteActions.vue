@@ -2,6 +2,7 @@
 // Getting to the open site and passing it on: directions in the phone's maps app, a link to it
 // (the system's share sheet, or the clipboard), and its coordinates
 const site = useCurrentSite();
+const { t } = useI18n();
 
 const coordinates = computed(() => {
   const [lon, lat] = site.value?.coordinates ?? [0, 0];
@@ -49,7 +50,7 @@ async function shareSite() {
       class="inline-flex min-h-11 items-center gap-x-2 rounded-full bg-terracotta px-5 font-semibold text-white shadow-[0_2px_6px_rgb(154_62_1/0.3)] transition hover:bg-brand-deep press press-subtle"
     >
       <UIcon name="i-lucide-navigation" class="size-4.5" aria-hidden="true" />
-      Indicazioni
+      {{ t("actions.directions") }}
     </a>
     <button
       v-if="canShare || canCopyLink"
@@ -62,13 +63,13 @@ async function shareSite() {
         class="size-4 text-muted"
         aria-hidden="true"
       />
-      {{ linkCopied ? "Link copiato" : "Condividi" }}
+      {{ linkCopied ? t("actions.linkCopied") : t("actions.share") }}
     </button>
     <button
       v-if="isSupported"
       type="button"
       class="inline-flex min-h-11 items-center gap-x-2 rounded-full px-4 text-sm font-semibold text-basalt tabular-nums transition hover:bg-well press press-subtle"
-      :aria-label="`Copia le coordinate: ${coordinates}`"
+      :aria-label="t('actions.copyCoordinates', { coordinates })"
       @click="copy(coordinates)"
     >
       <UIcon
@@ -76,11 +77,11 @@ async function shareSite() {
         class="size-4 text-muted"
         aria-hidden="true"
       />
-      <span>{{ copied ? "Coordinate copiate" : coordinates }}</span>
+      <span>{{ copied ? t("actions.coordinatesCopied") : coordinates }}</span>
     </button>
     <p v-else class="px-1 text-sm text-muted tabular-nums">{{ coordinates }}</p>
     <span class="sr-only" aria-live="polite">{{
-      copied ? "Coordinate copiate" : linkCopied ? "Link copiato" : ""
+      copied ? t("actions.coordinatesCopied") : linkCopied ? t("actions.linkCopied") : ""
     }}</span>
   </div>
 </template>

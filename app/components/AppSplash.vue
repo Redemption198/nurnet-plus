@@ -104,7 +104,7 @@ onUnmounted(() => animations?.revert());
     ref="root"
     class="splash fixed inset-x-0 bottom-0 z-50 bg-brand"
     role="status"
-    aria-label="Caricamento dei siti"
+    :aria-label="$t('app.loadingSites')"
   >
     <div ref="mark" class="logo absolute top-1/2 left-1/2 -translate-1/2">
       <IconNurnetPlus class="size-full fill-white" aria-hidden="true" />

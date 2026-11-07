@@ -21,7 +21,36 @@ export default defineNuxtConfig({
     compatibilityVersion: 5,
   },
 
-  modules: ["@vite-pwa/nuxt", "@vueuse/nuxt", "@nuxt/ui", "@nuxt/a11y", "@nuxtjs/seo"],
+  modules: [
+    "@vite-pwa/nuxt",
+    "@vueuse/nuxt",
+    "@nuxt/ui",
+    "@nuxtjs/i18n",
+    "@nuxt/a11y",
+    "@nuxtjs/seo",
+  ],
+
+  // The UI in Italian (the root) and English (/en/), each prerendered and indexed, linked to the
+  // other with hreflang (Nuxt SEO). No redirect by the browser's language, which search engines
+  // advise against: plugins/locale.client.ts offers the other language, and applies the one the
+  // visitor chose, kept in localStorage rather than in i18n's cookie
+  i18n: {
+    locales: [
+      { code: "it", language: "it-IT", name: "Italiano", file: "it.json" },
+      { code: "en", language: "en", name: "English", file: "en.json" },
+    ],
+    defaultLocale: "it",
+    strategy: "prefix_except_default",
+    detectBrowserLanguage: false,
+    // As `site`: links to /en/, the folder GitHub Pages serves, not to /en, which it redirects
+    trailingSlash: true,
+  },
+  experimental: {
+    // Nitro's auto-imports, which Nuxt 5 turns off: @nuxtjs/i18n 10.6's server code still takes
+    // useRuntimeConfig from #imports (its rewrite to an explicit import misses the call in
+    // runtime/shared/utils.js), and the build fails without them
+    nitroAutoImports: true,
+  },
 
   // Development only: axe-core accessibility checks, logged to the console and DevTools
   a11y: {
@@ -82,7 +111,7 @@ export default defineNuxtConfig({
 
   icon: {
     // Icons named in .vue files are found by the scan; the ones named elsewhere are listed
-    clientBundle: { scan: true, icons: ["lucide:refresh-cw"] },
+    clientBundle: { scan: true, icons: ["lucide:refresh-cw", "lucide:languages"] },
   },
 
   css: ["~/assets/css/tailwind.css"],
@@ -136,8 +165,9 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly
-      globPatterns: ["**/*.{js,css,html,svg,ico,woff2}"],
+      // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly,
+      // the UI's translations (fetched by @nuxtjs/i18n) with it
+      globPatterns: ["**/*.{js,css,html,svg,ico,woff2}", "_i18n/**/messages.json"],
       // No sourcemaps for the service worker, as for the app. vite-plugin-pwa follows the top-level
       // build.sourcemap, which with Vite's environment API (Nuxt 5) is the server build's
       sourcemap: false,
@@ -152,9 +182,11 @@ export default defineNuxtConfig({
   routeRules: {
     // Old links to the POI page without an id
     "/poi": { redirect: baseURL },
+    "/en/poi": { redirect: `${baseURL}en/` },
     // A site's page is the map with that site open: shareable, but not a page of its own for
     // search engines. noindex, nofollow, and out of the sitemap
     "/poi/**": { robots: false },
+    "/en/poi/**": { robots: false },
   },
 
   compatibilityDate: "2025-10-20",

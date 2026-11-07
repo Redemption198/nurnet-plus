@@ -2,6 +2,8 @@
 const site = useCurrentSite();
 const route = useRoute();
 const { items, openPOI, retry } = useNurnetData();
+const { t, locale } = useI18n();
+const localePath = useLocalePath();
 
 // The URL decides which site is open: a shared link, a reload, back/forward. Sites opened from the
 // app are already open by the time the route changes
@@ -16,14 +18,17 @@ watch(
     const poi = list.find((item) => item.content_id.toUpperCase() === wanted);
     if (poi) {
       openPOI(poi, { navigate: false });
-      if (poi.content_id !== id) void navigateTo(`/poi/${poi.content_id}`, { replace: true });
+      if (poi.content_id !== id)
+        void navigateTo(localePath({ name: "index-poi-id", params: { id: poi.content_id } }), {
+          replace: true,
+        });
       return;
     }
     // A link to a site that isn't in the data (any more): say so, rather than just showing the map
-    void navigateTo("/", { replace: true });
+    void navigateTo(localePath("index"), { replace: true });
     toast.add({
-      title: "Sito non trovato",
-      description: "Il link non corrisponde a nessun sito della mappa.",
+      title: t("site.notFound"),
+      description: t("site.notFoundDescription"),
       icon: "i-lucide-map-pin-off",
     });
   },
@@ -35,14 +40,17 @@ const category = computed(() => categoryOf(poi.value?.category_id));
 const status = computed(() => statusOf(poi.value?.stato));
 
 // Tab title and link previews: "Nuraghe Losa · NurNet+" (the site name comes from the title
-// template), "Nuraghe complesso ad Abbasanta…"
+// template), "Nuraghe complesso ad Abbasanta…". The typology is the census's, in Italian
 const place = computed(() => [poi.value?.comune, poi.value?.regione].filter(Boolean).join(", "));
+const kind = computed(() =>
+  poi.value ? poi.value.typology || t(`categories.${category.value.key}`) : "",
+);
 const description = computed(() => {
   if (!poi.value) return undefined;
-  const kind = poi.value.typology || category.value.name;
+  if (!place.value) return t("site.meta", { kind: kind.value });
   // "ad Abbasanta", "a Barumini"
-  const preposition = /^a/i.test(place.value) ? "ad" : "a";
-  return `${kind}${place.value ? ` ${preposition} ${place.value}` : ""}, sulla mappa di NurNet+.`;
+  const key = /^a/i.test(place.value) ? "site.metaInPlaceStartingWithA" : "site.metaInPlace";
+  return t(key, { kind: kind.value, place: place.value });
 });
 useSeoMeta({
   title: () => poi.value?.name,
@@ -54,7 +62,7 @@ useSeoMeta({
 // Esc closes the site, unless a dialog (photo viewer, info sheet) is open and takes it
 onKeyStroke("Escape", (event) => {
   if (event.defaultPrevented || document.querySelector("[role='dialog']")) return;
-  void navigateTo("/");
+  void navigateTo(localePath("index"));
 });
 
 const isURL = (value: string | undefined) => !!value && URL.canParse(value);
@@ -65,7 +73,7 @@ const sourceHost = computed(() =>
 // or west of Greenwich they'd read as the day before
 const added = computed(() =>
   poi.value?.date
-    ? new Date(poi.value.date).toLocaleDateString("it-IT", {
+    ? new Date(poi.value.date).toLocaleDateString(locale.value, {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -90,8 +98,8 @@ const { y: contentY } = useScroll(scroller);
         </h2>
         <NuxtLink
           class="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-well press"
-          to="/"
-          aria-label="Chiudi"
+          :to="localePath('index')"
+          :aria-label="t('common.close')"
         >
           <span class="flex size-9 items-center justify-center rounded-full bg-well/70">
             <UIcon name="i-lucide-x" class="size-5" aria-hidden="true" />
@@ -105,8 +113,7 @@ const { y: contentY } = useScroll(scroller);
       <p class="flex items-center gap-x-2 text-[0.9375rem] font-semibold text-basalt">
         <CategoryIcon :category-id="poi.category_id" class="size-5 shrink-0" />
         <span>
-          {{ poi.typology || category.name
-          }}<span v-if="place" class="font-normal text-muted"> · {{ place }}</span>
+          {{ kind }}<span v-if="place" class="font-normal text-muted"> · {{ place }}</span>
         </span>
       </p>
       <p
@@ -114,13 +121,17 @@ const { y: contentY } = useScroll(scroller);
         class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted"
       >
         <span v-if="status" class="flex items-center gap-x-1">
-          <UIcon :name="status.icon" class="size-4" aria-hidden="true" />{{ status.label }}
+          <UIcon :name="status.icon" class="size-4" aria-hidden="true" />{{
+            t(`status.${status.key}`)
+          }}
         </span>
         <span v-if="poi.localita" class="flex items-center gap-x-1">
           <UIcon name="i-lucide-map-pin" class="size-4" aria-hidden="true" />{{ poi.localita }}
         </span>
         <span v-if="poi.verified === false" class="flex items-center gap-x-1 text-terracotta-dark">
-          <UIcon name="i-lucide-badge-alert" class="size-4" aria-hidden="true" />Non verificato
+          <UIcon name="i-lucide-badge-alert" class="size-4" aria-hidden="true" />{{
+            t("site.unverified")
+          }}
         </span>
       </p>
     </div>
@@ -131,7 +142,7 @@ const { y: contentY } = useScroll(scroller);
       v-else-if="poi.detailsStatus === 'loading'"
       class="flex gap-x-3 overflow-hidden px-4 pb-4"
       role="status"
-      aria-label="Caricamento di foto e descrizione"
+      :aria-label="t('site.loadingDetails')"
     >
       <div v-for="n in 3" :key="n" class="size-40 shrink-0 animate-pulse rounded-2xl bg-well" />
     </div>
@@ -142,9 +153,9 @@ const { y: contentY } = useScroll(scroller);
       v-if="poi.detailsStatus === 'error'"
       class="mx-4 mb-6 flex items-center gap-x-3 text-sm text-muted"
     >
-      <p class="flex-1">Foto e descrizione non si sono caricate.</p>
+      <p class="flex-1">{{ t("site.detailsFailed") }}</p>
       <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="retry">
-        Riprova
+        {{ t("common.retry") }}
       </UButton>
     </div>
 
@@ -153,7 +164,9 @@ const { y: contentY } = useScroll(scroller);
       class="flex flex-col gap-y-3 px-4 pb-6"
       aria-labelledby="site-description"
     >
-      <h3 id="site-description" class="text-base font-semibold text-basalt">Descrizione</h3>
+      <h3 id="site-description" class="text-base font-semibold text-basalt">
+        {{ t("site.description") }}
+      </h3>
       <p
         v-for="(paragraph, i) in poi.description.split('\n\n')"
         :key="i"
@@ -171,7 +184,7 @@ const { y: contentY } = useScroll(scroller);
 
     <!-- Where the information comes from -->
     <footer class="flex flex-col gap-y-2 border-t border-line px-4 pt-4 text-sm text-muted">
-      <p v-if="poi.source && !sourceHost">Fonte: {{ poi.source }}</p>
+      <p v-if="poi.source && !sourceHost">{{ t("site.source", { source: poi.source }) }}</p>
       <div class="flex flex-wrap gap-x-5 gap-y-1">
         <a
           v-if="sourceHost"
@@ -180,7 +193,8 @@ const { y: contentY } = useScroll(scroller);
           rel="noopener"
           class="inline-flex min-h-11 items-center gap-x-1 font-semibold text-terracotta-dark underline-offset-4 hover:underline"
         >
-          Fonte: {{ sourceHost }}<UIcon name="i-lucide-arrow-up-right" class="size-4" />
+          {{ t("site.source", { source: sourceHost })
+          }}<UIcon name="i-lucide-arrow-up-right" class="size-4" />
         </a>
         <a
           v-if="poi.photos.length"
@@ -189,10 +203,10 @@ const { y: contentY } = useScroll(scroller);
           rel="noopener"
           class="inline-flex min-h-11 items-center gap-x-1 font-semibold text-terracotta-dark underline-offset-4 hover:underline"
         >
-          Foto nella Mediateca NurNet<UIcon name="i-lucide-arrow-up-right" class="size-4" />
+          {{ t("site.mediatecaPhotos") }}<UIcon name="i-lucide-arrow-up-right" class="size-4" />
         </a>
       </div>
-      <p v-if="added">Aggiunto a NurNet il {{ added }}</p>
+      <p v-if="added">{{ t("site.added", { date: added }) }}</p>
     </footer>
   </article>
 </template>

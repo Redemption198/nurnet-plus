@@ -1,5 +1,31 @@
 <script setup lang="ts">
+import { en, it } from "@nuxt/ui/locale";
+
 const config = useRuntimeConfig();
+
+const { locale, locales, localeProperties } = useI18n();
+
+// Nuxt UI's own words (a toast's close button, a modal's) in the UI's language
+const UI_LOCALES = { it, en };
+const uiLocale = computed(() => UI_LOCALES[locale.value as AppLocale]);
+
+// Each page names its twin in the other language (hreflang, as the sitemap does) and its own
+// locale (og:locale). Not i18n's useLocaleHead: its canonical, which would replace Nuxt SEO's,
+// drops the root's trailing slash. <html lang> and the canonical URL come from Nuxt SEO
+const switchLocalePath = useSwitchLocalePath();
+const siteUrl = useSiteConfig().url;
+// The paths come with their slash ("/", "/en/": i18n.trailingSlash)
+const absoluteUrl = (path: string) => siteUrl + config.app.baseURL.replace(/\/$/, "") + path;
+const hreflangLinks = computed(() => [
+  ...locales.value.map(({ code, language }) => ({
+    rel: "alternate" as const,
+    hreflang: language,
+    href: absoluteUrl(switchLocalePath(code)),
+  })),
+  { rel: "alternate" as const, hreflang: "x-default", href: absoluteUrl(switchLocalePath("it")) },
+]);
+useSeoMeta({ ogLocale: () => localeProperties.value.language?.replace("-", "_") });
+
 const asset = (file: string) => `${config.app.baseURL}pwa/${file}`;
 
 // iOS launch screens (utils/splashScreens.ts), one per device size and orientation
@@ -40,13 +66,14 @@ useHead({
     { name: "mobile-web-app-capable", content: "yes" },
     { name: "apple-mobile-web-app-title", content: "NurNet+" },
   ],
-  link: [
+  link: () => [
     // The logo on its tile (public/favicon.svg), sharp at any size; the PNG, rendered from it, for
     // browsers without SVG favicons
     { rel: "icon", type: "image/svg+xml", href: `${config.app.baseURL}favicon.svg` },
     { rel: "icon", type: "image/png", sizes: "196x196", href: asset("favicon-196.png") },
     { rel: "apple-touch-icon", href: asset("apple-icon-180.png") },
     ...splashLinks,
+    ...hreflangLinks.value,
   ],
   script: [
     {
@@ -64,7 +91,7 @@ useHead({
 
 <template>
   <!-- Toasts at the top (app.config toaster): the drawer owns the bottom of the screen -->
-  <UApp :toaster="{ position: 'top-right' }">
+  <UApp :toaster="{ position: 'top-right' }" :locale="uiLocale">
     <NuxtPage />
   </UApp>
 </template>

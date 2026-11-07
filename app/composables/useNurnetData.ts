@@ -62,6 +62,7 @@ function request<T>(message: Question) {
 export function useNurnetData() {
   const config = useRuntimeConfig();
   const router = useRouter();
+  const localePath = useLocalePath();
   const site = useCurrentSite();
   const recentSites = useRecentSites();
 
@@ -116,7 +117,8 @@ export function useNurnetData() {
       visibleStatus: isNuraghe(poi.category_id) ? "loading" : "none",
     };
     recentSites.value = addRecentSite(recentSites.value, poi.content_id);
-    if (navigate) void router.push(`/poi/${poi.content_id}`);
+    if (navigate)
+      void router.push(localePath({ name: "index-poi-id", params: { id: poi.content_id } }));
     if (isNuraghe(poi.category_id)) void loadVisible(poi);
     void loadDetails(poi);
   }
