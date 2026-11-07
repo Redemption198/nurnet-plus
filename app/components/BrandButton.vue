@@ -21,6 +21,7 @@ const infoOpen = useInfoOpen();
         : 'gap-x-2 rounded-2xl bg-panel/80 py-1.5 pr-2.5 pl-3 backdrop-blur-2xl'
     "
     :aria-label="$t('app.brandButton')"
+    :data-brand-pill="compact || undefined"
     @click="infoOpen = true"
   >
     <template v-if="compact">

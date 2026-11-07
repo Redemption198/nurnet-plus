@@ -60,6 +60,12 @@ export default defineNuxtPlugin({
         // Announced politely: an offer, not an alert
         type: "background",
         close: notNow,
+        // Back into the brand button however it's closed (an answer, ×, Esc, a swipe)
+        "data-locale-offer": "",
+        "onUpdate:open": (open: boolean) => {
+          const el = document.querySelector<HTMLElement>("[data-locale-offer]");
+          if (!open && el) returnToPill(el);
+        },
         actions: [
           { label: t("locale.switch"), onClick: () => choose(wanted) },
           {
@@ -70,6 +76,16 @@ export default defineNuxtPlugin({
           },
         ],
       } as Parameters<typeof toast.add>[0]);
+      // Out of the brand button, whose (i) the offer names. The toaster puts it in the page a few
+      // ticks later: caught as it's inserted (a mutation observer runs before the next paint)
+      const find = () => document.querySelector<HTMLElement>("[data-locale-offer]");
+      const observer = new MutationObserver(() => {
+        const el = find();
+        if (!el) return;
+        observer.disconnect();
+        emergeFromPill(el);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
     }
 
     nuxtApp.hook("app:mounted", () => {
