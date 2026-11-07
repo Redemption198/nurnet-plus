@@ -101,11 +101,11 @@ function onBlur() {
 
     <div
       v-if="site.visibleStatus === 'loading'"
-      class="flex flex-col"
+      class="-mx-4 flex flex-col"
       role="status"
       :aria-label="t('visibility.loading')"
     >
-      <div v-for="n in 3" :key="n" class="flex items-center gap-x-3 border-t border-line py-3">
+      <div v-for="n in 3" :key="n" class="flex items-center gap-x-3 border-t border-line px-4 py-3">
         <div class="size-6 animate-pulse rounded-full bg-well" />
         <div class="h-4 flex-1 animate-pulse rounded-full bg-well" />
       </div>
@@ -129,7 +129,7 @@ function onBlur() {
       <p v-if="!canHover" class="text-xs text-muted">
         {{ t("visibility.tapHint") }}
       </p>
-      <ul class="flex flex-col">
+      <ul class="-mx-4 flex flex-col">
         <li
           v-for="entry in shown"
           :key="entry.i"
@@ -138,7 +138,7 @@ function onBlur() {
         >
           <a
             :href="siteHref(entry.poi.content_id)"
-            class="-mx-2 flex min-h-14 min-w-0 flex-1 items-center gap-x-3 rounded-xl px-2 py-2 text-basalt"
+            class="flex min-h-14 min-w-0 flex-1 items-center gap-x-3 px-4 py-2 text-basalt"
             :aria-current="highlighted === entry.i ? 'true' : undefined"
             @click.prevent="onRowClick(entry)"
             @pointerenter="onPointer($event, entry.i)"
@@ -179,7 +179,7 @@ function onBlur() {
           <a
             v-if="!canHover && highlighted === entry.i"
             :href="siteHref(entry.poi.content_id)"
-            class="ml-2 inline-flex min-h-11 items-center gap-x-0.5 rounded-full bg-terracotta px-3 text-sm font-semibold text-white"
+            class="mr-4 -ml-2 inline-flex min-h-11 items-center gap-x-0.5 rounded-full bg-terracotta px-3 text-sm font-semibold text-white"
             @click.prevent="openPOI(entry.poi)"
           >
             {{ t("visibility.open")
