@@ -66,7 +66,8 @@ const TIPS = computed(() => [
     :description="t('info.description')"
     :ui="{
       overlay: 'bg-basalt/25 backdrop-blur-[2px] dark:bg-black/50',
-      content: 'max-w-md divide-y-0 rounded-3xl bg-panel/90 shadow-xl ring-0 backdrop-blur-2xl',
+      content:
+        'max-w-md divide-y-0 rounded-3xl bg-panel/90 shadow-[0_6px_24px_rgb(49_37_40/0.16)] ring-0 backdrop-blur-2xl',
     }"
   >
     <template #content="{ close }">

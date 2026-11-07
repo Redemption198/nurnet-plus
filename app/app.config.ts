@@ -16,10 +16,11 @@ export default defineAppConfig({
       compoundVariants: [{ color: "primary", variant: "solid", class: "text-white" }],
     },
     // Notices ("Sito non trovato", a new version) on the app's panel material: translucent sand,
-    // blurred, the soft basalt shadow of the floating controls
+    // blurred, as see-through as the drawer at each size (TheDrawer), the soft basalt shadow of the
+    // floating controls
     toast: {
       slots: {
-        root: "rounded-2xl bg-panel/90 shadow-[0_4px_16px_rgb(49_37_40/0.14)] ring-0 backdrop-blur-2xl",
+        root: "rounded-2xl bg-panel/75 shadow-[0_4px_16px_rgb(49_37_40/0.14)] ring-0 backdrop-blur-2xl lg:bg-panel/92",
         title: "font-semibold text-basalt",
         description: "text-pretty text-muted",
         // The × as big a target as the rest (44px), its icon where it was
