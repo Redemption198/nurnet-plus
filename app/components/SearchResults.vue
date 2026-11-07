@@ -231,10 +231,10 @@ const countLabel = computed(() => {
       </div>
     </div>
 
-    <ul v-else v-bind="wrapperProps" class="px-4" :aria-label="countLabel">
+    <ul v-else v-bind="wrapperProps" :aria-label="countLabel">
       <li v-for="result in list" :key="result.data.content_id" class="h-16 border-t border-line">
         <a
-          class="-mx-2 flex h-full items-center gap-x-3 rounded-xl px-2 text-basalt transition-colors hover:bg-basalt/5"
+          class="flex h-full items-center gap-x-3 px-4 text-basalt transition-colors hover:bg-basalt/5"
           :class="{ 'bg-basalt/5': hovered === indexOf.get(result.data.content_id) }"
           :href="siteHref(result.data.content_id)"
           @click.prevent="openPOI(result.data)"
