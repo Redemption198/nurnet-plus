@@ -5,8 +5,9 @@ import gsap from "gsap";
 // changed later with that button's (i). Where the pill isn't on screen (desktop, or covered by the
 // raised drawer) the toast keeps Nuxt UI's own slide. Visitors who ask for reduced motion get a
 // fade.
-// A little elastic, as a drop out of the pill's bottom: it drips down first, then spreads to its
-// width a beat later. The pill stays on top meanwhile, so the toast is seen leaving from beneath it
+// In two steps, as a drop out of the pill's bottom: a small square slides slowly out from under it,
+// and once it's all in view it swells into the whole toast, with a bounce as it settles. The pill
+// stays on top meanwhile, so the toast is seen leaving from beneath it
 
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -23,19 +24,25 @@ function visiblePill(toast: HTMLElement): HTMLElement | null {
   return top && pill.contains(top) ? pill : null;
 }
 
-// The toast's box mapped onto a sliver hidden behind the pill's lower half (origin at the toast's
-// top left): a little narrower than the pill, so it leaves through the bottom edge, between the
-// rounded corners
-function underPill(box: DOMRect, pill: DOMRect) {
-  const width = pill.width * 0.7;
-  const height = pill.height * 0.4;
+// The toast's box mapped onto a square a little narrower than the pill, so it leaves through the
+// bottom edge between the rounded corners (origin at the toast's top left): `under`, hidden behind
+// the pill; `square`, out of it, at the toast's own top. Its corners as the pill's tile's (22.5%),
+// each axis's radius undoing that axis's scale
+function squares(box: DOMRect, pill: DOMRect) {
+  const side = pill.width * 0.7;
+  const x = pill.left + (pill.width - side) / 2 - box.left;
+  const scaleX = side / box.width;
+  const scaleY = side / box.height;
+  const corner = side * 0.225;
+  const borderRadius = `${corner / scaleX}px / ${corner / scaleY}px`;
   return {
-    x: pill.left + (pill.width - width) / 2 - box.left,
-    y: pill.bottom - height - 2 - box.top,
-    scaleX: width / box.width,
-    scaleY: height / box.height,
+    under: { x, y: pill.bottom - side - 2 - box.top, scaleX, scaleY, borderRadius },
+    square: { x, y: 0, scaleX, scaleY, borderRadius },
   };
 }
+
+// The toast's own corners (rounded-2xl), in the same two-value form so GSAP can tween between them
+const TOAST_RADIUS = "16px / 16px";
 
 // The pill drawn again above the toaster while the toast goes under it: the app is a stacking
 // context of its own (#__nuxt is isolated), which the toaster, in <body>, is always above, whatever
@@ -102,27 +109,31 @@ export function emergeFromPill(toast: HTMLElement) {
   // toast's height as it mounts, which a scale now would shrink. Its transform transition (for
   // stacking) off while GSAP moves it
   requestAnimationFrame(() => {
-    const start = underPill(toast.getBoundingClientRect(), pill.getBoundingClientRect());
+    const { under, square } = squares(toast.getBoundingClientRect(), pill.getBoundingClientRect());
     const cover = coverPill(pill);
-    gsap.set(toast, { transformOrigin: "0 0", transition: "none", opacity: 1, ...start });
+    gsap.set(toast, { transformOrigin: "0 0", transition: "none", opacity: 1, ...under });
     // The words once the shape is there, so they're never seen squashed
     gsap.set(toast.children, { opacity: 0 });
     entrance = gsap
       .timeline({
         onComplete: () => {
-          gsap.set(toast, { clearProps: "transform,transformOrigin,transition,opacity" });
+          gsap.set(toast, {
+            clearProps: "transform,transformOrigin,transition,opacity,borderRadius",
+          });
         },
       })
       .add(() => nudge(cover, 0.9), 0)
-      // Down out of the pill's bottom, a small bounce as it lands
-      .to(toast, { y: 0, duration: 0.55, ease: "back.out(1.3)" }, 0)
-      .to(toast, { scaleY: 1, duration: 0.7, ease: "elastic.out(1, 0.6)" }, 0)
-      // Then out to its width: a slight overshoot only, all of it towards the screen's edge
-      .to(toast, { x: 0, scaleX: 1, duration: 0.5, ease: "back.out(1.15)" }, 0.12)
+      // Slowly down out of the pill's bottom, until the square is all in view
+      .to(toast, { y: square.y, duration: 0.55, ease: "power2.inOut" }, 0)
+      // Then the whole toast. The width overshoots only a little (all of it goes right, towards
+      // the screen's edge); the height bounces as it settles
+      .to(toast, { x: 0, scaleX: 1, duration: 0.55, ease: "back.out(1.1)" }, 0.55)
+      .to(toast, { borderRadius: TOAST_RADIUS, duration: 0.5, ease: "power2.out" }, 0.55)
+      .to(toast, { scaleY: 1, duration: 0.8, ease: "elastic.out(1, 0.45)" }, 0.6)
       .to(
         toast.children,
         { opacity: 1, duration: 0.25, ease: "power1.out", clearProps: "opacity" },
-        0.3,
+        0.85,
       );
   });
 }
@@ -133,7 +144,7 @@ export function returnToPill(toast: HTMLElement) {
   const pill = visiblePill(toast);
   if (!pill) return;
   entrance?.kill();
-  gsap.set(toast, { clearProps: "transform,transformOrigin,opacity" });
+  gsap.set(toast, { clearProps: "transform,transformOrigin,opacity,borderRadius" });
   gsap.set(toast.children, { clearProps: "opacity" });
   const box = toast.getBoundingClientRect();
 
@@ -168,15 +179,15 @@ export function returnToPill(toast: HTMLElement) {
     });
     return;
   }
-  const end = underPill(box, pill.getBoundingClientRect());
+  const { under, square } = squares(box, pill.getBoundingClientRect());
   const cover = coverPill(pill);
-  gsap.set(ghost, { transformOrigin: "0 0", x: 0, y: 0, scale: 1 });
-  // Faster than it came, the other way round: the words go, it narrows to the pill, then it's
-  // drawn up under it
+  gsap.set(ghost, { transformOrigin: "0 0", x: 0, y: 0, scale: 1, borderRadius: TOAST_RADIUS });
+  // Faster than it came, the other way round: the words go, it shrinks to the square, then the
+  // square is drawn up under the pill
   gsap
     .timeline({ onComplete: () => ghost.remove() })
     .to(ghost.children, { opacity: 0, duration: 0.1, ease: "none" }, 0)
-    .to(ghost, { x: end.x, scaleX: end.scaleX, duration: 0.24, ease: "power2.in" }, 0)
-    .to(ghost, { y: end.y, scaleY: end.scaleY, duration: 0.26, ease: "back.in(1.2)" }, 0.1)
-    .add(() => nudge(cover, 1.08), 0.34);
+    .to(ghost, { ...square, duration: 0.26, ease: "power2.in" }, 0)
+    .to(ghost, { y: under.y, duration: 0.2, ease: "back.in(1.4)" }, 0.26)
+    .add(() => nudge(cover, 1.08), 0.44);
 }
