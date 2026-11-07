@@ -67,12 +67,15 @@ const shown = computed(() => (showAll.value ? facts.value : facts.value.slice(0,
     <h3 id="poi-context" class="text-base font-semibold text-basalt">
       {{ t("context.title") }}
     </h3>
-    <dl id="poi-context-facts" class="grid grid-cols-2 gap-x-4">
+    <!-- Full width, separators edge to edge. No column gap: the cells' padding makes it, so the
+         text sits where a 16px gap would put it. The wide facts come last, so a narrow fact's
+         column is its position's parity -->
+    <dl id="poi-context-facts" class="-mx-4 grid grid-cols-2">
       <div
         v-for="fact in shown"
         :key="fact.label"
         class="flex flex-col gap-y-0.5 border-t border-line py-2.5"
-        :class="{ 'col-span-2': fact.wide }"
+        :class="fact.wide ? 'col-span-2 px-4' : 'odd:pr-2 odd:pl-4 even:pr-4 even:pl-2'"
       >
         <dt class="flex items-center gap-x-1.5 text-xs font-semibold text-muted">
           <UIcon :name="fact.icon" class="size-3.5 shrink-0 text-subtle" aria-hidden="true" />
