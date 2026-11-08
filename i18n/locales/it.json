@@ -133,7 +133,11 @@
     "description": "Descrizione",
     "source": "Fonte: {source}",
     "mediatecaPhotos": "Foto nella Mediateca NurNet",
-    "added": "Aggiunto a NurNet il {date}"
+    "added": "Aggiunto a NurNet il {date}",
+    "machineTranslated": "Tradotta automaticamente dall'italiano",
+    "originalItalian": "Testo originale in italiano",
+    "showOriginal": "Mostra l'originale",
+    "showTranslation": "Mostra la traduzione"
   },
   "actions": {
     "directions": "Indicazioni",
@@ -246,7 +250,7 @@
     "credits": {
       "title": "Crediti",
       "data": "Dati",
-      "dataText": "Dal {geoportal}, realizzato dal CRS4 con la Fondazione Nurnet e distribuito con licenza {license}. NurNet+ è un'app indipendente e non ufficiale.",
+      "dataText": "Dal {geoportal}, realizzato dal CRS4 con la Fondazione Nurnet e distribuito con licenza {license}. Le descrizioni nelle altre lingue sono tradotte automaticamente da NurNet+. NurNet+ è un'app indipendente e non ufficiale.",
       "photos": "Foto",
       "photosText": "Dei rispettivi autori, pubblicate nella {mediateca}.",
       "map": "Mappa",

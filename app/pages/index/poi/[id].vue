@@ -37,9 +37,18 @@ watch(
 
 const poi = computed(() => (site.value?.content_id === route.params.id ? site.value : null));
 
-// The description in the UI's language where it has been translated, else the census's Italian.
+// The description in the UI's language where it has been machine translated, else the census's
+// Italian; the visitor can switch to the original and back (each site opens on the translation).
 // A switch of language with a site open fetches it again in the new one
-const descriptionText = computed(() => poi.value?.translatedDescription ?? poi.value?.description);
+const showOriginal = ref(false);
+watch(
+  () => poi.value?.content_id,
+  () => (showOriginal.value = false),
+);
+const translated = computed(() => !!poi.value?.translatedDescription && !showOriginal.value);
+const descriptionText = computed(() =>
+  translated.value ? poi.value?.translatedDescription : poi.value?.description,
+);
 watch(locale, reloadDetails);
 const category = computed(() => categoryOf(poi.value?.category_id));
 const status = computed(() => statusOf(poi.value?.stato));
@@ -175,14 +184,37 @@ const { y: contentY } = useScroll(scroller);
       <h3 id="site-description" class="text-base font-semibold text-basalt">
         {{ t("site.description") }}
       </h3>
+      <!-- Said before the text, not after it: the census wrote it in Italian. The button keeps a
+           44px target without pushing the line apart -->
       <p
-        v-for="(paragraph, i) in descriptionText.split('\n\n')"
-        :key="i"
-        :lang="poi.translatedDescription ? undefined : 'it'"
-        class="max-w-[65ch] text-[0.9375rem] leading-relaxed text-pretty text-basalt/85"
+        v-if="poi.translatedDescription"
+        class="-mt-1.5 flex flex-wrap items-center gap-x-1.5 text-sm text-muted"
       >
-        {{ paragraph }}
+        <UIcon name="i-lucide-languages" class="size-4 shrink-0 text-subtle" aria-hidden="true" />
+        <span>{{ showOriginal ? t("site.originalItalian") : t("site.machineTranslated") }}</span>
+        <span aria-hidden="true">·</span>
+        <button
+          type="button"
+          class="-my-3 inline-flex min-h-11 items-center font-semibold text-terracotta-dark underline-offset-4 hover:underline"
+          aria-controls="site-description-text"
+          @click="showOriginal = !showOriginal"
+        >
+          {{ showOriginal ? t("site.showTranslation") : t("site.showOriginal") }}
+        </button>
       </p>
+      <div
+        id="site-description-text"
+        class="flex flex-col gap-y-3"
+        :lang="translated ? undefined : 'it'"
+      >
+        <p
+          v-for="(paragraph, i) in descriptionText.split('\n\n')"
+          :key="i"
+          class="max-w-[65ch] text-[0.9375rem] leading-relaxed text-pretty text-basalt/85"
+        >
+          {{ paragraph }}
+        </p>
+      </div>
     </section>
 
     <POIVideo v-if="poi.youtube" class="px-4 pb-6" />

@@ -133,7 +133,11 @@
     "description": "Description",
     "source": "Source: {source}",
     "mediatecaPhotos": "Photos in the NurNet Mediateca",
-    "added": "Added to NurNet on {date}"
+    "added": "Added to NurNet on {date}",
+    "machineTranslated": "Machine-translated from Italian",
+    "originalItalian": "Original Italian text",
+    "showOriginal": "Show original",
+    "showTranslation": "Show translation"
   },
   "actions": {
     "directions": "Directions",
@@ -246,7 +250,7 @@
     "credits": {
       "title": "Credits",
       "data": "Data",
-      "dataText": "From the {geoportal}, made by CRS4 with the Fondazione Nurnet and released under the {license} licence. NurNet+ is an independent, unofficial app.",
+      "dataText": "From the {geoportal}, made by CRS4 with the Fondazione Nurnet and released under the {license} licence. The descriptions in languages other than Italian are machine translated by NurNet+. NurNet+ is an independent, unofficial app.",
       "photos": "Photos",
       "photosText": "By their respective authors, published in the {mediateca}.",
       "map": "Map",
