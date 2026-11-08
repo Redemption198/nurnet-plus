@@ -11,13 +11,18 @@ const open = computed({
     if (!value) leaveUrl.value = null;
   },
 });
+// The last site asked about, kept after closing: the tap on "Open site" also closes the dialog,
+// and Vue updates the page before the browser follows the link, so a link that lost its address
+// with the dialog would open nothing. It also keeps the title while the dialog fades out
+const url = ref<string | null>(null);
+watch(leaveUrl, (value) => {
+  if (value) url.value = value;
+});
 const host = computed(() =>
-  leaveUrl.value && URL.canParse(leaveUrl.value)
-    ? new URL(leaveUrl.value).hostname.replace(/^www\./, "")
-    : "",
+  url.value && URL.canParse(url.value) ? new URL(url.value).hostname.replace(/^www\./, "") : "",
 );
 // The address as people read it, without its scheme
-const address = computed(() => leaveUrl.value?.replace(/^https?:\/\//, "").replace(/\/$/, ""));
+const address = computed(() => url.value?.replace(/^https?:\/\//, "").replace(/\/$/, ""));
 </script>
 
 <template>
@@ -51,7 +56,7 @@ const address = computed(() => leaveUrl.value?.replace(/^https?:\/\//, "").repla
         {{ t("leave.cancel") }}
       </button>
       <a
-        :href="leaveUrl ?? undefined"
+        :href="url ?? undefined"
         target="_blank"
         rel="noopener"
         class="inline-flex min-h-11 items-center gap-x-1.5 rounded-full bg-terracotta px-5 font-semibold text-white shadow-[0_2px_6px_rgb(154_62_1/0.3)] transition hover:bg-brand-deep press press-subtle"
