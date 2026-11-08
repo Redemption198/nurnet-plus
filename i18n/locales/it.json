@@ -139,6 +139,12 @@
     "showOriginal": "Mostra l'originale",
     "showTranslation": "Mostra la traduzione"
   },
+  "leave": {
+    "title": "Aprire {host}?",
+    "notice": "Questo sito non fa parte di NurNet+: è citato nel censimento, e da allora potrebbe essere cambiato.",
+    "open": "Apri il sito",
+    "cancel": "Annulla"
+  },
   "actions": {
     "directions": "Indicazioni",
     "share": "Condividi",

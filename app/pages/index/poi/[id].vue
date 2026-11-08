@@ -83,6 +83,8 @@ onKeyStroke("Escape", (event) => {
 });
 
 const isURL = (value: string | undefined) => !!value && URL.canParse(value);
+// The source and the description's links are sites the census cites: a tap asks first
+const leave = useLeaveConfirm();
 // A link named by its site where it has no label: "aserramanna.it"
 const linkName = ({ url, label }: { url: string; label?: string }) =>
   label ?? (URL.canParse(url) ? new URL(url).hostname.replace(/^www\./, "") : url);
@@ -227,6 +229,7 @@ const { y: contentY } = useScroll(scroller);
             :href="link.url"
             target="_blank"
             rel="noopener"
+            @click="leave($event, link.url)"
             class="inline-flex min-h-11 items-center gap-x-1 text-[0.9375rem] font-semibold text-terracotta-dark underline-offset-4 hover:underline"
           >
             {{ linkName(link) }}<UIcon name="i-lucide-arrow-up-right" class="size-4 shrink-0" />
@@ -250,6 +253,7 @@ const { y: contentY } = useScroll(scroller);
           :href="poi.source"
           target="_blank"
           rel="noopener"
+          @click="leave($event, poi.source!)"
           class="inline-flex min-h-11 items-center gap-x-1 font-semibold text-terracotta-dark underline-offset-4 hover:underline"
         >
           {{ t("site.source", { source: sourceHost })

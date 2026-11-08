@@ -37,6 +37,7 @@ useSchemaOrg([
         class="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 z-1 lg:hidden"
       />
       <InfoSheet />
+      <LeaveDialog />
 
       <TheDrawer>
         <component

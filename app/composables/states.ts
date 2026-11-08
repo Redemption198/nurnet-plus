@@ -11,6 +11,9 @@ export const useSplashVisible = () => useState<boolean>("splash-visible", () => 
 // The "Informazioni" sheet (about, credits)
 export const useInfoOpen = () => useState<boolean>("info-open", () => false);
 
+// A site the census cites that the visitor is about to open: LeaveDialog asks first
+export const useLeaveUrl = () => useState<string | null>("leave-url", () => null);
+
 // Video services the visitor chose to load videos from (POIVideo), until the app is closed.
 // In memory only: nothing about it is stored
 export const useVideoConsent = () =>

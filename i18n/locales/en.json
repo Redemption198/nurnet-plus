@@ -139,6 +139,12 @@
     "showOriginal": "Show original",
     "showTranslation": "Show translation"
   },
+  "leave": {
+    "title": "Open {host}?",
+    "notice": "This site isn't part of NurNet+: the census cites it, and it may have changed since.",
+    "open": "Open site",
+    "cancel": "Cancel"
+  },
   "actions": {
     "directions": "Directions",
     "share": "Share",
