@@ -14,6 +14,8 @@ export interface NurnetPOI {
 // From the details file, loaded in the background
 export interface NurnetDetails {
   description?: string;
+  // The description in the UI's language, machine translated (nurnet-descriptions.<lang>.json)
+  translatedDescription?: string;
   source?: string;
   youtube?: string;
   stato?: string;

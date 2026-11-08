@@ -6,6 +6,7 @@ import {
   parseIndex,
   tokenize,
   visibleFrom,
+  type DescriptionsFile,
   type DetailsFile,
   type IndexFile,
   type VisibilityFile,
@@ -13,13 +14,15 @@ import {
 
 // Fetching, parsing and searching the data all happen here, off the main thread.
 // The index (list, search, map) is loaded first; the details (photos, description...) when the app
-// asks (once idle, or when a site is opened); the line of sight the first time a nuraghe is opened
+// asks (once idle, or when a site is opened); the line of sight the first time a nuraghe is opened;
+// a language's translated descriptions the first time a site is opened in that language
 
 export type WorkerRequest =
   | { type: "load"; indexUrl: string; detailsUrl: string; visibilityUrl: string }
   | { type: "load-details" }
   | { type: "search"; requestId: number; query: string }
-  | { type: "details"; requestId: number; id: string }
+  // `descriptionsUrl`: the UI language's translated descriptions; none in Italian
+  | { type: "details"; requestId: number; id: string; descriptionsUrl?: string }
   | { type: "visible"; requestId: number; id: string };
 
 export type WorkerReply =
@@ -37,6 +40,7 @@ let urls: { details: string; visibility: string } | undefined;
 let details: Promise<DetailsFile> | undefined;
 let detailsLoaded: DetailsFile | undefined;
 let visibility: Promise<ReturnType<typeof buildVisibility>> | undefined;
+const descriptions = new Map<string, Promise<DescriptionsFile>>();
 
 const reply = (message: WorkerReply) => self.postMessage(message);
 
@@ -66,6 +70,18 @@ function loadVisibility() {
       throw error;
     });
   return visibility;
+}
+
+// Downloaded only by visitors who use that language. Missing or unreachable (offline before the
+// first download): the sites show their Italian description
+function loadDescriptions(url: string) {
+  let file = descriptions.get(url);
+  if (!file) {
+    file = fetchJson<DescriptionsFile>(url);
+    descriptions.set(url, file);
+    file.catch(() => descriptions.delete(url));
+  }
+  return file;
 }
 
 async function load({
@@ -116,8 +132,16 @@ async function answer(request: Exclude<WorkerRequest, { type: "load" | "load-det
       : [];
     reply({ type: "search", requestId, result });
   } else if (request.type === "details") {
-    const file = await loadDetails().catch(() => null);
-    reply({ type: "details", requestId, result: file && detailsFor(file, request.id) });
+    const [file, translations] = await Promise.all([
+      loadDetails().catch(() => null),
+      request.descriptionsUrl ? loadDescriptions(request.descriptionsUrl).catch(() => null) : null,
+    ]);
+    const translatedDescription = translations?.descriptions[request.id];
+    const result = file && {
+      ...detailsFor(file, request.id),
+      ...(translatedDescription && { translatedDescription }),
+    };
+    reply({ type: "details", requestId, result });
   } else {
     try {
       // The elevations (for the lines in 3D) come with the details: wait for them, but answer

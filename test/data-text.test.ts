@@ -1,6 +1,8 @@
 // The site texts in public/ as a visitor reads them: no markup, HTML entities or broken encoding.
 // nurnet-dumper cleans these up and lists what it can't fix in its report; this catches data
 // copied in without that review
+/// <reference types="vite-plus/client" />
+// Vite's types for ?raw imports and import.meta.glob, also when the file is checked on its own
 import { describe, expect, it } from "vite-plus/test";
 import indexJson from "../public/nurnet-index.json?raw";
 import detailsJson from "../public/nurnet-details.json?raw";
@@ -11,6 +13,18 @@ const details: { sites: Record<string, Record<string, Text>> } = JSON.parse(deta
 
 const TEXT_FIELDS = ["name", "comune", "localita", "regione"];
 const DETAIL_FIELDS = ["description", "source"];
+
+// The machine-translated descriptions, one file per language (nurnet-dumper's translate-run)
+const translations = Object.entries(
+  import.meta.glob<string>("../public/nurnet-descriptions.*.json", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }),
+).map(([path, raw]) => ({
+  lang: /descriptions\.([a-z-]+)\.json$/.exec(path)![1]!,
+  descriptions: (JSON.parse(raw) as { descriptions: Record<string, string> }).descriptions,
+}));
 
 // Every text field of every site, as [content_id, field, text]
 const texts: [string, string, string][] = [
@@ -24,6 +38,13 @@ const texts: [string, string, string][] = [
   ...Object.entries(details.sites).flatMap(([id, site]) =>
     DETAIL_FIELDS.map((field): [string, string, string] => [id, field, String(site[field] ?? "")]),
   ),
+  ...translations.flatMap(({ lang, descriptions }) =>
+    Object.entries(descriptions).map(([id, text]): [string, string, string] => [
+      id,
+      `description (${lang})`,
+      text,
+    ]),
+  ),
 ];
 
 const PROBLEMS: Record<string, RegExp> = {
@@ -36,6 +57,15 @@ const PROBLEMS: Record<string, RegExp> = {
 describe("site texts", () => {
   it("are read from the data", () => {
     expect(texts.length).toBeGreaterThan(1000);
+  });
+
+  // A translation for a site that's gone, or that never had a description, would be shown for
+  // nothing the census says
+  it("are translated only for sites with a description", () => {
+    for (const { lang, descriptions } of translations) {
+      const stray = Object.keys(descriptions).filter((id) => !details.sites[id]?.description);
+      expect(stray, lang).toEqual([]);
+    }
   });
 
   for (const [problem, pattern] of Object.entries(PROBLEMS)) {

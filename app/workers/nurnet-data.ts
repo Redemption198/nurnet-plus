@@ -11,6 +11,13 @@ export interface DetailsFile {
   sites: Record<string, Partial<NurnetDetails>>;
 }
 
+// One language's descriptions, machine translated (nurnet-dumper): content_id -> text. Only the
+// sites whose translation passed the checks; the rest keep their Italian description
+export interface DescriptionsFile {
+  generated: string;
+  descriptions: Record<string, string>;
+}
+
 export interface VisibilityFile {
   // a, b (content_ids), direct, inverse (metres of tower visible, in decimetres)
   pairs: [string, string, number, number][];

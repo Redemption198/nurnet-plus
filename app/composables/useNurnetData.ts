@@ -65,9 +65,10 @@ export function useNurnetData() {
   const localePath = useLocalePath();
   const site = useCurrentSite();
   const recentSites = useRecentSites();
+  const { locale } = useI18n();
 
+  const url = (file: string) => new URL(`${config.app.baseURL}${file}`, location.href).href;
   if (import.meta.client && !worker) {
-    const url = (file: string) => new URL(`${config.app.baseURL}${file}`, location.href).href;
     urls = [url("nurnet-index.json"), url("nurnet-details.json"), url("nurnet-visibility.json")];
     startWorker(urls);
   }
@@ -77,9 +78,12 @@ export function useNurnetData() {
     return request<number[]>({ type: "search", query });
   }
 
-  // Resolves once the details file has loaded; null if it couldn't be loaded
+  // Resolves once the details file has loaded; null if it couldn't be loaded. In a language other
+  // than the census's Italian, with the description translated into it where there is one
   function getDetails(id: string) {
-    return request<NurnetDetails | null>({ type: "details", id });
+    const descriptionsUrl =
+      locale.value === "it" ? undefined : url(`nurnet-descriptions.${locale.value}.json`);
+    return request<NurnetDetails | null>({ type: "details", id, descriptionsUrl });
   }
 
   // The sites visible from a nuraghe, nearest first; null if the data couldn't be loaded
@@ -100,6 +104,8 @@ export function useNurnetData() {
   async function loadDetails(poi: NurnetPOI) {
     const details = await getDetails(poi.content_id);
     update(poi.content_id, {
+      // A translation from the previous language goes, even if this one has none
+      translatedDescription: undefined,
       ...details,
       photos: details?.photos ?? [],
       detailsStatus: details ? "loaded" : "error",
@@ -137,6 +143,11 @@ export function useNurnetData() {
     }
   }
 
+  // The open site's details again, in the language the visitor just switched to
+  function reloadDetails() {
+    if (site.value) void loadDetails(site.value);
+  }
+
   // Starts over after the index failed to load
   function reload() {
     if (!urls) return;
@@ -145,5 +156,5 @@ export function useNurnetData() {
     startWorker(urls);
   }
 
-  return { items, error, search, getDetails, getVisible, openPOI, retry, reload };
+  return { items, error, search, getDetails, getVisible, openPOI, retry, reloadDetails, reload };
 }

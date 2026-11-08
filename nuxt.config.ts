@@ -176,6 +176,16 @@ export default defineNuxtConfig({
         dataFileEntry("nurnet-details.json"),
         dataFileEntry("nurnet-visibility.json"),
       ],
+      // The translated descriptions aren't precached for everyone: a language's file is downloaded
+      // the first time a visitor opens a site in it, then kept for offline use. Served from the
+      // cache at once and refreshed behind, so a newer translation shows on the next visit
+      runtimeCaching: [
+        {
+          urlPattern: /\/nurnet-descriptions\.[a-z-]+\.json$/,
+          handler: "StaleWhileRevalidate",
+          options: { cacheName: "nurnet-descriptions" },
+        },
+      ],
     },
   },
 

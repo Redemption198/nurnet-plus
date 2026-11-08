@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const site = useCurrentSite();
 const route = useRoute();
-const { items, openPOI, retry } = useNurnetData();
+const { items, openPOI, retry, reloadDetails } = useNurnetData();
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 
@@ -36,6 +36,11 @@ watch(
 );
 
 const poi = computed(() => (site.value?.content_id === route.params.id ? site.value : null));
+
+// The description in the UI's language where it has been translated, else the census's Italian.
+// A switch of language with a site open fetches it again in the new one
+const descriptionText = computed(() => poi.value?.translatedDescription ?? poi.value?.description);
+watch(locale, reloadDetails);
 const category = computed(() => categoryOf(poi.value?.category_id));
 const status = computed(() => statusOf(poi.value?.stato));
 
@@ -163,7 +168,7 @@ const { y: contentY } = useScroll(scroller);
     </div>
 
     <section
-      v-if="poi.description"
+      v-if="descriptionText"
       class="flex flex-col gap-y-3 px-4 pb-6"
       aria-labelledby="site-description"
     >
@@ -171,8 +176,9 @@ const { y: contentY } = useScroll(scroller);
         {{ t("site.description") }}
       </h3>
       <p
-        v-for="(paragraph, i) in poi.description.split('\n\n')"
+        v-for="(paragraph, i) in descriptionText.split('\n\n')"
         :key="i"
+        :lang="poi.translatedDescription ? undefined : 'it'"
         class="max-w-[65ch] text-[0.9375rem] leading-relaxed text-pretty text-basalt/85"
       >
         {{ paragraph }}

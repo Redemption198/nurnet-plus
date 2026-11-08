@@ -1,4 +1,5 @@
-/// <reference path="./raw.d.ts" />
+/// <reference types="vite-plus/client" />
+// Vite's types for ?raw imports, also when the file is checked on its own (the pre-commit check)
 import { describe, expect, it } from "vite-plus/test";
 import en from "../i18n/locales/en.json";
 import itMessages from "../i18n/locales/it.json";
