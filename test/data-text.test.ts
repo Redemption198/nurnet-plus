@@ -59,6 +59,17 @@ describe("site texts", () => {
     expect(texts.length).toBeGreaterThan(1000);
   });
 
+  // The links taken out of the descriptions open as they are
+  it("link to web pages", () => {
+    const sites = details.sites as Record<string, { links?: { url: string }[] }>;
+    const bad = Object.entries(sites).flatMap(([id, site]) =>
+      (site.links ?? [])
+        .filter(({ url }) => !/^https?:\/\/[^/\s]/.test(url) || !URL.canParse(url))
+        .map(({ url }) => `${id}: ${url}`),
+    );
+    expect(bad).toEqual([]);
+  });
+
   // A translation for a site that's gone, or that never had a description, would be shown for
   // nothing the census says
   it("are translated only for sites with a description", () => {

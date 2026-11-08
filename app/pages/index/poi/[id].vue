@@ -83,6 +83,9 @@ onKeyStroke("Escape", (event) => {
 });
 
 const isURL = (value: string | undefined) => !!value && URL.canParse(value);
+// A link named by its site where it has no label: "aserramanna.it"
+const linkName = ({ url, label }: { url: string; label?: string }) =>
+  label ?? (URL.canParse(url) ? new URL(url).hostname.replace(/^www\./, "") : url);
 const sourceHost = computed(() =>
   isURL(poi.value?.source) ? new URL(poi.value!.source!).hostname.replace(/^www\./, "") : null,
 );
@@ -177,7 +180,7 @@ const { y: contentY } = useScroll(scroller);
     </div>
 
     <section
-      v-if="descriptionText"
+      v-if="descriptionText || poi.links?.length"
       class="flex flex-col gap-y-3 px-4 pb-6"
       aria-labelledby="site-description"
     >
@@ -203,6 +206,7 @@ const { y: contentY } = useScroll(scroller);
         </button>
       </p>
       <div
+        v-if="descriptionText"
         id="site-description-text"
         class="flex flex-col gap-y-3"
         :lang="translated ? undefined : 'it'"
@@ -215,6 +219,20 @@ const { y: contentY } = useScroll(scroller);
           {{ paragraph }}
         </p>
       </div>
+      <!-- The addresses the description cited, out of its text (nurnet-dumper): the same in every
+           language, one tap target each -->
+      <ul v-if="poi.links?.length" class="-mt-1 flex flex-col">
+        <li v-for="link in poi.links" :key="link.url">
+          <a
+            :href="link.url"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex min-h-11 items-center gap-x-1 text-[0.9375rem] font-semibold text-terracotta-dark underline-offset-4 hover:underline"
+          >
+            {{ linkName(link) }}<UIcon name="i-lucide-arrow-up-right" class="size-4 shrink-0" />
+          </a>
+        </li>
+      </ul>
     </section>
 
     <POIVideo v-if="poi.youtube" class="px-4 pb-6" />

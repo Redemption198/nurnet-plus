@@ -16,6 +16,9 @@ export interface NurnetDetails {
   description?: string;
   // The description in the UI's language, machine translated (nurnet-descriptions.<lang>.json)
   translatedDescription?: string;
+  // The web addresses that were in the description, taken out of the text (nurnet-dumper); a
+  // label where the address alone wouldn't say what it is (a thesis and its pages)
+  links?: { url: string; label?: string }[];
   source?: string;
   youtube?: string;
   stato?: string;
