@@ -3,6 +3,7 @@
 // facts this site has; the first few always, the rest on request. The typology is in the meta line
 const site = useCurrentSite();
 const { t, locale } = useI18n();
+const term = useCensusTerm();
 
 interface Fact {
   icon: string;
@@ -16,7 +17,11 @@ const facts = computed(() => {
   if (!poi) return [];
   // Each entry is a fact or a falsy value for a field the site lacks
   const list: (Fact | false | "" | undefined)[] = [
-    poi.period && { icon: "i-lucide-hourglass", label: t("context.period"), value: poi.period },
+    poi.period && {
+      icon: "i-lucide-hourglass",
+      label: t("context.period"),
+      value: term("period", poi.period),
+    },
     poi.elevation != null && {
       icon: "i-lucide-mountain",
       label: t("context.elevation"),
@@ -40,13 +45,13 @@ const facts = computed(() => {
     poi.lithology && {
       icon: "i-lucide-layers",
       label: t("context.geology"),
-      value: poi.lithology,
+      value: term("lithology", poi.lithology),
       wide: true,
     },
     poi.landUse && {
       icon: "i-lucide-trees",
       label: t("context.landUse"),
-      value: poi.landUse,
+      value: term("landUse", poi.landUse),
       wide: true,
     },
   ];

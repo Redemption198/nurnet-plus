@@ -40,11 +40,14 @@ const category = computed(() => categoryOf(poi.value?.category_id));
 const status = computed(() => statusOf(poi.value?.stato));
 
 // Tab title and link previews: "Nuraghe Losa · NurNet+" (the site name comes from the title
-// template), "Nuraghe complesso ad Abbasanta…". The typology is the census's, in Italian
+// template), "Nuraghe complesso ad Abbasanta…". The census's typology, in the UI's language
+const term = useCensusTerm();
 const place = computed(() => [poi.value?.comune, poi.value?.regione].filter(Boolean).join(", "));
-const kind = computed(() =>
-  poi.value ? poi.value.typology || t(`categories.${category.value.key}`) : "",
-);
+const kind = computed(() => {
+  if (!poi.value) return "";
+  const typology = poi.value.typology;
+  return typology ? term("typology", typology) : t(`categories.${category.value.key}`);
+});
 const description = computed(() => {
   if (!poi.value) return undefined;
   if (!place.value) return t("site.meta", { kind: kind.value });

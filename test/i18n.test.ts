@@ -1,7 +1,10 @@
+/// <reference path="./raw.d.ts" />
 import { describe, expect, it } from "vite-plus/test";
 import en from "../i18n/locales/en.json";
 import itMessages from "../i18n/locales/it.json";
+import detailsJson from "../public/nurnet-details.json?raw";
 import { CATEGORIES, statusOf } from "../app/utils/categories";
+import { type CensusField, censusTermKey, censusTermParts } from "../app/utils/censusTerms";
 import { preferredLocale } from "../app/utils/locale";
 import { VISIBILITY_LEVELS } from "../app/utils/visibilityLevels";
 
@@ -55,6 +58,39 @@ describe("locale messages", () => {
   it("keep the census's own names in Italian", () => {
     for (const category of CATEGORIES) {
       expect(lookup(itMessages, `categories.${category.key}`)).toBe(category.name);
+    }
+  });
+});
+
+describe("census terms", () => {
+  const details: { sites: Record<string, Partial<Record<CensusField, string>>> } =
+    JSON.parse(detailsJson);
+  const FIELDS: CensusField[] = ["typology", "period", "lithology", "landUse"];
+
+  it("make a key from the Italian wording", () => {
+    expect(censusTermKey("typology", "Nuraghe a corridoio (protonuraghe)")).toBe(
+      "typology.nuragheACorridoioProtonuraghe",
+    );
+    expect(censusTermKey("lithology", "Basalti e brecce andesitico-basaltiche")).toBe(
+      "lithology.basaltiEBrecceAndesiticoBasaltiche",
+    );
+    expect(censusTermKey("typology", "Allée couverte")).toBe("typology.alleeCouverte");
+    expect(censusTermParts("bosco / coltivabile")).toEqual(["bosco", "coltivabile"]);
+  });
+
+  // A data refresh with a new value fails here instead of showing Italian in another language
+  it("translate every value in the data, the Italian as the census writes it", () => {
+    const parts = new Set<string>();
+    for (const site of Object.values(details.sites))
+      for (const field of FIELDS) {
+        const value = site[field];
+        if (value) for (const part of censusTermParts(value)) parts.add(`${field}\t${part}`);
+      }
+    for (const entry of parts) {
+      const [field, part] = entry.split("\t") as [CensusField, string];
+      const key = censusTermKey(field, part);
+      expect(lookup(itMessages, key), key).toBe(part);
+      expect(typeof lookup(en, key), key).toBe("string");
     }
   });
 });
