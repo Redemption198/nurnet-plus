@@ -43,9 +43,10 @@ export function useAppUpdates() {
 
   useEventListener(document, "visibilitychange", () => {
     if (document.visibilityState !== "visible" || !navigator.onLine) return;
-    void $pwa
-      .getSWRegistration()
-      ?.update()
+    // The browser's own lookup: @vite-pwa/nuxt's getSWRegistration is deprecated
+    void navigator.serviceWorker
+      ?.getRegistration()
+      .then((registration) => registration?.update())
       .catch(() => {});
   });
 }
