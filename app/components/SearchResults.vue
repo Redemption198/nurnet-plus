@@ -120,7 +120,7 @@ const countLabel = computed(() => {
   >
     <DrawerHeader :scrolled="listY > 0">
       <BrandButton
-        class="mb-3 hidden !bg-transparent !px-0 !shadow-none !backdrop-blur-none lg:flex"
+        class="mb-3 hidden bg-transparent! px-0! shadow-none! backdrop-blur-none! lg:flex"
       />
 
       <div class="flex gap-x-2">

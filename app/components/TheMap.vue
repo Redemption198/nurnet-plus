@@ -1046,7 +1046,7 @@ onUnmounted(() => {
 
       <MapControlsButton
         class="text-sm font-bold"
-        :class="is3D ? 'bg-basalt !text-panel hover:!bg-basalt' : '!text-muted'"
+        :class="is3D ? 'bg-basalt text-panel! hover:bg-basalt!' : 'text-muted!'"
         :aria-label="t('map.view3d')"
         :aria-pressed="is3D"
         @click.prevent="toggle3D()"

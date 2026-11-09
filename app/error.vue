@@ -8,7 +8,7 @@ const props = defineProps<{ error: NuxtError }>();
 const { t } = useI18n();
 const localePath = useLocalePath();
 
-const notFound = computed(() => props.error.statusCode === 404);
+const notFound = computed(() => props.error.status === 404);
 const title = computed(() => (notFound.value ? t("app.notFound.title") : t("app.error.title")));
 useSeoMeta({ title, robots: "noindex, nofollow" });
 
@@ -32,7 +32,7 @@ const dev = import.meta.dev;
       </p>
       <!-- For the developer only: what failed -->
       <p v-if="dev" class="mt-4 font-mono text-xs break-all text-subtle">
-        {{ error.statusCode }} · {{ error.message }}
+        {{ error.status }} · {{ error.message }}
       </p>
       <div class="mt-8 flex flex-wrap items-center gap-2">
         <button
