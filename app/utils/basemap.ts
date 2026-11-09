@@ -87,15 +87,17 @@ export function warmBasemap(ml: MapLibreMap, dark: boolean) {
 export function addTerrain(ml: MapLibreMap, dark: boolean) {
   // One source for the 3D terrain and the hillshading. MapLibre suggests separate ones, but a
   // hillshade source of its own drew grey lines along tile edges (its tiles' borders weren't
-  // matched to their neighbours)
-  ml.addSource("terrain", {
-    type: "raster-dem",
-    tiles: [TERRAIN_TILES],
-    encoding: "terrarium",
-    tileSize: 256,
-    maxzoom: 14,
-    attribution: TERRAIN_ATTRIBUTION,
-  });
+  // matched to their neighbours). Kept by the light / dark switch (TheMap's keepOurSources), with
+  // its loaded tiles, so the relief doesn't flatten for a moment
+  if (!ml.getSource("terrain"))
+    ml.addSource("terrain", {
+      type: "raster-dem",
+      tiles: [TERRAIN_TILES],
+      encoding: "terrarium",
+      tileSize: 256,
+      maxzoom: 14,
+      attribution: TERRAIN_ATTRIBUTION,
+    });
 
   // Hillshading goes under the first label layer so text stays on top. On the dark map it goes
   // under the sea: the seabed's relief, lit, glowed brighter than the island's

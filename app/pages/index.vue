@@ -1,4 +1,9 @@
 <script setup lang="ts">
+// One page in every language: / and /en/ are two routes (one per locale), and switching between
+// them rebuilt the page, the map with it (a blank flash while it loaded again). With one key it
+// stays, and only its words change
+definePageMeta({ key: "map" });
+
 const NuxtPage = resolveComponent("NuxtPage");
 const SearchResults = resolveComponent("SearchResults");
 const isHome = useIsHome();

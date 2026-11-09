@@ -6,6 +6,7 @@ import {
   type FilterSpecification,
   type GeoJSONSource,
   type LngLatLike,
+  type TransformStyleFunction,
 } from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -104,19 +105,45 @@ function labelPaint() {
   };
 }
 
+// Our sources on the basemap, kept through the light / dark switch (see keepOurSources)
+const OUR_SOURCES = ["terrain", "pois", "visibility", "me"];
+
+// The light / dark switch keeps our sources (their data and loaded tiles: the sites, the sight
+// lines, the terrain and its 3D) and the location dot, which doesn't change with the theme. The
+// two OpenFreeMap styles share their sources, sprite and fonts, so the switch only swaps the
+// basemap's layers: no blank frame. Our other layers come back drawn for the new theme
+const keepOurSources: TransformStyleFunction = (previous, next) => ({
+  ...next,
+  sources: {
+    ...next.sources,
+    ...Object.fromEntries(
+      OUR_SOURCES.flatMap((id) => (previous?.sources[id] ? [[id, previous.sources[id]]] : [])),
+    ),
+  },
+  ...(previous?.terrain && { terrain: previous.terrain }),
+  layers: [...next.layers, ...(previous?.layers.filter((layer) => layer.id === "me") ?? [])],
+});
+
 function addPois(ml: MapLibreMap) {
-  ml.addSource("pois", {
-    type: "geojson",
-    // Only what the map needs; the full POI comes from props.pois via its index
-    data: {
-      type: "FeatureCollection",
-      features: props.pois.map((poi, i) => ({
-        type: "Feature",
-        geometry: { type: "Point", coordinates: poi.coordinates },
-        properties: { i, content_id: poi.content_id, category_id: poi.category_id, name: poi.name },
-      })),
-    },
-  });
+  // Already there after the light / dark switch, which keeps it (keepOurSources)
+  if (!ml.getSource("pois"))
+    ml.addSource("pois", {
+      type: "geojson",
+      // Only what the map needs; the full POI comes from props.pois via its index
+      data: {
+        type: "FeatureCollection",
+        features: props.pois.map((poi, i) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: poi.coordinates },
+          properties: {
+            i,
+            content_id: poi.content_id,
+            category_id: poi.category_id,
+            name: poi.name,
+          },
+        })),
+      },
+    });
 
   ml.addLayer({
     id: "pois",
@@ -365,7 +392,9 @@ function applyHighlight() {
 }
 
 function addSightLines(ml: MapLibreMap) {
-  ml.addSource("visibility", { type: "geojson", data: visibilityEnds() });
+  // Kept by the light / dark switch: updateSightLines gives it its data again
+  if (!ml.getSource("visibility"))
+    ml.addSource("visibility", { type: "geojson", data: visibilityEnds() });
   // All under the markers
   ml.addLayer(sightLines, "pois");
   ml.addLayer(
@@ -868,8 +897,8 @@ onMounted(() => {
     mapOffline.value = false;
   });
 
-  // Everything of ours on top of the basemap's style. A new style (the light / dark switch) drops
-  // it all, so it's added again then
+  // Everything of ours on top of the basemap's style. The light / dark switch keeps our sources
+  // but not our layers, drawn in the theme's colours: they're added again then
   async function addOurLayers() {
     await addMarkerImages(ml);
     warmBasemap(ml, isDark.value);
@@ -878,6 +907,8 @@ onMounted(() => {
     sightLines.setDark(isDark.value);
     addSightLines(ml);
     updateSightLines(); // also applies the markers' focus
+    // The location dot, kept by the switch, back above them all
+    if (ml.getLayer("me")) ml.moveLayer("me");
   }
 
   ml.on("load", async () => {
@@ -899,8 +930,17 @@ onMounted(() => {
         const style = await response.json();
         if (url !== styleUrl()) return; // switched back meanwhile
         styleShown = url;
-        ml.once("style.load", () => void addOurLayers());
-        ml.setStyle(style, { diff: false });
+        // Swapped in place (the two styles share their sources: see keepOurSources), our layers go
+        // back at once, before the next frame. Should MapLibre rebuild the style instead (a new
+        // Style object), they go back once it has loaded
+        const putOursBack = () => void addOurLayers();
+        const before = ml.style;
+        ml.once("style.load", putOursBack);
+        ml.setStyle(style, { diff: true, transformStyle: keepOurSources });
+        if (ml.style === before) {
+          ml.off("style.load", putOursBack);
+          putOursBack();
+        }
       } catch {
         // Nothing once the map is gone: an aborted signal adds no listener
         window.addEventListener("online", () => void showStyle(), {
