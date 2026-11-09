@@ -128,7 +128,9 @@ function settle() {
     }"
   >
     <template #content="{ close }">
-      <div class="relative flex max-h-[85dvh] flex-col rounded-[inherit]">
+      <!-- One height for every page, so the sheet doesn't grow and shrink as they change: the home
+           page fits in it, a longer page scrolls -->
+      <div class="relative flex h-[min(85dvh,44rem)] flex-col rounded-[inherit]">
         <header
           ref="headerEl"
           class="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-x-3 rounded-t-3xl p-4 pb-2 transition-[background-color,box-shadow] duration-200"
@@ -174,7 +176,7 @@ function settle() {
 
         <div
           ref="body"
-          class="scrollbar-hidden overflow-y-auto overscroll-contain rounded-[inherit] px-4 pb-6 text-sm text-basalt"
+          class="scrollbar-hidden flex-1 overflow-y-auto overscroll-contain rounded-[inherit] px-4 pb-6 text-sm text-basalt"
           :style="{ paddingTop: `${headerHeight + 8}px` }"
         >
           <Transition
