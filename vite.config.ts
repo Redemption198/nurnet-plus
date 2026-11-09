@@ -12,6 +12,8 @@ const AGENT_TOOLING = [
 ];
 
 export default defineConfig({
+  // Unit tests only; e2e/ holds the Playwright specs, run with `pnpm exec playwright test`
+  test: { include: ["test/**/*.test.ts"] },
   staged: {
     "*": "vp check --fix",
   },
