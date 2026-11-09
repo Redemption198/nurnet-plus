@@ -12,12 +12,12 @@ const props = defineProps<{
 // Index of the photo to show, null when closed
 const index = defineModel<number | null>("index", { default: null });
 
-const track = ref<HTMLElement | null>(null);
+const track = useTemplateRef("track");
 const current = ref(0);
 // Hidden while the photo flies in or out: the flying copy stands in for it
 const settled = ref(false);
-const backdrop = ref<HTMLElement | null>(null);
-const chrome = ref<HTMLElement | null>(null);
+const backdrop = useTemplateRef("backdrop");
+const chrome = useTemplateRef("chrome");
 // Originals that have loaded, which fade in over their placeholders, and those that couldn't be
 // loaded, which leave the thumbnail as the best there is
 const loaded = ref(new Set<number>());

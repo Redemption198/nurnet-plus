@@ -6,7 +6,7 @@
 defineProps<{ scrolled?: boolean }>();
 
 // The scroll areas leave this much room at the top (--drawer-header-h on the drawer)
-const header = ref<HTMLElement | null>(null);
+const header = useTemplateRef("header");
 const headerHeight = useDrawerHeaderHeight();
 useResizeObserver(header, ([entry]) => {
   headerHeight.value = entry!.borderBoxSize[0]!.blockSize;

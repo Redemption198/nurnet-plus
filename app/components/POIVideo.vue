@@ -28,7 +28,7 @@ const playerSrc = computed(() => {
 });
 
 // The button goes away: keyboard focus moves on to the player that replaces it
-const player = ref<HTMLIFrameElement | null>(null);
+const player = useTemplateRef("player");
 async function load() {
   autoplay.value = true;
   loaded.value[provider.value] = true;

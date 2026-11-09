@@ -7,8 +7,8 @@ const props = defineProps<{ ready: boolean }>();
 const visible = ref(true);
 // The status bar's orange (app.vue) lasts as long as the splash, and goes as it starts to fade
 const splashVisible = useSplashVisible();
-const root = ref<HTMLElement | null>(null);
-const mark = ref<HTMLElement | null>(null);
+const root = useTemplateRef("root");
+const mark = useTemplateRef("mark");
 
 // The splash's animations, reverted (loop included) once it's gone
 let animations: gsap.Context | undefined;

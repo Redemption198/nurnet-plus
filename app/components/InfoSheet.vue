@@ -5,9 +5,9 @@ const { t, locale, setLocale } = useI18n();
 
 // Like the drawer: the header floats over the content, which scrolls under it, and turns into a
 // blurred bar once there is something under it
-const body = ref<HTMLElement | null>(null);
+const body = useTemplateRef("body");
 const { y: bodyY } = useScroll(body);
-const headerEl = ref<HTMLElement | null>(null);
+const headerEl = useTemplateRef("headerEl");
 const { height: headerHeight } = useElementSize(headerEl, undefined, { box: "border-box" });
 
 // The privacy details, folded: most visitors open the sheet for the legend

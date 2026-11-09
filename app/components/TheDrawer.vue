@@ -4,12 +4,12 @@ import { InertiaPlugin } from "gsap/InertiaPlugin";
 
 if (import.meta.client) gsap.registerPlugin(InertiaPlugin);
 
-const drawer = ref<HTMLElement | null>(null);
+const drawer = useTemplateRef("drawer");
 // The map's buttons on mobile ride on the drawer's top edge (TheMap teleports them here): a layer
 // moved with the drawer by the same tweens, and faded out as the drawer reaches the top
-const float = ref<HTMLElement | null>(null);
-const sheets = () => [drawer.value, float.value].filter((el): el is HTMLElement => !!el);
-const drawerContent = ref<HTMLElement | null>(null);
+const float = useTemplateRef("float");
+const sheets = () => [drawer.value, float.value].filter((el) => el !== null);
+const drawerContent = useTemplateRef("drawerContent");
 provideDrawerScroller(drawerContent);
 
 const drawerState = useDrawerState();

@@ -31,7 +31,7 @@ const mapView = useMapView();
 const highlighted = useHighlightedVisible();
 const hovered = useHoveredSite();
 
-const map = ref<HTMLElement | null>(null);
+const map = useTemplateRef("map");
 // shallowRef: MapLibre's map must not be wrapped in a deep reactive proxy
 const mlMap = shallowRef<MapLibreMap>();
 const is3D = ref(false);

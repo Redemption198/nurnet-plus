@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const site = useCurrentSite();
 
-const scroller = ref<HTMLElement | null>(null);
+const scroller = useTemplateRef("scroller");
 const { arrivedState } = useScroll(scroller);
 
 // Photo opened in the fullscreen viewer, null when closed
