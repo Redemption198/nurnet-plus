@@ -940,6 +940,15 @@ onMounted(() => {
         if (ml.style === before) {
           ml.off("style.load", putOursBack);
           putOursBack();
+          // The map is drawn onto the terrain through tiles it caches, which don't all follow the
+          // swap: part of the map stayed in the old theme until it moved. Once the new style's
+          // tiles are in (idle), the terrain is set again, in one go, and draws them all afresh
+          ml.once("idle", () => {
+            const terrain = ml.getTerrain();
+            if (!terrain) return;
+            ml.setTerrain(null);
+            ml.setTerrain(terrain);
+          });
         }
       } catch {
         // Nothing once the map is gone: an aborted signal adds no listener
