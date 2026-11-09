@@ -21,6 +21,15 @@
     "loadingSites": "Caricamento dei siti",
     "loadFailed": "I siti non si sono caricati. Controlla la connessione.",
     "brandButton": "NurNet+: impostazioni e informazioni",
+    "notFound": {
+      "title": "Pagina non trovata",
+      "description": "L'indirizzo non corrisponde a nessuna pagina di NurNet+."
+    },
+    "error": {
+      "title": "Qualcosa non ha funzionato",
+      "description": "La pagina non si è caricata come doveva. Riprova: di solito basta.",
+      "toMap": "Torna alla mappa"
+    },
     "update": {
       "title": "Nuova versione di NurNet+",
       "description": "Aggiorna per usarla: la pagina si ricarica in un attimo.",

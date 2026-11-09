@@ -21,6 +21,15 @@
     "loadingSites": "Loading the sites",
     "loadFailed": "The sites didn't load. Check your connection.",
     "brandButton": "NurNet+: settings and information",
+    "notFound": {
+      "title": "Page not found",
+      "description": "That address isn't a page of NurNet+."
+    },
+    "error": {
+      "title": "Something went wrong",
+      "description": "The page didn't load as it should. Try again: that usually fixes it.",
+      "toMap": "Back to the map"
+    },
     "update": {
       "title": "New version of NurNet+",
       "description": "Update to use it: the page reloads in a moment.",
