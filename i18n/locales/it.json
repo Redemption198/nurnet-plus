@@ -7,19 +7,20 @@
     "switch": "Passa all'italiano",
     "stay": "Resta in inglese",
     "later": "Puoi cambiare lingua quando vuoi con {button}.",
-    "laterButton": "il pulsante delle informazioni",
+    "laterButton": "il pulsante delle impostazioni",
     "notNow": "Non ora"
   },
   "common": {
     "close": "Chiudi",
     "retry": "Riprova",
     "showLess": "Mostra meno",
-    "loading": "Caricamento…"
+    "loading": "Caricamento…",
+    "back": "Indietro"
   },
   "app": {
     "loadingSites": "Caricamento dei siti",
     "loadFailed": "I siti non si sono caricati. Controlla la connessione.",
-    "brandButton": "NurNet+: guida, legenda e crediti",
+    "brandButton": "NurNet+: impostazioni e informazioni",
     "update": {
       "title": "Nuova versione di NurNet+",
       "description": "Aggiorna per usarla: la pagina si ricarica in un attimo.",
@@ -217,6 +218,15 @@
     "intro": "Un'app non ufficiale per esplorare nuraghi, domus de janas, tombe dei giganti, pozzi sacri e gli altri siti censiti dal {project}, su una mappa agile anche dal telefono.",
     "introProject": "progetto NurNet",
     "legend": "Legenda",
+    "siteTypes": "Tipi di sito",
+    "about": "Informazioni e crediti",
+    "more": "Guida e informazioni",
+    "rows": {
+      "legend": "Tipi di sito, stato, linee di vista",
+      "tips": "Ricerca, mappa 3D, indicazioni",
+      "privacy": "Nessun account, nessun tracciamento",
+      "about": "Progetto, dati, foto e codice"
+    },
     "status": "Stato di conservazione",
     "sightLines": "Linee di vista tra nuraghi",
     "sightLinesNote": "Calcolate dal CRS4 sul modello digitale del terreno, indicano quanto di una torre alta 15 m sia visibile dall'altra. Le trovi nella scheda di ogni nuraghe, con «Mostra sulla mappa».",
@@ -239,7 +249,6 @@
     "privacy": {
       "title": "Privacy",
       "summary": "NurNet+ non ha account, non usa cookie né statistiche e non raccoglie alcun dato su di te. Per mostrarti mappa, foto e video, però, il browser si collega ad altri servizi, che ricevono il tuo indirizzo IP.",
-      "more": "Cosa viene condiviso con altri servizi",
       "location": "La tua posizione",
       "locationText": "Viene usata solo se tocchi {button} sulla mappa e lo consenti al browser. Serve a mostrarti dove sei: rimane sul dispositivo e non viene né inviata né conservata.",
       "locationButton": "il pulsante «Mostra la mia posizione»",

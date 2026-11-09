@@ -7,19 +7,20 @@
     "switch": "Switch to English",
     "stay": "Stay in Italian",
     "later": "You can change the language at any time with {button}.",
-    "laterButton": "the info button",
+    "laterButton": "the settings button",
     "notNow": "Not now"
   },
   "common": {
     "close": "Close",
     "retry": "Try again",
     "showLess": "Show less",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "back": "Back"
   },
   "app": {
     "loadingSites": "Loading the sites",
     "loadFailed": "The sites didn't load. Check your connection.",
-    "brandButton": "NurNet+: guide, legend and credits",
+    "brandButton": "NurNet+: settings and information",
     "update": {
       "title": "New version of NurNet+",
       "description": "Update to use it: the page reloads in a moment.",
@@ -217,6 +218,15 @@
     "intro": "An unofficial app to explore the nuraghi, domus de janas, giants' tombs, sacred wells and the other sites surveyed by the {project}, on a map that's easy to use on a phone too.",
     "introProject": "NurNet project",
     "legend": "Legend",
+    "siteTypes": "Site types",
+    "about": "About and credits",
+    "more": "Guide and information",
+    "rows": {
+      "legend": "Site types, conservation, sight lines",
+      "tips": "Search, the 3D map, directions",
+      "privacy": "No accounts, no tracking: what is shared",
+      "about": "The project, data, photos and code"
+    },
     "status": "State of conservation",
     "sightLines": "Sight lines between nuraghi",
     "sightLinesNote": "Computed by CRS4 on the digital terrain model, they show how much of a 15 m tower can be seen from the other. You'll find them on each nuraghe's page, with “Show on the map”.",
@@ -239,7 +249,6 @@
     "privacy": {
       "title": "Privacy",
       "summary": "NurNet+ has no accounts, uses no cookies or analytics and collects no data about you. To show you the map, photos and videos, though, the browser connects to other services, which receive your IP address.",
-      "more": "What is shared with other services",
       "location": "Your location",
       "locationText": "It is used only if you tap {button} on the map and allow it in the browser. It shows you where you are: it stays on the device and is never sent or stored.",
       "locationButton": "the “Show my location” button",

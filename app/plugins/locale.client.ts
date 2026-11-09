@@ -28,14 +28,14 @@ export default defineNuxtPlugin({
       await until(() => toast.toasts.value.some((t) => t.id === "app-update")).toBe(false);
       await i18n.loadLocaleMessages(wanted);
       const t = (key: string, named = {}) => i18n.t(key, named, { locale: wanted });
-      // "…with (i).": the brand button's info icon, as drawn there, named for screen readers
+      // "…with ⚙.": the brand button's gear, as drawn there, named for screen readers
       const [before, after] = t("locale.later", { button: "\u0000" }).split("\u0000");
       const later = () =>
         h("span", [
           before,
           // As a plain component: UIcon's own props type is too deep for h()'s inference
           h(UIcon as Component, {
-            name: "i-lucide-info",
+            name: "i-lucide-settings",
             class: "inline-block size-4 align-[-0.2em]",
           }),
           h("span", { class: "sr-only" }, t("locale.laterButton")),
