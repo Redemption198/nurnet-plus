@@ -1,5 +1,7 @@
-// The basemap under our layers (TheMap): its style, recoloured toward Sardinia, and the terrain
-import type { MapLibreMap } from "maplibre-gl";
+// The basemap under our layers (TheMap): its style, recoloured toward Sardinia, and the terrain;
+// what the light / dark switch keeps; the visitor's position on it
+import type { GeoJSONSource, MapLibreMap, TransformStyleFunction } from "maplibre-gl";
+import type { FeatureCollection, Point } from "geojson";
 import { BRAND, BRAND_DARK } from "./brand";
 
 // Free sources, no API keys: OpenFreeMap vector tiles and the AWS Terrain Tiles dataset
@@ -93,7 +95,7 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
   // while tilted) and "hillshade" for the shading, always. A source driving the terrain loads its
   // tiles two zoom levels lower (MapLibre's TerrainTileManager): the 1024 tile size keeps the
   // hillshading at those same levels, detailed enough and light to download. Both kept by the
-  // light / dark switch (TheMap's keepOurSources), with their loaded tiles, so the relief doesn't
+  // light / dark switch (keepOurSources), with their loaded tiles, so the relief doesn't
   // flatten for a moment
   if (!ml.getSource("terrain"))
     ml.addSource("terrain", {
@@ -144,5 +146,55 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
     "horizon-fog-blend": 0.6,
     "fog-color": dark ? BRAND_DARK.sand : "#efe6d8",
     "fog-ground-blend": 0.4,
+  });
+}
+
+// Our sources on the basemap, kept through the light / dark switch (see keepOurSources)
+const OUR_SOURCES = [
+  "terrain",
+  "hillshade",
+  "pois",
+  "poi-selected",
+  "poi-hover",
+  "visibility",
+  "me",
+];
+
+// The light / dark switch keeps our sources (their data and loaded tiles: the sites, the sight
+// lines, the terrain and its 3D) and the location dot, which doesn't change with the theme. The
+// two OpenFreeMap styles share their sources, sprite and fonts, so the switch only swaps the
+// basemap's layers: no blank frame. Our other layers come back drawn for the new theme
+export const keepOurSources: TransformStyleFunction = (previous, next) => ({
+  ...next,
+  sources: {
+    ...next.sources,
+    ...Object.fromEntries(
+      OUR_SOURCES.flatMap((id) => (previous?.sources[id] ? [[id, previous.sources[id]]] : [])),
+    ),
+  },
+  ...(previous?.terrain && { terrain: previous.terrain }),
+  layers: [...next.layers, ...(previous?.layers.filter((layer) => layer.id === "me") ?? [])],
+});
+
+// The visitor's position: a blue dot, moved there if it's already on the map
+export function showVisitorDot(ml: MapLibreMap, here: [number, number]) {
+  const data: FeatureCollection<Point> = {
+    type: "FeatureCollection",
+    features: [{ type: "Feature", geometry: { type: "Point", coordinates: here }, properties: {} }],
+  };
+  const source = ml.getSource("me") as GeoJSONSource | undefined;
+  if (source) return source.setData(data);
+  ml.addSource("me", { type: "geojson", data });
+  ml.addLayer({
+    id: "me",
+    type: "circle",
+    source: "me",
+    paint: {
+      "circle-radius": 8,
+      "circle-color": "#2563eb",
+      "circle-stroke-color": "#fff",
+      "circle-stroke-width": 3,
+      "circle-pitch-alignment": "map",
+    },
   });
 }

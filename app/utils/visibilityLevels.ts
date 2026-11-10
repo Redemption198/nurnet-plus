@@ -32,6 +32,10 @@ export const VISIBILITY_LEVELS = [
   },
 ] as const;
 
+// A level's colour on the light or the dark map
+export const levelColor = (level: (typeof VISIBILITY_LEVELS)[number], dark: boolean) =>
+  dark ? level.darkColor : level.color;
+
 // Index into VISIBILITY_LEVELS
 export const visibilityLevel = (height: number) =>
   VISIBILITY_LEVELS.findIndex((level) => height >= level.min);
