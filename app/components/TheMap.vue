@@ -38,8 +38,15 @@ const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
 const pois = () => props.pois;
 const sightLines = useSightLines(mlMap, pois);
 const sites = useMapSites(mlMap, pois, () => sightLines.visibleSites().map((entry) => entry.i));
-const { toMapPadding, forgetFraming, zoomBy, showOpenedSite, flyToVisitor, cameraForTilt } =
-  useMapCamera(mlMap, pois, is3D);
+const {
+  toMapPadding,
+  forgetFraming,
+  zoomBy,
+  showOpenedSite,
+  flyToVisitor,
+  cameraForTilt,
+  settleFraming,
+} = useMapCamera(mlMap, pois, is3D);
 
 let stopWatchingResolution: (() => void) | undefined;
 // What the map sets up outside the component's own lifetime (after its "load", in callbacks), to
@@ -92,12 +99,26 @@ function pointAt(ml: MapLibreMap, point: { x: number; y: number } | null) {
 
 // The 3D terrain is on only while the map is tilted: seen from straight above it changes nothing,
 // and drawing the map onto it (into textures, then onto its mesh) is the heaviest part of drawing
-// the map. On as the map starts tilting (`pitch`), off once it's back flat (`pitchend`)
+// the map. Its relief grows with the tilt, from none when flat to full at FULL_RELIEF, so the
+// terrain comes and goes without a jump: flat it changes nothing on screen, and the camera,
+// which MapLibre keeps above the ground, rises and settles with the relief
 const FLAT = 0.5; // degrees
-function applyTerrain(ml: MapLibreMap, pitch = ml.getPitch()) {
-  const tilted = pitch > FLAT;
-  if (tilted === !!ml.getTerrain()) return;
-  ml.setTerrain(tilted ? TERRAIN : null);
+const FULL_RELIEF = 20; // degrees
+// The relief changes in steps: each change rebuilds the terrain
+const RELIEF_STEP = 0.1;
+function applyTerrain(ml: MapLibreMap) {
+  const pitch = ml.getPitch();
+  const current = ml.getTerrain()?.exaggeration;
+  if (pitch <= FLAT) {
+    if (current === undefined) return;
+    ml.setTerrain(null);
+  } else {
+    const full = TERRAIN.exaggeration;
+    const steps = Math.round((full * Math.min(1, pitch / FULL_RELIEF)) / RELIEF_STEP);
+    const exaggeration = Math.min(full, steps * RELIEF_STEP);
+    if (exaggeration === current) return;
+    ml.setTerrain({ ...TERRAIN, exaggeration });
+  }
   // The towers stand on the terrain while it's on, else on the sites' elevations
   sightLines.update();
 }
@@ -112,10 +133,13 @@ function toggle3D() {
   is3D.value = tilt;
   const pitch = tilt ? 60 : 0;
   const bearing = tilt ? ml.getBearing() : 0;
-  // The terrain before the framing, so the places are framed on the relief
-  if (tilt) applyTerrain(ml, pitch);
+  // Framed on the map as it is now; on the relief once it has grown (settleFraming)
   const camera = sightLines.visibleSites().length ? cameraForTilt(pitch, bearing) : null;
-  ml.easeTo({ ...camera, pitch, bearing, duration: 800 });
+  // The camera keeps its height through the tilt, as MapLibre's own tilt gestures do: the terrain
+  // switching on or off mid-way doesn't move it, and at the end MapLibre puts the center back on
+  // the ground with the camera where it is
+  ml.easeTo({ ...camera, pitch, bearing, duration: 800, freezeElevation: true });
+  if (camera) settleFraming(ml);
 }
 
 function publishView(ml: MapLibreMap) {
@@ -304,9 +328,7 @@ onMounted(() => {
     is3D.value = ml.getPitch() > TILTED;
     applyTerrain(ml);
   });
-  ml.on("pitch", () => {
-    if (!ml.getTerrain()) applyTerrain(ml);
-  });
+  ml.on("pitch", () => applyTerrain(ml));
 
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
   ml.on("movestart", (event) => {

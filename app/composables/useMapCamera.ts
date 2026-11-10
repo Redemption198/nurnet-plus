@@ -208,8 +208,15 @@ export function useMapCamera(
         duration: 1200,
         essential: true,
       });
-    // Tilted, the terrain where the camera arrives may load only now, raising the places on high
-    // ground: once it has, frame them again if they moved (unless the visitor took over)
+    settleFraming(ml);
+  });
+
+  // After a camera move to the framed places: tilted, the terrain where the camera arrives may
+  // load only then (and its relief grows with the tilt), raising the places on high ground. Once
+  // the map is idle, frame them again if they moved (unless the visitor took over)
+  function settleFraming(ml: MapLibreMap) {
+    const points = framedPoints;
+    if (!points) return;
     ml.once("moveend", () =>
       ml.once("idle", () => {
         if (framedPoints !== points) return;
@@ -220,7 +227,7 @@ export function useMapCamera(
           ml.easeTo({ ...settled, duration: 500, essential: true });
       }),
     );
-  });
+  }
 
   return {
     toMapPadding,
@@ -229,5 +236,6 @@ export function useMapCamera(
     showOpenedSite,
     flyToVisitor,
     cameraForTilt,
+    settleFraming,
   };
 }
