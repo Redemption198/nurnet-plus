@@ -67,24 +67,13 @@ export function useMapSites(
     return siteFeature(i !== null && toValue(pois)[i]?.content_id !== selectedId() ? i : null);
   };
 
-  // The open site's own marker is hidden under its pin, where its disc would peek out behind the
-  // tip: a feature state, set without rebuilding the sites' layer
-  let openMarker: number | null = null;
-  function markOpen(ml: MapLibreMap) {
-    const i = selectedIndex();
-    if (openMarker !== null)
-      ml.setFeatureState({ source: "pois", id: openMarker }, { open: false });
-    openMarker = i >= 0 ? i : null;
-    if (openMarker !== null) ml.setFeatureState({ source: "pois", id: openMarker }, { open: true });
-  }
-
-  // The layers only exist once the style has loaded; add() shows the selection itself
+  // The layers only exist once the style has loaded; add() shows the selection itself. The open
+  // site's own marker is hidden by applyFocus (focusStyle)
   function applySelection() {
     const ml = map.value;
     if (!ml?.getLayer("poi-selected")) return;
     void (ml.getSource("poi-selected") as GeoJSONSource).setData(selectedFeature());
     void (ml.getSource("poi-hover") as GeoJSONSource).setData(hoveredFeature());
-    markOpen(ml);
     applyFocus();
   }
 
@@ -119,8 +108,8 @@ export function useMapSites(
     const name: ExpressionSpecification = focus
       ? ["case", inFocus, ["get", "name"], ""]
       : ["get", "name"];
-    // The open site is drawn as a pin (poi-selected): its own marker is hidden (markOpen)
-    const isOpen: ExpressionSpecification = ["boolean", ["feature-state", "open"], false];
+    // The open site is drawn as a pin (poi-selected): its own disc would peek out behind the tip
+    const isOpen: ExpressionSpecification = ["==", ["get", "content_id"], selectedId()];
     const faded = isDark.value ? FADED_OPACITY_DARK : FADED_OPACITY;
     const opacity: ExpressionSpecification = focus
       ? ["case", isOpen, 0, inFocus, 1, faded]
@@ -140,8 +129,6 @@ export function useMapSites(
     if (!ml.getSource("pois"))
       ml.addSource("pois", {
         type: "geojson",
-        // Each feature's id is its index, for the feature state (markOpen)
-        promoteId: "i",
         // Only what the map needs; the full POI comes from `pois` via its index
         data: {
           type: "FeatureCollection",
@@ -184,7 +171,6 @@ export function useMapSites(
       },
       paint: { ...labelPaint(isDark.value), "icon-opacity": focus.opacity },
     });
-    markOpen(ml);
 
     // The selected POI: a pin with its tip on the site, always visible, with its name a bit earlier
     ml.addLayer({

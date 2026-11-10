@@ -38,15 +38,8 @@ const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
 const pois = () => props.pois;
 const sightLines = useSightLines(mlMap, pois);
 const sites = useMapSites(mlMap, pois, () => sightLines.visibleSites().map((entry) => entry.i));
-const {
-  toMapPadding,
-  forgetFraming,
-  zoomBy,
-  showOpenedSite,
-  flyToVisitor,
-  cameraForTilt,
-  settleFraming,
-} = useMapCamera(mlMap, pois, is3D);
+const { toMapPadding, forgetFraming, zoomBy, showOpenedSite, flyToVisitor, cameraForTilt } =
+  useMapCamera(mlMap, pois, is3D);
 
 let stopWatchingResolution: (() => void) | undefined;
 // What the map sets up outside the component's own lifetime (after its "load", in callbacks), to
@@ -97,32 +90,6 @@ function pointAt(ml: MapLibreMap, point: { x: number; y: number } | null) {
   ml.getCanvas().style.cursor = i !== null ? "pointer" : "";
 }
 
-// The 3D terrain is on only while the map is tilted: seen from straight above it changes nothing,
-// and drawing the map onto it (into textures, then onto its mesh) is the heaviest part of drawing
-// the map. Its relief grows with the tilt, from none when flat to full at FULL_RELIEF, so the
-// terrain comes and goes without a jump: flat it changes nothing on screen, and the camera,
-// which MapLibre keeps above the ground, rises and settles with the relief
-const FLAT = 0.5; // degrees
-const FULL_RELIEF = 20; // degrees
-// The relief changes in steps: each change rebuilds the terrain
-const RELIEF_STEP = 0.1;
-function applyTerrain(ml: MapLibreMap) {
-  const pitch = ml.getPitch();
-  const current = ml.getTerrain()?.exaggeration;
-  if (pitch <= FLAT) {
-    if (current === undefined) return;
-    ml.setTerrain(null);
-  } else {
-    const full = TERRAIN.exaggeration;
-    const steps = Math.round((full * Math.min(1, pitch / FULL_RELIEF)) / RELIEF_STEP);
-    const exaggeration = Math.min(full, steps * RELIEF_STEP);
-    if (exaggeration === current) return;
-    ml.setTerrain({ ...TERRAIN, exaggeration });
-  }
-  // The towers stand on the terrain while it's on, else on the sites' elevations
-  sightLines.update();
-}
-
 // The button follows the map's actual tilt (set by it or by a two-finger drag), and camera moves
 // keep whatever tilt the visitor chose
 const TILTED = 5; // degrees
@@ -133,13 +100,9 @@ function toggle3D() {
   is3D.value = tilt;
   const pitch = tilt ? 60 : 0;
   const bearing = tilt ? ml.getBearing() : 0;
-  // Framed on the map as it is now; on the relief once it has grown (settleFraming)
+  // A network the map framed, untouched since: frame it again for the new tilt
   const camera = sightLines.visibleSites().length ? cameraForTilt(pitch, bearing) : null;
-  // The camera keeps its height through the tilt, as MapLibre's own tilt gestures do: the terrain
-  // switching on or off mid-way doesn't move it, and at the end MapLibre puts the center back on
-  // the ground with the camera where it is
-  ml.easeTo({ ...camera, pitch, bearing, duration: 800, freezeElevation: true });
-  if (camera) settleFraming(ml);
+  ml.easeTo({ ...camera, pitch, bearing, duration: 800 });
 }
 
 function publishView(ml: MapLibreMap) {
@@ -244,7 +207,6 @@ onMounted(() => {
     sightLines.update();
     // The location dot, kept by the switch, back above them all
     if (ml.getLayer("me")) ml.moveLayer("me");
-    applyTerrain(ml);
   }
 
   ml.on("load", async () => {
@@ -276,10 +238,9 @@ onMounted(() => {
         if (ml.style === before) {
           ml.off("style.load", putOursBack);
           putOursBack();
-          // Tilted, the map is drawn onto the terrain through tiles it caches, which don't all
-          // follow the swap: part of the map stayed in the old theme until it moved. Once the new
-          // style's tiles are in (idle), the terrain is set again, in one go, and draws them all
-          // afresh
+          // The map is drawn onto the terrain through tiles it caches, which don't all follow the
+          // swap: part of the map stayed in the old theme until it moved. Once the new style's
+          // tiles are in (idle), the terrain is set again, in one go, and draws them all afresh
           ml.once("idle", () => {
             const terrain = ml.getTerrain();
             if (!terrain) return;
@@ -324,11 +285,7 @@ onMounted(() => {
 
   ml.on("moveend", () => publishView(ml));
   // Whatever tilted the map (the button, a two-finger drag, a camera move), the button follows
-  ml.on("pitchend", () => {
-    is3D.value = ml.getPitch() > TILTED;
-    applyTerrain(ml);
-  });
-  ml.on("pitch", () => applyTerrain(ml));
+  ml.on("pitchend", () => (is3D.value = ml.getPitch() > TILTED));
 
   // Collapse the drawer when the user pans or pinches the map, not on programmatic moves
   ml.on("movestart", (event) => {

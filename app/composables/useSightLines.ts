@@ -39,8 +39,7 @@ export function useSightLines(
   }
 
   // Ground height as drawn (with the terrain's exaggeration): the terrain where its tiles are
-  // loaded (only while the map is tilted), else the site's elevation, else `fallback` (a nearby
-  // height: 0 would bury the tower).
+  // loaded, else the site's elevation, else `fallback` (a nearby height: 0 would bury the tower).
   // queryTerrainElevation gives 0, not null, where the terrain hasn't loaded yet: a 0 for a site
   // known to be higher up is taken as "not loaded"
   function groundAt(
