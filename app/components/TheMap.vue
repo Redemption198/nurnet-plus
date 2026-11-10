@@ -43,17 +43,63 @@ const mapOffline = ref(false);
 const isDark = useIsDark();
 const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
 
-// The selected POI's layer shows only the POI open in the drawer (none on the list)
+// The POI open in the drawer (none on the list)
 const selectedId = () => (isHome.value ? "" : (site.value?.content_id ?? ""));
-function selectedFilter(): FilterSpecification {
-  return ["==", ["get", "content_id"], selectedId()];
+const selectedIndex = () => {
+  const id = selectedId();
+  return id ? props.pois.findIndex((poi) => poi.content_id === id) : -1;
+};
+
+// The open and the hovered sites are drawn from sources of their own, one feature each (none
+// when there's no such site): updating one redraws that marker alone, not the sites' layer
+function siteFeature(i: number | null): FeatureCollection<Point> {
+  const poi = i === null ? undefined : props.pois[i];
+  return {
+    type: "FeatureCollection",
+    features: poi
+      ? [
+          {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: poi.coordinates },
+            properties: {
+              i,
+              content_id: poi.content_id,
+              category_id: poi.category_id,
+              name: poi.name,
+            },
+          },
+        ]
+      : [],
+  };
+}
+const selectedFeature = () => {
+  const i = selectedIndex();
+  return siteFeature(i >= 0 ? i : null);
+};
+// Never the open site: its pin is already there (it stays hovered after the click that opened
+// it, until the mouse moves)
+const hoveredFeature = () => {
+  const i = hovered.value;
+  return siteFeature(i !== null && props.pois[i]?.content_id !== selectedId() ? i : null);
+};
+
+// The open site's own marker is hidden under its pin, where its disc would peek out behind the
+// tip: a feature state, set without rebuilding the sites' layer
+let openMarker: number | null = null;
+function markOpen(ml: MapLibreMap) {
+  const i = selectedIndex();
+  if (openMarker !== null) ml.setFeatureState({ source: "pois", id: openMarker }, { open: false });
+  openMarker = i >= 0 ? i : null;
+  if (openMarker !== null) ml.setFeatureState({ source: "pois", id: openMarker }, { open: true });
 }
 
-// The layer only exists once the style has loaded; addPois applies the filter itself
+// The layers only exist once the style has loaded; addPois shows the selection itself
 function applySelection() {
-  if (!mlMap.value?.getLayer("poi-selected")) return;
-  mlMap.value.setFilter("poi-selected", selectedFilter());
-  mlMap.value.setFilter("poi-hover", hoverFilter());
+  const ml = mlMap.value;
+  if (!ml?.getLayer("poi-selected")) return;
+  (ml.getSource("poi-selected") as GeoJSONSource).setData(selectedFeature());
+  (ml.getSource("poi-hover") as GeoJSONSource).setData(hoveredFeature());
+  markOpen(ml);
   applyFocus();
 }
 
@@ -106,7 +152,15 @@ function labelPaint() {
 }
 
 // Our sources on the basemap, kept through the light / dark switch (see keepOurSources)
-const OUR_SOURCES = ["terrain", "pois", "visibility", "me"];
+const OUR_SOURCES = [
+  "terrain",
+  "hillshade",
+  "pois",
+  "poi-selected",
+  "poi-hover",
+  "visibility",
+  "me",
+];
 
 // The light / dark switch keeps our sources (their data and loaded tiles: the sites, the sight
 // lines, the terrain and its 3D) and the location dot, which doesn't change with the theme. The
@@ -129,6 +183,8 @@ function addPois(ml: MapLibreMap) {
   if (!ml.getSource("pois"))
     ml.addSource("pois", {
       type: "geojson",
+      // Each feature's id is its index, for the feature state (markOpen)
+      promoteId: "i",
       // Only what the map needs; the full POI comes from props.pois via its index
       data: {
         type: "FeatureCollection",
@@ -145,6 +201,13 @@ function addPois(ml: MapLibreMap) {
       },
     });
 
+  if (!ml.getSource("poi-selected"))
+    ml.addSource("poi-selected", { type: "geojson", data: selectedFeature() });
+  if (!ml.getSource("poi-hover"))
+    ml.addSource("poi-hover", { type: "geojson", data: hoveredFeature() });
+
+  // Drawn for the current focus from the start, as applyFocus sets it later (focusStyle)
+  const focus = focusStyle();
   ml.addLayer({
     id: "pois",
     type: "symbol",
@@ -155,21 +218,22 @@ function addPois(ml: MapLibreMap) {
       "icon-image": markerForCategory,
       "icon-anchor": "bottom",
       "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.5, 13, 0.75, 16, 0.9],
-      // Where markers overlap, the landmarks win (see applyFocus)
-      "symbol-sort-key": markerPriority,
+      // Where markers overlap, the landmarks win (see focusStyle)
+      "symbol-sort-key": focus.sortKey,
       // Overlapping icons are hidden while zoomed out and come back when zooming in
       "icon-padding": 0,
       ...labelLayout(ml, LABEL_ZOOM),
+      "text-field": focus.textField,
     },
-    paint: labelPaint(),
+    paint: { ...labelPaint(), "icon-opacity": focus.opacity },
   });
+  markOpen(ml);
 
   // The selected POI: a pin with its tip on the site, always visible, with its name a bit earlier
   ml.addLayer({
     id: "poi-selected",
     type: "symbol",
-    source: "pois",
-    filter: selectedFilter(),
+    source: "poi-selected",
     layout: {
       "icon-image": pinForCategory,
       "icon-anchor": "bottom",
@@ -188,8 +252,7 @@ function addPois(ml: MapLibreMap) {
   ml.addLayer({
     id: "poi-hover",
     type: "symbol",
-    source: "pois",
-    filter: hoverFilter(),
+    source: "poi-hover",
     layout: {
       "icon-image": hoverMarkerForCategory,
       "icon-anchor": "bottom",
@@ -203,16 +266,6 @@ function addPois(ml: MapLibreMap) {
     },
     paint: { ...labelPaint(), "text-halo-width": 2 },
   });
-}
-
-// Never the open site: its pin is already there (it stays hovered after the click that opened
-// it, until the mouse moves)
-function hoverFilter(): FilterSpecification {
-  return [
-    "all",
-    ["==", ["get", "i"], hovered.value ?? -1],
-    ["!=", ["get", "content_id"], selectedId()],
-  ];
 }
 
 // Lines of sight from the open nuraghe to the sites it can see (none on the list): in mid-air
@@ -262,7 +315,8 @@ function visibilityEnds(): FeatureCollection<Point> {
 }
 
 // Ground height as drawn (with the terrain's exaggeration): the terrain where its tiles are
-// loaded, else the site's elevation, else `fallback` (a nearby height: 0 would bury the tower).
+// loaded (only while the map is tilted), else the site's elevation, else `fallback` (a nearby
+// height: 0 would bury the tower).
 // queryTerrainElevation gives 0, not null, where the terrain hasn't loaded yet: a 0 for a site
 // known to be higher up is taken as "not loaded"
 function groundAt(
@@ -285,6 +339,15 @@ const FADED_OPACITY_DARK = 0.15;
 function applyFocus() {
   const ml = mlMap.value;
   if (!ml?.getLayer("pois")) return;
+  // MapLibre ignores a value that hasn't changed
+  const { opacity, textField, sortKey } = focusStyle();
+  ml.setPaintProperty("pois", "icon-opacity", opacity);
+  ml.setLayoutProperty("pois", "text-field", textField);
+  ml.setLayoutProperty("pois", "symbol-sort-key", sortKey);
+}
+
+// The markers' opacity, names and order for the current focus (see applyFocus)
+function focusStyle() {
   const network = visibleSites().map((entry) => entry.i);
   const focus = network.length ? network : isHome.value ? searchMatches.value : null;
   const inFocus: ExpressionSpecification = ["in", ["get", "i"], ["literal", focus ?? []]];
@@ -292,21 +355,20 @@ function applyFocus() {
   const name: ExpressionSpecification = focus
     ? ["case", inFocus, ["get", "name"], ""]
     : ["get", "name"];
-  // The open site is drawn as a pin (poi-selected): its disc would peek out behind the tip
-  const isOpen: ExpressionSpecification = ["==", ["get", "content_id"], selectedId()];
-  ml.setPaintProperty("pois", "icon-opacity", [
-    "case",
-    isOpen,
-    0,
-    ...(focus ? [inFocus, 1, isDark.value ? FADED_OPACITY_DARK : FADED_OPACITY] : [1]),
-  ] as ExpressionSpecification);
-  ml.setLayoutProperty("pois", "text-field", ["step", ["zoom"], "", LABEL_ZOOM, name]);
-  // Then by category: markerPriority is below 100
-  ml.setLayoutProperty(
-    "pois",
-    "symbol-sort-key",
-    focus ? ["+", markerPriority, ["case", inFocus, 0, 100]] : markerPriority,
-  );
+  return {
+    // The open site is drawn as a pin (poi-selected): its own marker is hidden (markOpen)
+    opacity: [
+      "case",
+      ["boolean", ["feature-state", "open"], false],
+      0,
+      ...(focus ? [inFocus, 1, isDark.value ? FADED_OPACITY_DARK : FADED_OPACITY] : [1]),
+    ] as ExpressionSpecification,
+    textField: ["step", ["zoom"], "", LABEL_ZOOM, name] as ExpressionSpecification,
+    // Then by category: markerPriority is below 100
+    sortKey: focus
+      ? (["+", markerPriority, ["case", inFocus, 0, 100]] as ExpressionSpecification)
+      : markerPriority,
+  };
 }
 
 let stopWatchingResolution: (() => void) | undefined;
@@ -720,6 +782,18 @@ function focusSelectedPOI() {
   });
 }
 
+// The 3D terrain is on only while the map is tilted: seen from straight above it changes nothing,
+// and drawing the map onto it (into textures, then onto its mesh) is the heaviest part of drawing
+// the map. On as the map starts tilting (`pitch`), off once it's back flat (`pitchend`)
+const FLAT = 0.5; // degrees
+function applyTerrain(ml: MapLibreMap, pitch = ml.getPitch()) {
+  const tilted = pitch > FLAT;
+  if (tilted === !!ml.getTerrain()) return;
+  ml.setTerrain(tilted ? TERRAIN : null);
+  // The towers stand on the terrain while it's on, else on the sites' elevations (groundAt)
+  updateSightLines();
+}
+
 // The button follows the map's actual tilt (set by it or by a two-finger drag), and camera moves
 // keep whatever tilt the visitor chose
 const TILTED = 5; // degrees
@@ -730,6 +804,8 @@ function toggle3D() {
   is3D.value = tilt;
   const pitch = tilt ? 60 : 0;
   const bearing = tilt ? ml.getBearing() : 0;
+  // The terrain before the framing, so the places are framed on the relief
+  if (tilt) applyTerrain(ml, pitch);
   // A network the map framed, untouched since: frame it again for the new tilt
   const camera =
     framedPoints && visibleSites().length
@@ -810,7 +886,7 @@ onMounted(() => {
   );
   watch(highlighted, applyHighlight);
   watch(hovered, () => {
-    if (mlMap.value?.getLayer("poi-hover")) mlMap.value.setFilter("poi-hover", hoverFilter());
+    (mlMap.value?.getSource("poi-hover") as GeoJSONSource | undefined)?.setData(hoveredFeature());
   });
   watch(searchMatches, applyFocus);
 
@@ -837,7 +913,7 @@ onMounted(() => {
         duration: 1200,
         essential: true,
       });
-    // The terrain where the camera arrives may load only now, raising the places on high
+    // Tilted, the terrain where the camera arrives may load only now, raising the places on high
     // ground: once it has, frame them again if they moved (unless the visitor took over)
     ml.once("moveend", () =>
       ml.once("idle", () => {
@@ -914,6 +990,7 @@ onMounted(() => {
     updateSightLines(); // also applies the markers' focus
     // The location dot, kept by the switch, back above them all
     if (ml.getLayer("me")) ml.moveLayer("me");
+    applyTerrain(ml);
   }
 
   ml.on("load", async () => {
@@ -945,9 +1022,10 @@ onMounted(() => {
         if (ml.style === before) {
           ml.off("style.load", putOursBack);
           putOursBack();
-          // The map is drawn onto the terrain through tiles it caches, which don't all follow the
-          // swap: part of the map stayed in the old theme until it moved. Once the new style's
-          // tiles are in (idle), the terrain is set again, in one go, and draws them all afresh
+          // Tilted, the map is drawn onto the terrain through tiles it caches, which don't all
+          // follow the swap: part of the map stayed in the old theme until it moved. Once the new
+          // style's tiles are in (idle), the terrain is set again, in one go, and draws them all
+          // afresh
           ml.once("idle", () => {
             const terrain = ml.getTerrain();
             if (!terrain) return;
@@ -992,7 +1070,13 @@ onMounted(() => {
 
   ml.on("moveend", () => publishView(ml));
   // Whatever tilted the map (the button, a two-finger drag, a camera move), the button follows
-  ml.on("pitchend", () => (is3D.value = ml.getPitch() > TILTED));
+  ml.on("pitchend", () => {
+    is3D.value = ml.getPitch() > TILTED;
+    applyTerrain(ml);
+  });
+  ml.on("pitch", () => {
+    if (!ml.getTerrain()) applyTerrain(ml);
+  });
   ml.on("rotate", () => (bearing.value = ml.getBearing()));
   rotateWithTrackpadTwist(ml, map.value!);
 

@@ -84,11 +84,17 @@ export function warmBasemap(ml: MapLibreMap, dark: boolean) {
   }
 }
 
+// The 3D terrain, from the "terrain" source below. Exaggerated a bit: Sardinia's relief is gentle
+// and would look flat at 1x
+export const TERRAIN = { source: "terrain", exaggeration: 1.5 };
+
 export function addTerrain(ml: MapLibreMap, dark: boolean) {
-  // One source for the 3D terrain and the hillshading. MapLibre suggests separate ones, but a
-  // hillshade source of its own drew grey lines along tile edges (its tiles' borders weren't
-  // matched to their neighbours). Kept by the light / dark switch (TheMap's keepOurSources), with
-  // its loaded tiles, so the relief doesn't flatten for a moment
+  // Two sources of the same elevation tiles: "terrain" for the 3D terrain (set by TheMap, only
+  // while tilted) and "hillshade" for the shading, always. A source driving the terrain loads its
+  // tiles two zoom levels lower (MapLibre's TerrainTileManager): the 1024 tile size keeps the
+  // hillshading at those same levels, detailed enough and light to download. Both kept by the
+  // light / dark switch (TheMap's keepOurSources), with their loaded tiles, so the relief doesn't
+  // flatten for a moment
   if (!ml.getSource("terrain"))
     ml.addSource("terrain", {
       type: "raster-dem",
@@ -97,6 +103,14 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
       tileSize: 256,
       maxzoom: 14,
       attribution: TERRAIN_ATTRIBUTION,
+    });
+  if (!ml.getSource("hillshade"))
+    ml.addSource("hillshade", {
+      type: "raster-dem",
+      tiles: [TERRAIN_TILES],
+      encoding: "terrarium",
+      tileSize: 1024,
+      maxzoom: 14,
     });
 
   // Hillshading goes under the first label layer so text stays on top. On the dark map it goes
@@ -107,7 +121,7 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
     {
       id: "hillshade",
       type: "hillshade",
-      source: "terrain",
+      source: "hillshade",
       // Shadows in a warm basalt grey, not the default slate, so the relief stays in the palette
       paint: dark
         ? {
@@ -120,8 +134,6 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
     below,
   );
 
-  // Exaggerated a bit: Sardinia's relief is gentle and would look flat at 1x
-  ml.setTerrain({ source: "terrain", exaggeration: 1.5 });
   // In 3D: a soft Mediterranean sky, and a horizon and haze of warm limestone (the map's sand,
   // lighter), so the distance fades into the palette rather than into a cool grey
   // (in dark mode: a night sky, and a haze of the dark map's own ground)

@@ -1,6 +1,6 @@
 // fitBounds frames places as if the map were flat: tilted, the near side is drawn bigger and the
-// far side smaller, and places on high ground are drawn higher (even untilted, the camera's
-// perspective pushes them outwards), so some end up under the drawer or off screen.
+// far side smaller, and places on high ground are drawn higher (on the terrain, which is on only
+// while the map is tilted), so some end up under the drawer or off screen.
 // cameraForPlaces starts from its flat camera and corrects it on a copy of the map's camera,
 // where the places are projected as drawn (tilt and terrain), until they fill the free area
 import { LngLat, Point as ScreenPoint, type MapLibreMap } from "maplibre-gl";
