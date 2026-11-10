@@ -25,7 +25,9 @@ const facts = computed(() => {
     poi.elevation != null && {
       icon: "i-lucide-mountain",
       label: t("context.elevation"),
-      value: t("context.elevationValue", { metres: poi.elevation.toLocaleString(locale.value) }),
+      value: t("context.elevationValue", {
+        metres: poi.elevation.toLocaleString(locale.value, { useGrouping: "always" }),
+      }),
     },
     poi.coastDistance != null && {
       icon: "i-lucide-sailboat",

@@ -106,7 +106,8 @@ watch([debouncedQuery, categoryFilter], () => {
 const countLabel = computed(() => {
   const count = results.value.length;
   if (!count) return t(searching.value ? "search.noneFound" : "search.noneInMap");
-  const n = count.toLocaleString(locale.value);
+  // "always": Italian leaves four-digit numbers ungrouped by default (7516, not 7.516)
+  const n = count.toLocaleString(locale.value, { useGrouping: "always" });
   return t(searching.value ? "search.found" : "search.inMap", { n }, count);
 });
 </script>
@@ -137,7 +138,8 @@ const countLabel = computed(() => {
             :placeholder="t('search.placeholder')"
             :aria-label="t('search.label')"
             @focus="raiseForSearch"
-            class="h-11 w-full rounded-full bg-surface/85 pr-11 pl-10 text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] placeholder:text-muted focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:appearance-none"
+            :class="query ? 'pr-11' : 'pr-3'"
+            class="h-11 w-full rounded-full bg-surface/85 pl-10 text-basalt shadow-[0_1px_3px_rgb(49_37_40/0.12)] placeholder:text-muted focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:appearance-none"
           />
           <!-- The browser's own clear button doesn't follow the palette: this one does -->
           <button
