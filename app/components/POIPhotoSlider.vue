@@ -24,7 +24,7 @@ function scrollPage(direction: number) {
     <!-- Native horizontal scrolling (touch, trackpad, shift+wheel), snapping to each photo -->
     <div
       ref="scroller"
-      class="scrollbar-hidden flex snap-x snap-mandatory scroll-px-4 gap-x-3 overflow-x-auto px-4 focus-visible:-outline-offset-2"
+      class="scrollbar-hidden flex snap-x snap-mandatory scroll-px-4 gap-x-3 overflow-x-auto overflow-y-hidden px-4 focus-visible:-outline-offset-2"
       tabindex="0"
       role="region"
       :aria-label="$t('photos.of', { name })"

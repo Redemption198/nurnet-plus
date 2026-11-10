@@ -227,7 +227,7 @@ watch(
              place, and the original fades in over it -->
         <div
           ref="track"
-          class="scrollbar-hidden relative flex h-full snap-x snap-mandatory overflow-x-auto overscroll-contain focus-visible:outline-none"
+          class="scrollbar-hidden relative flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-contain focus-visible:outline-none"
           :class="{ invisible: !settled }"
           tabindex="0"
           role="region"
