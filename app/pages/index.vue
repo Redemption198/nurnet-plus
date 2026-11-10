@@ -66,7 +66,7 @@ useSchemaOrg([
       </TheDrawer>
 
       <!-- After the drawer in the page, so keyboard users reach the search before the map -->
-      <TheMap v-if="mapData" :pois="mapData" />
+      <LazyTheMap v-if="mapData" :pois="mapData" />
     </ClientOnly>
   </main>
 </template>

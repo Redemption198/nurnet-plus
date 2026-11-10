@@ -189,6 +189,32 @@ export default defineNuxtConfig({
     },
   },
 
+  app: {
+    head: {
+      link: [
+        // The index (list, search, map) starts downloading with the page, not once the app and its
+        // data worker are up
+        {
+          rel: "preload",
+          as: "fetch",
+          href: `${baseURL}nurnet-index.json`,
+          crossorigin: "anonymous",
+        },
+        // The basemap's style, tiles and fonts (OpenFreeMap): the connection is ready when the map
+        // asks
+        { rel: "preconnect", href: "https://tiles.openfreemap.org", crossorigin: "anonymous" },
+      ],
+    },
+  },
+
+  nitro: {
+    prerender: {
+      // The index's preload link (app.head above) is a file from public/, copied as it is: not a
+      // page for the crawler to render, where it would 404 and fail the build
+      ignore: [`${baseURL}nurnet-index.json`],
+    },
+  },
+
   routeRules: {
     // Old links to the POI page without an id
     "/poi": { redirect: baseURL },

@@ -22,7 +22,7 @@ const isHome = useIsHome();
 const { t } = useI18n();
 
 const site = useCurrentSite();
-const { openPOI } = useNurnetData();
+const { openPOI, prefetchDetails } = useNurnetData();
 const drawerState = useDrawerState();
 const mapPadding = useMapPadding();
 const categoryFilter = useCategoryFilter();
@@ -884,6 +884,11 @@ onMounted(() => {
     return;
   }
   mlMap.value = ml;
+  // The camera is set from the start (bounds above): the list can follow it now, rather than once
+  // the basemap's style has come from OpenFreeMap
+  publishView(ml);
+  // The first view drawn, tiles and all: time for the sites' details (useNurnetData)
+  ml.once("idle", prefetchDetails);
 
   // The basemap's style comes from OpenFreeMap: offline (e.g. the installed app without a
   // connection) it never loads, and the map would stay empty without a word. Errors before "load"

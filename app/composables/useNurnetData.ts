@@ -20,11 +20,6 @@ function startWorker([indexUrl, detailsUrl, visibilityUrl]: NonNullable<typeof u
   worker.onmessage = ({ data }: MessageEvent<WorkerReply>) => {
     if (data.type === "data") {
       items.value = data.items;
-      // The details (photos, descriptions: ~1 MB) aren't needed until a site is opened: fetch
-      // them once the browser is idle, so they don't compete with the map's first tiles
-      const loadDetails = () => post({ type: "load-details" });
-      if ("requestIdleCallback" in window) requestIdleCallback(loadDetails, { timeout: 4000 });
-      else setTimeout(loadDetails, 2000);
     } else if (data.type === "error") {
       error.value = data.message;
       console.error("NurNet data worker:", data.message);
@@ -71,6 +66,13 @@ export function useNurnetData() {
   if (import.meta.client && !worker) {
     urls = [url("nurnet-index.json"), url("nurnet-details.json"), url("nurnet-visibility.json")];
     startWorker(urls);
+  }
+
+  // The details (photos, descriptions: ~1 MB) aren't needed until a site is opened: TheMap asks
+  // for them once its first view is drawn, so they don't compete with the list or the first tiles.
+  // Opening a site loads them anyway, should that come first
+  function prefetchDetails() {
+    post({ type: "load-details" });
   }
 
   // Resolves with the indices (into `items`) of the matching POIs, best match first
@@ -156,5 +158,16 @@ export function useNurnetData() {
     startWorker(urls);
   }
 
-  return { items, error, search, getDetails, getVisible, openPOI, retry, reloadDetails, reload };
+  return {
+    items,
+    error,
+    search,
+    getDetails,
+    getVisible,
+    openPOI,
+    prefetchDetails,
+    retry,
+    reloadDetails,
+    reload,
+  };
 }
