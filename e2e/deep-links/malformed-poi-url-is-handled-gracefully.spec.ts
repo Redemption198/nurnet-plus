@@ -2,7 +2,7 @@
 // seed: e2e/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
-import { TOTAL_SITES } from "../data.ts";
+import { TOTAL_SITES, inMap } from "../data.ts";
 
 test.describe("URL and deep-link state", () => {
   test("Malformed poi URL is handled gracefully", async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe("URL and deep-link state", () => {
     const toast = page.getByRole("listitem").filter({ hasText: "Sito non trovato" });
     await expect(toast).toBeVisible();
     await expect(page.locator("canvas.maplibregl-canvas")).toBeVisible();
-    await expect(page.getByText(`${TOTAL_SITES} siti nella mappa`).first()).toBeVisible();
+    await expect(page.getByText(inMap(TOTAL_SITES)).first()).toBeVisible();
 
     // ... and open /nurnet-plus/poi/
     await page.goto("/nurnet-plus/poi/");
@@ -31,7 +31,7 @@ test.describe("URL and deep-link state", () => {
     // (there is no site ID to look up), it simply redirects to the map home.
     await expect(page).toHaveURL(/\/nurnet-plus\/$/, { timeout: 30_000 });
     await expect(page.locator("canvas.maplibregl-canvas")).toBeVisible();
-    await expect(page.getByText(`${TOTAL_SITES} siti nella mappa`).first()).toBeVisible();
+    await expect(page.getByText(inMap(TOTAL_SITES)).first()).toBeVisible();
     await expect(page.getByText("Sito non trovato")).toBeHidden();
 
     // No crash or unhandled error, and no script executed

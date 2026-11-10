@@ -1,7 +1,7 @@
 // spec: specs/nurnet-plus.md
 // seed: e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
-import { TOTAL_SITES } from "../data.ts";
+import { TOTAL_SITES, inMap } from "../data.ts";
 
 test.describe("Map loading and filters", () => {
   test("Map loads with site markers and count", async ({ page }) => {
@@ -17,8 +17,8 @@ test.describe("Map loading and filters", () => {
     });
     await expect(page).toHaveTitle("NurNet+");
     await expect(page.getByRole("region", { name: "Map" })).toBeVisible();
-    await expect(page.getByText(`${TOTAL_SITES} siti nella mappa`, { exact: true })).toBeVisible();
-    const list = page.getByRole("list", { name: `${TOTAL_SITES} siti nella mappa` });
+    await expect(page.getByText(inMap(TOTAL_SITES), { exact: true })).toBeVisible();
+    const list = page.getByRole("list", { name: inMap(TOTAL_SITES) });
     await expect(list.getByRole("link").first()).toHaveAttribute(
       "href",
       /\/nurnet-plus\/poi\/[^/]+\/$/,

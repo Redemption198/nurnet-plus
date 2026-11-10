@@ -2,7 +2,7 @@
 // seed: e2e/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
-import { TOTAL_SITES } from "../data.ts";
+import { TOTAL_SITES, inMap } from "../data.ts";
 
 test.describe("Search", () => {
   test("Search with no results", async ({ page }) => {
@@ -32,6 +32,6 @@ test.describe("Search", () => {
     await page.getByText("Cancella la ricerca").click();
 
     await expect(searchbox).toHaveValue("");
-    await expect(page.getByText(`${TOTAL_SITES} siti nella mappa`).first()).toBeVisible();
+    await expect(page.getByText(inMap(TOTAL_SITES)).first()).toBeVisible();
   });
 });

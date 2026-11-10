@@ -2,7 +2,7 @@
 // seed: e2e/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
-import { sitesOfType } from "../data.ts";
+import { inMap, sitesOfType } from "../data.ts";
 
 test.describe("Search", () => {
   test("Search combined with a type filter", async ({ page }) => {
@@ -42,8 +42,6 @@ test.describe("Search", () => {
     await expect(searchbox).toHaveValue("");
     await expect(nuragheChip).toHaveAttribute("aria-pressed", "true");
     // All the nuraghi are shown
-    await expect(
-      page.getByRole("list", { name: `${sitesOfType("Nuraghe")} siti nella mappa` }),
-    ).toBeVisible();
+    await expect(page.getByRole("list", { name: inMap(sitesOfType("Nuraghe")) })).toBeVisible();
   });
 });

@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference lib="es2023.intl" />
 import { readFileSync } from "node:fs";
 import { CATEGORIES } from "../app/utils/categories.ts";
 
@@ -17,6 +18,11 @@ const fold = (text: string) =>
     .toLowerCase();
 
 export const TOTAL_SITES = index.rows.length;
+
+// The list's count as the app writes it in Italian: "7.516 siti nella mappa", grouped even with four
+// digits (SearchResults' countLabel)
+export const inMap = (count: number) =>
+  `${count.toLocaleString("it", { useGrouping: "always" })} siti nella mappa`;
 
 export function sitesOfType(name: string) {
   const ids = CATEGORIES.find((category) => category.name === name)!.ids;

@@ -1,12 +1,12 @@
 // spec: specs/nurnet-plus.md
 // seed: e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
-import { TOTAL_SITES, sitesOfType } from "../data.ts";
+import { TOTAL_SITES, inMap, sitesOfType } from "../data.ts";
 
 test.describe("Map loading and filters", () => {
   test("Type filter chips narrow the sites", async ({ page }) => {
     await page.goto("/");
-    const total = page.getByText(`${TOTAL_SITES} siti nella mappa`, { exact: true });
+    const total = page.getByText(inMap(TOTAL_SITES), { exact: true });
     await expect(total).toBeVisible({ timeout: 30_000 });
     const nuraghe = page.getByRole("button", { name: "Nuraghe", exact: true });
     const count = async () =>
@@ -16,7 +16,10 @@ test.describe("Map loading and filters", () => {
             .locator("p", { hasText: /siti nella mappa$/ })
             .first()
             .innerText()
-        ).match(/\d+/)![0],
+        )
+          // Grouped with a dot from four digits up (inMap)
+          .match(/[\d.]+/)![0]
+          .replaceAll(".", ""),
       );
 
     // 1. Click the 'Nuraghe' filter chip

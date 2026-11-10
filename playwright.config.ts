@@ -15,6 +15,8 @@ export default defineConfig({
   // Reuses the dev server already on :3000; Nuxt allows one per project, so none starts beside it
   webServer: {
     command: "pnpm dev --no-tui",
+    // The specs open the app where GitHub Pages serves it (/nurnet-plus/)
+    env: { NUXT_APP_BASE_URL: "/nurnet-plus/" },
     url: "http://localhost:3000",
     reuseExistingServer: true,
     timeout: 180_000,

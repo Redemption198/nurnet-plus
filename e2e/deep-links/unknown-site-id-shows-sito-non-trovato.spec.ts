@@ -2,7 +2,7 @@
 // seed: e2e/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
-import { TOTAL_SITES } from "../data.ts";
+import { TOTAL_SITES, inMap } from "../data.ts";
 
 test.describe("URL and deep-link state", () => {
   test("Unknown site ID shows 'Sito non trovato'", async ({ page }) => {
@@ -23,6 +23,6 @@ test.describe("URL and deep-link state", () => {
 
     // The map and all the sites load normally
     await expect(page.locator("canvas.maplibregl-canvas")).toBeVisible();
-    await expect(page.getByText(`${TOTAL_SITES} siti nella mappa`).first()).toBeVisible();
+    await expect(page.getByText(inMap(TOTAL_SITES)).first()).toBeVisible();
   });
 });
