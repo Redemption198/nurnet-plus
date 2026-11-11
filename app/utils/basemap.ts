@@ -1,8 +1,15 @@
 // The basemap under our layers (TheMap): its style, recoloured toward Sardinia, and the terrain;
 // what the light / dark switch keeps; the visitor's position on it
-import type { GeoJSONSource, MapLibreMap, TransformStyleFunction } from "maplibre-gl";
+import {
+  addProtocol,
+  type GeoJSONSource,
+  type MapLibreMap,
+  type TransformStyleFunction,
+} from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
+import mlcontour from "maplibre-contour";
 import { BRAND, BRAND_DARK } from "./brand";
+import { labelFont } from "./mapLabels";
 
 // Free sources, no API keys: OpenFreeMap vector tiles and the AWS Terrain Tiles dataset
 // liberty in light mode (recoloured below), their dark style in dark mode
@@ -86,6 +93,23 @@ export function warmBasemap(ml: MapLibreMap, dark: boolean) {
   }
 }
 
+// The elevation tiles, fetched and kept once (maplibre-contour's DemSource, in a worker) for the
+// 3D terrain, the hillshading and the contour lines: MapLibre reads them through the protocol it
+// registers (sharedDemProtocolUrl), the contour lines are drawn from them
+let elevation: InstanceType<typeof mlcontour.DemSource> | undefined;
+function elevationTiles() {
+  if (!elevation) {
+    elevation = new mlcontour.DemSource({
+      url: TERRAIN_TILES,
+      encoding: "terrarium",
+      maxzoom: 14,
+      worker: true,
+    });
+    elevation.setupMaplibre({ addProtocol });
+  }
+  return elevation;
+}
+
 export function addTerrain(ml: MapLibreMap, dark: boolean) {
   // One source for the 3D terrain and the hillshading. MapLibre suggests separate ones, but a
   // hillshade source of its own drew grey lines along tile edges (its tiles' borders weren't
@@ -94,7 +118,7 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
   if (!ml.getSource("terrain"))
     ml.addSource("terrain", {
       type: "raster-dem",
-      tiles: [TERRAIN_TILES],
+      tiles: [elevationTiles().sharedDemProtocolUrl],
       encoding: "terrarium",
       tileSize: 256,
       maxzoom: 14,
@@ -138,7 +162,81 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
 }
 
 // Our sources on the basemap, kept through the light / dark switch (see keepOurSources)
-const OUR_SOURCES = ["terrain", "pois", "poi-selected", "poi-hover", "visibility", "me"];
+const OUR_SOURCES = [
+  "contours",
+  "terrain",
+  "pois",
+  "poi-selected",
+  "poi-hover",
+  "visibility",
+  "me",
+];
+
+// Contour lines, drawn from the elevation tiles (elevationTiles) from zoom 11, when the map shows a
+// valley more than the island: every 100 m there (500 m labelled), closer as it zooms in. Under
+// the basemap's names, in its ink, faint: a hint of the slope, not a hiking map
+export function addContours(ml: MapLibreMap, dark: boolean) {
+  if (!ml.getSource("contours"))
+    ml.addSource("contours", {
+      type: "vector",
+      tiles: [
+        elevationTiles().contourProtocolUrl({
+          // [minor, major] metres by zoom
+          thresholds: { 11: [100, 500], 12: [50, 250], 13: [20, 100], 14: [10, 50] },
+          elevationKey: "ele",
+          levelKey: "level",
+          contourLayer: "contours",
+          overzoom: 1,
+        }),
+      ],
+      minzoom: 11,
+      maxzoom: 15,
+    });
+
+  const color = dark ? BRAND_DARK.basalt : BRAND.basalt;
+  const below = ml.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+  ml.addLayer(
+    {
+      id: "contours",
+      type: "line",
+      source: "contours",
+      "source-layer": "contours",
+      paint: {
+        "line-color": color,
+        // Major lines (level 1) stronger
+        "line-opacity": ["match", ["get", "level"], 1, 0.45, 0.22],
+        "line-width": ["match", ["get", "level"], 1, 1, 0.6],
+      },
+    },
+    below,
+  );
+  ml.addLayer(
+    {
+      id: "contour-labels",
+      type: "symbol",
+      source: "contours",
+      "source-layer": "contours",
+      filter: [">", ["get", "level"], 0],
+      layout: {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          // Grouped as the app's language writes it (1.500 m, 1,500 m)
+          ["number-format", ["get", "ele"], { locale: ["global-state", "locale"] }],
+          " m",
+        ],
+        "text-font": labelFont(ml),
+        "text-size": 10,
+      },
+      paint: {
+        "text-color": color,
+        "text-halo-color": dark ? BRAND_DARK.sand : BRAND.sand,
+        "text-halo-width": 1.5,
+      },
+    },
+    below,
+  );
+}
 
 // The light / dark switch keeps our sources (their data and loaded tiles: the sites, the sight
 // lines, the terrain and its 3D) and the location dot, which doesn't change with the theme. The

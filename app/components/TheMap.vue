@@ -205,6 +205,7 @@ onMounted(() => {
     await addMarkerImages(ml);
     warmBasemap(ml, isDark.value);
     addTerrain(ml, isDark.value);
+    addContours(ml, isDark.value);
     sites.add(ml);
     sightLines.add(ml);
     sightLines.update();

@@ -26,6 +26,9 @@ importers:
       gsap:
         specifier: ^3.15.1
         version: 3.15.1
+      maplibre-contour:
+        specifier: ^0.1.1
+        version: 0.1.1
       maplibre-gl:
         specifier: ^6.16.0
         version: 6.16.0
@@ -4784,6 +4787,9 @@ packages:
 
   magicast@0.5.5:
     resolution: {integrity: sha512-UicdXN8zQ3JHlxVq+28afMXPr1z7WNY6+7EJnzTdQWkTAlMLF5fNCCKxJHBQwGaNGR11581EiQmQzx73+MvszA==}
+
+  maplibre-contour@0.1.1:
+    resolution: {integrity: sha512-0m267124bx+LJ5zM1mpB23uvO4sCrgOb4dWgwbUbGWGsDsWNA4g93XTXPoRQga6GAD6TDI7tzyowBzdADSPusg==}
 
   maplibre-gl@6.16.0:
     resolution: {integrity: sha512-gApO66EMtoDZuio680RUBvskR7ahFd/NNhLN4tBAs+Y7FeT4gQV8zVFgYVMRmFxQznOEzecW19w6xOd9XjZjiA==}
@@ -11719,6 +11725,8 @@ snapshots:
       '@babel/parser': 7.29.13
       '@babel/types': 7.29.11
       source-map-js: 1.2.2
+
+  maplibre-contour@0.1.1: {}
 
   maplibre-gl@6.16.0:
     dependencies:
