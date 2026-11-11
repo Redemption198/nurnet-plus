@@ -185,8 +185,14 @@ export function useMapCamera(
       if (camera) ml.easeTo({ ...camera, duration: 600, essential: true });
       else if (framedCenter) ml.easeTo({ center: framedCenter, duration: 600, essential: true });
     };
-    if (ml.isMoving()) ml.once("moveend", apply);
-    else apply();
+    // A move that another one cuts short ends inside that one's easeTo, before it starts: moving
+    // the camera from there would leave MapLibre two animations to run and one to stop ("_onEaseFrame
+    // is not a function"). So look once it has returned, and wait again if the map moves on
+    const applyWhenStill = () => {
+      if (ml.isMoving()) ml.once("moveend", () => queueMicrotask(applyWhenStill));
+      else apply();
+    };
+    applyWhenStill();
   }
   watch(mapPadding, applyPadding);
 
