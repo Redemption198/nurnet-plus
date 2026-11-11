@@ -8,7 +8,9 @@ import { UIcon } from "#components";
 //   page's: the same page in that language, the history entry replaced
 // - otherwise, if the browser asks for the other language, a toast offers it, in that language,
 //   with both answers as buttons. Only an answer is kept: closing it (×, Esc) is "not now", and
-//   it is offered again on the next visit
+//   it is offered again on the next visit. Opening the info sheet, where the language is chosen,
+//   closes it the same way (it also covered the sheet's close button), and it waits while the
+//   sheet is open
 export default defineNuxtPlugin({
   name: "locale",
   dependsOn: ["i18n:plugin"],
@@ -16,6 +18,10 @@ export default defineNuxtPlugin({
     const i18n = nuxtApp.$i18n;
     const toast = useToast();
     const splashVisible = useSplashVisible();
+    const infoOpen = useInfoOpen();
+    watch(infoOpen, (open) => {
+      if (open) toast.remove("locale-offer");
+    });
     // A pause in the visitor's use of the map, rather than the first frame after the splash
     const { idle, reset } = useIdle(2500);
 
@@ -26,6 +32,8 @@ export default defineNuxtPlugin({
       await until(idle).toBe(true);
       // One notice at a time: after the "new version" one, if it's up
       await until(() => toast.toasts.value.some((t) => t.id === "app-update")).toBe(false);
+      // Not over the info sheet, which has the language choice itself
+      await until(infoOpen).toBe(false);
       await i18n.loadLocaleMessages(wanted);
       const t = (key: string, named = {}) => i18n.t(key, named, { locale: wanted });
       // "…with ⚙.": the brand button's gear, as drawn there, named for screen readers
