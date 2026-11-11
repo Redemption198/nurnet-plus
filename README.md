@@ -47,7 +47,7 @@ An unofficial map of the sites of nuragic Sardinia: nuraghi, domus de janas, gia
 - **Sight lines** between nuraghi, computed by CRS4 on the digital terrain model, drawn from one tower to another.
 - **2D or 3D**, with the terrain brought out when the map is tilted.
 - **Directions** open the site in your maps app. Share it, or copy its coordinates.
-- **Offline:** an installable app, with the site data saved alongside it, for the places where the signal runs out.
+- **Offline:** an installable app, with the site data saved alongside it, and the map you've already looked at kept on the device (up to about 100 MB), for the places where the signal runs out.
 - **Italian and English.** The descriptions in English are machine translated, and a site whose translation failed the checks keeps its Italian text.
 
 ## Privacy
@@ -77,13 +77,13 @@ vp exec playwright test     # end-to-end tests, in e2e/ (starts the dev server)
 vp run generate             # the static site, under /nurnet-plus/, in .output/public
 ```
 
-| Where                  | What                                                                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `app/`                 | Pages, components, the map, and the worker that loads the census                                            |
-| `i18n/locales/`        | All UI copy, Italian and English, and the census's translated vocabularies                                  |
-| `public/nurnet-*.json` | The census: index, details, sight lines and translated descriptions                                         |
-| `scripts/`             | The app icons and splash screens (`vp run generate-pwa-assets`), the link-preview image (`vp run og-image`) |
-| `PRODUCT.md`           | Who the app is for, what it promises, and the principles behind it                                          |
+| Where                  | What                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `app/`                 | Pages, components, the map, and the worker that loads the census                                                                                                         |
+| `i18n/locales/`        | All UI copy, Italian and English, and the census's translated vocabularies                                                                                               |
+| `public/nurnet-*.json` | The census: index, details, sight lines and translated descriptions, as [nurnet-dumper](https://github.com/Redemption198/nurnet-dumper#output) writes and describes them |
+| `scripts/`             | The app icons and splash screens (`vp run generate-pwa-assets`), the link-preview image (`vp run og-image`)                                                              |
+| `PRODUCT.md`           | Who the app is for, what it promises, and the principles behind it                                                                                                       |
 
 After a data refresh, run `vp run og-image` so the link preview draws the new sites.
 

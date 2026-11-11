@@ -47,7 +47,7 @@ Una mappa non ufficiale dei siti della Sardegna nuragica: nuraghi, domus de jana
 - **La visibilità tra i nuraghi**, calcolata dal CRS4 sul modello digitale del terreno, tracciata da una torre all'altra.
 - **2D o 3D**, con il rilievo che emerge quando la mappa si inclina.
 - **Indicazioni** apre il sito nella tua app di mappe. Puoi anche condividerlo o copiarne le coordinate.
-- **Offline:** un'app installabile, con i dati dei siti salvati insieme a lei, per i posti dove il segnale non arriva.
+- **Offline:** un'app installabile, con i dati dei siti salvati insieme a lei e la mappa già vista conservata sul dispositivo (fino a circa 100 MB), per i posti dove il segnale non arriva.
 - **Italiano e inglese.** Le descrizioni in inglese sono tradotte automaticamente; un sito la cui traduzione non ha superato i controlli mantiene il testo italiano.
 
 ## Privacy
@@ -77,13 +77,13 @@ vp exec playwright test     # test end-to-end, in e2e/ (avvia da sé il server d
 vp run generate             # il sito statico, sotto /nurnet-plus/, in .output/public
 ```
 
-| Dove                   | Cosa                                                                                                              |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `app/`                 | Pagine, componenti, la mappa e il worker che carica il censimento                                                 |
-| `i18n/locales/`        | Tutti i testi dell'interfaccia, in italiano e inglese, e i vocabolari del censimento tradotti                     |
-| `public/nurnet-*.json` | Il censimento: indice, dettagli, visibilità e descrizioni tradotte                                                |
-| `scripts/`             | Le icone e le schermate d'avvio dell'app (`vp run generate-pwa-assets`), l'anteprima dei link (`vp run og-image`) |
-| `PRODUCT.md`           | Per chi è l'app, cosa promette e i principi che la guidano                                                        |
+| Dove                   | Cosa                                                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`                 | Pagine, componenti, la mappa e il worker che carica il censimento                                                                                                       |
+| `i18n/locales/`        | Tutti i testi dell'interfaccia, in italiano e inglese, e i vocabolari del censimento tradotti                                                                           |
+| `public/nurnet-*.json` | Il censimento: indice, dettagli, visibilità e descrizioni tradotte, come li scrive e li descrive [nurnet-dumper](https://github.com/Redemption198/nurnet-dumper#output) |
+| `scripts/`             | Le icone e le schermate d'avvio dell'app (`vp run generate-pwa-assets`), l'anteprima dei link (`vp run og-image`)                                                       |
+| `PRODUCT.md`           | Per chi è l'app, cosa promette e i principi che la guidano                                                                                                              |
 
 Dopo un aggiornamento dei dati, esegui `vp run og-image` perché l'anteprima dei link disegni i nuovi siti.
 
