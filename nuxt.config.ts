@@ -167,7 +167,7 @@ export default defineNuxtConfig({
     workbox: {
       // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly,
       // the UI's translations (fetched by @nuxtjs/i18n) with it
-      globPatterns: ["**/*.{js,css,html,svg,ico,woff2}", "_i18n/**/messages.json"],
+      globPatterns: ["**/*.{js,mjs,css,html,svg,ico,woff2}", "_i18n/**/messages.json"],
       // No sourcemaps for the service worker, as for the app. vite-plugin-pwa follows the top-level
       // build.sourcemap, which with Vite's environment API (Nuxt 5) is the server build's
       sourcemap: false,
@@ -184,6 +184,47 @@ export default defineNuxtConfig({
           urlPattern: /\/nurnet-descriptions\.[a-z-]+\.json$/,
           handler: "StaleWhileRevalidate",
           options: { cacheName: "nurnet-descriptions" },
+        },
+        // The map as the visitor has seen it, for the field without a connection: about 100 MB
+        // (550 of each kind of tile: ~61 KB a basemap tile, ~119 KB an elevation tile), dropped
+        // after 30 days, and first if the device runs short of storage. The styles' address has
+        // no version: served from the cache and refreshed behind
+        {
+          urlPattern: /^https:\/\/tiles\.openfreemap\.org\/styles\//,
+          handler: "StaleWhileRevalidate",
+          options: {
+            cacheName: "map-styles",
+            cacheableResponse: { statuses: [200] },
+            expiration: { maxEntries: 4 },
+          },
+        },
+        // Tiles, sprites and fonts: their addresses carry a version, a new one comes with a release
+        {
+          urlPattern: /^https:\/\/tiles\.openfreemap\.org\//,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "map-tiles",
+            cacheableResponse: { statuses: [200] },
+            expiration: {
+              maxEntries: 550,
+              maxAgeSeconds: 30 * 24 * 3600,
+              purgeOnQuotaError: true,
+            },
+          },
+        },
+        // Elevation (terrain, hillshading, contour lines): the tiles never change
+        {
+          urlPattern: /^https:\/\/elevation-tiles-prod\.s3\.amazonaws\.com\//,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "elevation-tiles",
+            cacheableResponse: { statuses: [200] },
+            expiration: {
+              maxEntries: 550,
+              maxAgeSeconds: 30 * 24 * 3600,
+              purgeOnQuotaError: true,
+            },
+          },
         },
       ],
     },
