@@ -3,6 +3,7 @@
 import {
   addProtocol,
   type GeoJSONSource,
+  type ExpressionSpecification,
   type MapLibreMap,
   type TransformStyleFunction,
 } from "maplibre-gl";
@@ -37,12 +38,14 @@ const BASEMAP_COLORS: Record<string, [PaintProperty, string]> = {
 // panels (the sand token, dark), a deep sea that still reads as water (1.6:1 on the ground),
 // warm roads in the panels' basalt, and town names in the muted text colour (8:1)
 const ROAD = "#5a4a44";
+// Names of the sea, lakes and rivers: a light blue on the deep sea's colour, darker
+const WATER_NAME_DARK = { "text-color": "#7d9bb0", "text-halo-color": "#1d2a33" };
 const LABEL_HALO = "rgba(29, 24, 25, 0.85)";
 const BASEMAP_DARK: Record<string, Partial<Record<PaintProperty, string>>> = {
   background: { "background-color": BRAND_DARK.sand },
   water: { "fill-color": "#253f52" },
   waterway: { "line-color": "#253f52" },
-  water_name: { "text-color": "#7d9bb0", "text-halo-color": "#1d2a33" },
+  water_name: WATER_NAME_DARK,
   landcover_ice_shelf: { "fill-color": BRAND_DARK.sand },
   landcover_glacier: { "fill-color": BRAND_DARK.sand },
   landuse_residential: { "fill-color": "#241e1f" },
@@ -94,6 +97,50 @@ export function warmBasemap(ml: MapLibreMap, dark: boolean) {
   // The dark style draws the water first, under the land's fills (opaque parks): moved over
   // them, as in the light style, it can cover the relief and the contour lines drawn under it
   if (ml.getLayer("water") && ml.getLayer("waterway")) ml.moveLayer("water", "waterway");
+
+  // The dark style names only gulfs and lakes drawn as lines: the names of rivers and of the sea
+  // and lakes drawn as points (Lago Omodeo), as the light style places them, in the dark style's
+  // water names' look. Under its labels, so the sites still win where they meet
+  if (!ml.getLayer("water_name")) return;
+  const look = {
+    layout: { "text-field": LOCALIZED_NAME, "text-font": labelFont(ml), "text-max-width": 5 },
+    paint: WATER_NAME_DARK,
+  };
+  if (!ml.getLayer("waterway_name"))
+    ml.addLayer(
+      {
+        id: "waterway_name",
+        type: "symbol",
+        source: "openmaptiles",
+        "source-layer": "waterway",
+        minzoom: 10,
+        filter: ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+        layout: {
+          ...look.layout,
+          "symbol-placement": "line",
+          "symbol-spacing": 350,
+          "text-size": 12,
+        },
+        paint: look.paint,
+      },
+      "water_name",
+    );
+  if (!ml.getLayer("water_name_point"))
+    ml.addLayer(
+      {
+        id: "water_name_point",
+        type: "symbol",
+        source: "openmaptiles",
+        "source-layer": "water_name",
+        filter: ["match", ["geometry-type"], ["MultiPoint", "Point"], true, false],
+        layout: {
+          ...look.layout,
+          "text-size": ["interpolate", ["linear"], ["zoom"], 0, 10, 8, 13],
+        },
+        paint: look.paint,
+      },
+      "water_name",
+    );
 }
 
 // The elevation tiles, fetched and kept once (maplibre-contour's DemSource, in a worker) for the
@@ -276,7 +323,7 @@ export const keepOurSources: TransformStyleFunction = (previous, next) => ({
 // instead. The language is the map's global state "locale" (TheMap), so switching it doesn't
 // touch the style, only the labels
 const ENGLISH_NAME = JSON.stringify(["coalesce", ["get", "name_en"], ["get", "name"]]);
-const LOCALIZED_NAME = [
+const LOCALIZED_NAME: ExpressionSpecification = [
   "case",
   ["==", ["global-state", "locale"], "en"],
   ["coalesce", ["get", "name_en"], ["get", "name"]],
