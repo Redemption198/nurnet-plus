@@ -47,6 +47,12 @@
   }
 }
 
+/* Light mode's browser surfaces (scrollbars, form controls), also on a dark system when the
+   visitor chose light: the page declares both themes (<meta name="color-scheme">) */
+.light {
+  color-scheme: light;
+}
+
 /* Dark mode, following the system (Nuxt UI's color mode puts .dark on <html>): the same names,
    flipped. Basalt stays the text colour, so it turns light; the panels turn to a warm near-black.
    Unlayered, so it wins over Nuxt UI's own .dark variables */

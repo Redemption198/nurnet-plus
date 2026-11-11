@@ -191,6 +191,9 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      // Both themes, so the browser draws its first, empty canvas dark on a dark system, before
+      // the styles arrive (tailwind.css then sets the theme's own color-scheme on <html>)
+      meta: [{ name: "color-scheme", content: "light dark" }],
       link: [
         // The index (list, search, map) starts downloading with the page, not once the app and its
         // data worker are up
