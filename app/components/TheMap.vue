@@ -38,8 +38,15 @@ const styleUrl = () => STYLE_URLS[isDark.value ? "dark" : "light"];
 const pois = () => props.pois;
 const sightLines = useSightLines(mlMap, pois);
 const sites = useMapSites(mlMap, pois, () => sightLines.visibleSites().map((entry) => entry.i));
-const { toMapPadding, forgetFraming, zoomBy, showOpenedSite, flyToVisitor, cameraForTilt } =
-  useMapCamera(mlMap, pois, is3D);
+const {
+  toMapPadding,
+  applyPadding,
+  forgetFraming,
+  zoomBy,
+  showOpenedSite,
+  flyToVisitor,
+  cameraForTilt,
+} = useMapCamera(mlMap, pois, is3D);
 
 let stopWatchingResolution: (() => void) | undefined;
 // What the map sets up outside the component's own lifetime (after its "load", in callbacks), to
@@ -99,7 +106,8 @@ function toggle3D() {
   const tilt = !is3D.value;
   is3D.value = tilt;
   const pitch = tilt ? 60 : 0;
-  const bearing = tilt ? ml.getBearing() : 0;
+  // Only the tilt changes: the visitor's rotation stays, both ways (the compass turns north up)
+  const bearing = ml.getBearing();
   // A network the map framed, untouched since: frame it again for the new tilt
   const camera = sightLines.visibleSites().length ? cameraForTilt(pitch, bearing) : null;
   ml.easeTo({ ...camera, pitch, bearing, duration: 800 });
@@ -181,6 +189,8 @@ onMounted(() => {
     return;
   }
   mlMap.value = ml;
+  // The drawer's padding, which it reported before the map existed (applyPadding)
+  applyPadding();
   // The camera is set from the start (bounds above): the list can follow it now, rather than once
   // the basemap's style has come from OpenFreeMap
   publishView(ml);

@@ -157,13 +157,17 @@ export function useMapCamera(
     return cameraForPlaces(ml, framedPoints, fitPadding(), FIT_MAX_ZOOM, pitch, bearing);
   }
 
+  // The area the drawer and the controls cover, as the map's padding: whenever the drawer moves,
+  // and once right after the map is created (the drawer reports its size before there is a map).
+  // The map turns and tilts around the middle of its padded area, which must be the middle of
+  // what is visible, not of the whole screen, partly under the drawer.
   // Changing the padding is a camera move: it would cancel the inertia of a pan in progress (the
   // drawer collapses as soon as the user pans), so wait for the map to stop. It is applied without
   // moving what is on screen: the point now in the middle of the new visible area becomes the
   // centre. Then, if the map still shows what it framed (the visitor hasn't moved it since), that
   // is framed again in the new visible area, alongside the drawer: a network framed above the
   // drawer in the middle spreads out over the map when the drawer goes down, and the reverse
-  watch(mapPadding, () => {
+  function applyPadding() {
     const ml = map.value;
     if (!ml) return;
     const apply = () => {
@@ -183,7 +187,8 @@ export function useMapCamera(
     };
     if (ml.isMoving()) ml.once("moveend", apply);
     else apply();
-  });
+  }
+  watch(mapPadding, applyPadding);
 
   // "Mostra sulla mappa" and friends: frame the requested area in the part the drawer leaves visible
   watch(mapFitBounds, async (request) => {
@@ -224,6 +229,7 @@ export function useMapCamera(
 
   return {
     toMapPadding,
+    applyPadding,
     forgetFraming,
     zoomBy,
     showOpenedSite,
