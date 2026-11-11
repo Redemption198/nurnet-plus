@@ -189,6 +189,9 @@ onMounted(() => {
     return;
   }
   mlMap.value = ml;
+  // The e2e specs read the map through geowright; dev builds only, nothing of it ships
+  if (import.meta.dev)
+    ((window as { __geowright_maps?: Record<string, unknown> }).__geowright_maps ??= {}).main = ml;
   // The drawer's padding, which it reported before the map existed (applyPadding)
   applyPadding();
   // The camera is set from the start (bounds above): the list can follow it now, rather than once

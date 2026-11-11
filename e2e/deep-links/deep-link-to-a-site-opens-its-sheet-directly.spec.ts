@@ -2,6 +2,7 @@
 // seed: e2e/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
+import { geowright, expect as expectMap } from "geowright";
 
 test.describe("URL and deep-link state", () => {
   test("Deep link to a site opens its sheet directly", async ({ page }) => {
@@ -20,6 +21,11 @@ test.describe("URL and deep-link state", () => {
       "/nurnet-plus/",
     );
     await expect(page.locator("canvas.maplibregl-canvas")).toBeVisible();
+    // On the map too: the site's pin
+    await expectMap(geowright(page)).toHaveFeature({
+      layer: "poi-selected",
+      where: { content_id: "NUR5023" },
+    });
 
     // Page title includes the site name
     await expect(page).toHaveTitle(/Casa Zapata e Nuraxi 'e Cresia/);

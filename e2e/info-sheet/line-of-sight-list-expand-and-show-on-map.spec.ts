@@ -2,6 +2,7 @@
 // seed: e2e/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
+import { geowright, expect as expectMap } from "geowright";
 
 test.describe("Site info sheet", () => {
   test("Line-of-sight list: expand and show on map", async ({ page }) => {
@@ -19,6 +20,8 @@ test.describe("Site info sheet", () => {
     // 2. Click 'Mostra sulla mappa'
     await visibility.getByRole("button", { name: "Mostra sulla mappa" }).click();
     await expect(page.getByRole("list", { name: "Legenda delle linee di vista" })).toBeVisible();
+    // The sites it sees, as dots at the ends of the lines on the map
+    await expectMap(geowright(page)).toHaveFeature({ layer: "visibility-ends" });
 
     // 3. Click the first visible site 'Su Nuraxi'
     await visibility.getByRole("link", { name: /^Su Nuraxi/ }).click();
