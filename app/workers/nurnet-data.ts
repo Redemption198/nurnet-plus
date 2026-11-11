@@ -1,9 +1,25 @@
 // The data worker's pure logic: parsing the data files, search normalisation, line of sight.
 // Kept apart from the worker's messaging so it can be tested directly
 
+// A value per site, of a field whose values repeat: the values once, and each site's index
+interface Values<T> {
+  values: T[];
+  of: number[];
+}
+
+// One array per field, in site order (nurnet-dumper's index-file.ts): the ids as the
+// differences between them (sorted), without their prefix; the coordinates in
+// hundred-thousandths of a degree
 export interface IndexFile {
-  // content_id, category_id, name, comune, localita, regione, lon, lat
-  rows: [string, string | null, string, string, string, string, number, number][];
+  idPrefix: string;
+  ids: number[];
+  category: Values<string | null>;
+  name: string[];
+  comune: Values<string>;
+  localita: Values<string>;
+  regione: Values<string>;
+  lon: number[];
+  lat: number[];
 }
 
 export interface DetailsFile {
@@ -24,15 +40,20 @@ export interface VisibilityFile {
 }
 
 export function parseIndex(index: IndexFile): NurnetPOI[] {
-  return index.rows.map(([content_id, category_id, name, comune, localita, regione, lon, lat]) => ({
-    content_id,
-    category_id,
-    name,
-    comune,
-    localita,
-    regione,
-    coordinates: [lon, lat],
-  }));
+  const value = <T>(field: Values<T>, i: number) => field.values[field.of[i]!]!;
+  let id = 0;
+  return index.ids.map((difference, i) => {
+    id += difference;
+    return {
+      content_id: `${index.idPrefix}${id}`,
+      category_id: value(index.category, i),
+      name: index.name[i]!,
+      comune: value(index.comune, i),
+      localita: value(index.localita, i),
+      regione: value(index.regione, i),
+      coordinates: [index.lon[i]! / 1e5, index.lat[i]! / 1e5],
+    };
+  });
 }
 
 // Case, accents and apostrophe variants don't matter: "canne" finds "Cann'e"

@@ -6,9 +6,10 @@
 import { describe, expect, it } from "vite-plus/test";
 import indexJson from "../public/nurnet-index.json?raw";
 import detailsJson from "../public/nurnet-details.json?raw";
+import { parseIndex, type IndexFile } from "../app/workers/nurnet-data";
 
 type Text = string | number | null | undefined;
-const index: { fields: string[]; rows: Text[][] } = JSON.parse(indexJson);
+const sites = parseIndex(JSON.parse(indexJson) as IndexFile);
 const details: { sites: Record<string, Record<string, Text>> } = JSON.parse(detailsJson);
 
 const TEXT_FIELDS = ["name", "comune", "localita", "regione"];
@@ -28,11 +29,11 @@ const translations = Object.entries(
 
 // Every text field of every site, as [content_id, field, text]
 const texts: [string, string, string][] = [
-  ...index.rows.flatMap((row) =>
+  ...sites.flatMap((site) =>
     TEXT_FIELDS.map((field): [string, string, string] => [
-      String(row[0]),
+      site.content_id,
       field,
-      String(row[index.fields.indexOf(field)] ?? ""),
+      String(site[field as keyof typeof site] ?? ""),
     ]),
   ),
   ...Object.entries(details.sites).flatMap(([id, site]) =>

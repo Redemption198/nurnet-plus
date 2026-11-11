@@ -34,6 +34,7 @@ export type WorkerReply =
   | { type: "visible"; requestId: number; result: VisibleSite[] | null };
 
 let miniSearch: MiniSearch<{ i: number }> | undefined;
+const byName = new Intl.Collator("it");
 let items: NurnetPOI[] = [];
 let urls: { details: string; visibility: string } | undefined;
 // Each is fetched once; a failed load is forgotten so the next request tries again
@@ -130,8 +131,13 @@ async function load({
 async function answer(request: Exclude<WorkerRequest, { type: "load" | "load-details" }>) {
   const { requestId } = request;
   if (request.type === "search") {
+    // Best match first; equal ones (all the sites of a comune, for its name) A to Z, not in the
+    // data file's order
     const result = miniSearch
-      ? miniSearch.search(request.query).map((match) => match.id as number)
+      ? miniSearch
+          .search(request.query)
+          .sort((a, b) => b.score - a.score || byName.compare(items[a.id]!.name, items[b.id]!.name))
+          .map((match) => match.id as number)
       : [];
     reply({ type: "search", requestId, result });
   } else if (request.type === "details") {

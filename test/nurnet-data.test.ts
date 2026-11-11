@@ -10,15 +10,21 @@ import {
 } from "../app/workers/nurnet-data";
 
 const index = parseIndex({
-  rows: [
-    ["NUR1", "10", "Nuraghe Losa", "Abbasanta", "", "Guilcer", 8.8018, 40.0703],
-    ["NUR2", "10", "Nuraghe Izzi", "Abbasanta", "", "Guilcer", 8.815, 40.071],
-    ["NUR3", "30", "Domus de janas", "Ghilarza", "", "Guilcer", 8.85, 40.12],
-  ],
+  idPrefix: "NUR",
+  ids: [1, 1, 1],
+  category: { values: ["10", "30"], of: [0, 0, 1] },
+  name: ["Nuraghe Losa", "Nuraghe Izzi", "Domus de janas"],
+  comune: { values: ["Abbasanta", "Ghilarza"], of: [0, 0, 1] },
+  localita: { values: [""], of: [0, 0, 0] },
+  regione: { values: ["Guilcer"], of: [0, 0, 0] },
+  lon: [880180, 881500, 885000],
+  lat: [4007030, 4007100, 4012000],
 });
 
 describe("parseIndex", () => {
-  it("turns rows into sites with [lon, lat]", () => {
+  it("rebuilds the ids and the sites' values, with [lon, lat] in degrees", () => {
+    expect(index.map((site) => site.content_id)).toEqual(["NUR1", "NUR2", "NUR3"]);
+    expect(index[2]!.comune).toBe("Ghilarza");
     expect(index[0]).toEqual({
       content_id: "NUR1",
       category_id: "10",
