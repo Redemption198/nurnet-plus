@@ -44,14 +44,17 @@ const descriptions = new Map<string, Promise<DescriptionsFile>>();
 
 const reply = (message: WorkerReply) => self.postMessage(message);
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
+async function fetchJson<T>(url: string, priority?: RequestPriority): Promise<T> {
+  const response = await fetch(url, { priority });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json() as Promise<T>;
 }
 
-function loadDetails() {
-  details ??= fetchJson<DetailsFile>(urls!.details).then(
+// `prefetch`: asked for ahead of need (load-details), at low priority so it yields to the map's
+// tiles and to what the visitor asks for meanwhile. A site opened first fetches it at the usual
+// priority; once started, the download keeps the priority it began with
+function loadDetails(prefetch = false) {
+  details ??= fetchJson<DetailsFile>(urls!.details, prefetch ? "low" : undefined).then(
     (file) => (detailsLoaded = file),
     (error: unknown) => {
       details = undefined;
@@ -159,6 +162,6 @@ async function answer(request: Exclude<WorkerRequest, { type: "load" | "load-det
 
 self.onmessage = ({ data }: MessageEvent<WorkerRequest>) => {
   if (data.type === "load") void load(data);
-  else if (data.type === "load-details") void loadDetails().catch(() => {});
+  else if (data.type === "load-details") void loadDetails(true).catch(() => {});
   else void answer(data);
 };
