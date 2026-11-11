@@ -10,7 +10,7 @@ const props = defineProps<{ pois: NurnetPOI[] }>();
 
 const route = useRoute();
 const isHome = useIsHome();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const site = useCurrentSite();
 const { openPOI, prefetchDetails } = useNurnetData();
@@ -170,6 +170,9 @@ onMounted(() => {
       // The map credits (OpenFreeMap, OpenMapTiles, OpenStreetMap, Terrain Tiles) are in the
       // "Informazioni" sheet, opened from the NurNet+ (i) button on the map / top of the drawer
       attributionControl: false,
+      // The basemap's names in the app's language (localizeLabels), set before the style is used
+      transformStyle: localizeLabels,
+      globalState: { locale: locale.value },
     });
   } catch (error) {
     // e.g. WebGL is unavailable or disabled
@@ -234,7 +237,11 @@ onMounted(() => {
         const putOursBack = () => void addOurLayers();
         const before = ml.style;
         ml.once("style.load", putOursBack);
-        ml.setStyle(style, { diff: true, transformStyle: keepOurSources });
+        ml.setStyle(style, {
+          diff: true,
+          transformStyle: (previous, next) =>
+            keepOurSources(previous, localizeLabels(previous, next)),
+        });
         if (ml.style === before) {
           ml.off("style.load", putOursBack);
           putOursBack();
@@ -258,6 +265,14 @@ onMounted(() => {
     }
     // Registered here, after the component's setup: in a scope of its own, stopped on unmount
     lateEffects.run(() => watch(isDark, () => void showStyle()));
+    // The basemap's names follow the app's language (localizeLabels), also if it changed while
+    // the map was loading
+    const showLocale = () => {
+      if (ml.getGlobalState().locale !== locale.value)
+        ml.setGlobalStateProperty("locale", locale.value);
+    };
+    showLocale();
+    lateEffects.run(() => watch(locale, showLocale));
 
     // A site opened from its URL before the map was ready: raise the drawer and show it
     if (!isHome.value && site.value) {

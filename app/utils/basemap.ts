@@ -156,6 +156,40 @@ export const keepOurSources: TransformStyleFunction = (previous, next) => ({
   layers: [...next.layers, ...(previous?.layers.filter((layer) => layer.id === "me") ?? [])],
 });
 
+// The basemap's names in the app's language. OpenFreeMap's styles write a place's English name
+// where it has one (name_en), whatever the language: in Italian the place's own name (name)
+// instead. The language is the map's global state "locale" (TheMap), so switching it doesn't
+// touch the style, only the labels
+const ENGLISH_NAME = JSON.stringify(["coalesce", ["get", "name_en"], ["get", "name"]]);
+const LOCALIZED_NAME = [
+  "case",
+  ["==", ["global-state", "locale"], "en"],
+  ["coalesce", ["get", "name_en"], ["get", "name"]],
+  ["get", "name"],
+];
+const localizeName = (value: unknown): unknown =>
+  JSON.stringify(value) === ENGLISH_NAME
+    ? LOCALIZED_NAME
+    : Array.isArray(value)
+      ? value.map(localizeName)
+      : value;
+export const localizeLabels: TransformStyleFunction = (_previous, next) => ({
+  ...next,
+  layers: next.layers.map((layer) =>
+    layer.type === "symbol" && layer.layout?.["text-field"]
+      ? {
+          ...layer,
+          layout: {
+            ...layer.layout,
+            "text-field": localizeName(
+              layer.layout["text-field"],
+            ) as (typeof layer.layout)["text-field"],
+          },
+        }
+      : layer,
+  ),
+});
+
 // The visitor's position: a blue dot, moved there if it's already on the map
 export function showVisitorDot(ml: MapLibreMap, here: [number, number]) {
   const data: FeatureCollection<Point> = {
