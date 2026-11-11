@@ -7,6 +7,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
+  // The dev server serves a page's modules one by one the first time a browser opens it: with
+  // two workers running, the first site page took up to 8 s to open (the built site loads it as
+  // one prefetched chunk), past expect's default 5 s, and a whole spec past the default 30 s
+  expect: { timeout: 15_000 },
+  timeout: 60_000,
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
