@@ -35,7 +35,12 @@ watch(
   { immediate: true },
 );
 
-const poi = computed(() => (site.value?.content_id === route.params.id ? site.value : null));
+// The site the URL names. A site opened from the app is open a frame before its URL is: until then
+// the one before stays, rather than an empty drawer flashing between the two
+let shown: typeof site.value = null;
+const poi = computed(() =>
+  site.value?.content_id === route.params.id ? (shown = site.value) : shown,
+);
 
 // The description in the UI's language where it has been machine translated, else the census's
 // Italian; the visitor can switch to the original and back (each site opens on the translation).
@@ -162,7 +167,7 @@ const { y: contentY } = useScroll(scroller);
     <!-- The strip's space while the details load, so the page doesn't jump -->
     <div
       v-else-if="poi.detailsStatus === 'loading'"
-      class="flex gap-x-3 overflow-hidden px-4 pb-4"
+      class="flex gap-x-3 overflow-hidden px-4 pb-4 appear-late"
       role="status"
       :aria-label="t('site.loadingDetails')"
     >

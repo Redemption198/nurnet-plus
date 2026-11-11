@@ -144,3 +144,15 @@
     display: none;
   }
 }
+
+/* A loading placeholder that keeps its space but shows only if the wait is long enough to notice:
+   from a site to the next the details come in a frame or two, and a skeleton then would just flash */
+@utility appear-late {
+  animation: appear-late 150ms 300ms both;
+}
+
+@keyframes appear-late {
+  from {
+    opacity: 0;
+  }
+}

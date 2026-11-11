@@ -101,7 +101,7 @@ function onBlur() {
 
     <div
       v-if="site.visibleStatus === 'loading'"
-      class="-mx-4 flex flex-col"
+      class="-mx-4 flex flex-col appear-late"
       role="status"
       :aria-label="t('visibility.loading')"
     >
