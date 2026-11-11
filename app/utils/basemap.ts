@@ -91,6 +91,9 @@ export function warmBasemap(ml: MapLibreMap, dark: boolean) {
     for (const [property, color] of Object.entries(paint ?? {}))
       ml.setPaintProperty(layer.id, property as PaintProperty, color);
   }
+  // The dark style draws the water first, under the land's fills (opaque parks): moved over
+  // them, as in the light style, it can cover the relief and the contour lines drawn under it
+  if (ml.getLayer("water") && ml.getLayer("waterway")) ml.moveLayer("water", "waterway");
 }
 
 // The elevation tiles, fetched and kept once (maplibre-contour's DemSource, in a worker) for the
@@ -125,10 +128,11 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
       attribution: TERRAIN_ATTRIBUTION,
     });
 
-  // Hillshading goes under the first label layer so text stays on top. On the dark map it goes
-  // under the sea: the seabed's relief, lit, glowed brighter than the island's
+  // Hillshading goes under the water: the elevation tiles have relief under the sea and lakes too
+  // (the seabed lit, a lake's uneven surface shaded), which the water hides. Under the first
+  // label layer, so text stays on top, if the style has no water
   const firstSymbolLayer = ml.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
-  const below = dark && ml.getLayer("water") ? "water" : firstSymbolLayer;
+  const below = ml.getLayer("water") ? "water" : firstSymbolLayer;
   ml.addLayer(
     {
       id: "hillshade",
@@ -206,6 +210,8 @@ export function addContours(ml: MapLibreMap, dark: boolean) {
 
   const color = dark ? BRAND_DARK.basalt : BRAND.basalt;
   const below = ml.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+  // The lines under the water: a lake's surface in the elevation tiles isn't flat, and where it
+  // lies near a contour's height its ripples drew closed loops all over the lake
   ml.addLayer(
     {
       id: "contours",
@@ -219,7 +225,7 @@ export function addContours(ml: MapLibreMap, dark: boolean) {
         "line-width": ["match", ["get", "level"], 1, 1, 0.6],
       },
     },
-    below,
+    ml.getLayer("water") ? "water" : below,
   );
   ml.addLayer(
     {
