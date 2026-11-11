@@ -134,14 +134,25 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
       id: "hillshade",
       type: "hillshade",
       source: "terrain",
-      // Shadows in a warm basalt grey, not the default slate, so the relief stays in the palette
-      paint: dark
-        ? {
-            "hillshade-exaggeration": 0.4,
-            "hillshade-shadow-color": "#0e0a0b",
-            "hillshade-highlight-color": "rgba(241, 233, 220, 0.1)",
-          }
-        : { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#4d413e" },
+      // Lit from four directions (west to north-east), so slopes facing any way read, not only
+      // those away from a single north-west light. Shadows in a warm basalt grey, not the default
+      // slate, so the relief stays in the palette
+      paint: {
+        "hillshade-method": "multidirectional",
+        "hillshade-illumination-direction": [270, 315, 0, 45],
+        "hillshade-illumination-altitude": [30, 30, 30, 30],
+        ...(dark
+          ? {
+              "hillshade-exaggeration": 0.25,
+              "hillshade-shadow-color": Array(4).fill("#0e0a0b"),
+              "hillshade-highlight-color": Array(4).fill("rgba(241, 233, 220, 0.1)"),
+            }
+          : {
+              "hillshade-exaggeration": 0.2,
+              "hillshade-shadow-color": Array(4).fill("#4d413e"),
+              "hillshade-highlight-color": Array(4).fill("rgba(255, 252, 245, 0.35)"),
+            }),
+      },
     },
     below,
   );
