@@ -168,6 +168,12 @@ export default defineNuxtConfig({
       // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly,
       // the UI's translations (fetched by @nuxtjs/i18n) with it
       globPatterns: ["**/*.{js,mjs,css,html,svg,ico,woff2}", "_i18n/**/messages.json"],
+      // Any other address opened (a site's link, /en/poi/NUR3551/) gets the bare app shell, which
+      // opens what the URL names. The default, the prerendered home page, carried the home's own
+      // render: the app booted as the home and replaced a shared site's URL with the map's.
+      // The prerendered pages are precached under their own addresses and served as they are.
+      // Named as the precache lists it, without .html (GitHub Pages serves /200 from 200.html)
+      navigateFallback: `${baseURL}200`,
       // No sourcemaps for the service worker, as for the app. vite-plugin-pwa follows the top-level
       // build.sourcemap, which with Vite's environment API (Nuxt 5) is the server build's
       sourcemap: false,
