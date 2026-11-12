@@ -212,14 +212,15 @@ export function addTerrain(ml: MapLibreMap, dark: boolean) {
   ml.setTerrain({ source: "terrain", exaggeration: 1.5 });
   // In 3D: a soft Mediterranean sky, and a horizon and haze of warm limestone (the map's sand,
   // lighter), so the distance fades into the palette rather than into a cool grey
-  // (in dark mode: a night sky, and a haze of the dark map's own ground)
+  // (in dark mode: a night sky, and a haze of the dark map's own ground). The haze only near the
+  // horizon: from 40% of the way there it washed out the far half of a tilted map
   ml.setSky({
     "sky-color": dark ? "#14181f" : "#b3d3e0",
     "horizon-color": dark ? "#221c1d" : "#f3ece1",
     "sky-horizon-blend": 0.5,
-    "horizon-fog-blend": 0.6,
+    "horizon-fog-blend": 0.3,
     "fog-color": dark ? BRAND_DARK.sand : "#efe6d8",
-    "fog-ground-blend": 0.4,
+    "fog-ground-blend": 0.9,
   });
 }
 

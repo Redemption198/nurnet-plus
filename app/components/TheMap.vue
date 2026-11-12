@@ -224,6 +224,11 @@ onMounted(() => {
     sightLines.update();
     // The location dot, kept by the switch, back above them all
     if (ml.getLayer("me")) ml.moveLayer("me");
+    // Tilted, the distance is drawn from coarser tiles: MapLibre's default (4 zoom levels on
+    // screen) left the land beyond a few kilometres bare, towns as names on blank sand. Fewer
+    // levels and more tiles keep its roads and places, at the cost of more tiles when steeply
+    // tilted. It applies to the sources there now, so again after the switch
+    ml.setSourceTileLodParams(2.5, 6);
   }
 
   ml.on("load", async () => {
