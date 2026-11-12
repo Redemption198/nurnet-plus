@@ -75,6 +75,7 @@ vp run typecheck            # vue-tsc
 vp test                     # unit tests, in test/
 vp exec playwright test     # end-to-end tests, in e2e/ (starts the dev server)
 vp run generate             # the static site, under /nurnet-plus/, in .output/public
+vp run e2e-built            # end-to-end tests of that build served as GitHub Pages serves it, in e2e-built/
 ```
 
 | Where                  | What                                                                                                                                                                     |

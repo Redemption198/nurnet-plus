@@ -5,6 +5,19 @@ import { BRAND } from "./app/utils/brand.ts";
 
 const baseURL = process.env.NUXT_APP_BASE_URL ?? "/";
 
+// Every site's address, in each language, prerendered with its own title, description and photo
+// (plugins/site-head.server.ts): link previews read the HTML at the address and run no script. Without them
+// GitHub Pages answered a shared link with 404.html and the home page's generic tags
+// The ids as the index stores them: the differences between them, after a prefix (parseIndex)
+const { idPrefix, ids } = JSON.parse(
+  readFileSync(new URL("./public/nurnet-index.json", import.meta.url), "utf8"),
+) as { idPrefix: string; ids: number[] };
+let lastId = 0;
+const siteRoutes = ids.flatMap((difference) => {
+  const id = `${idPrefix}${(lastId += difference)}`;
+  return [`/poi/${id}/`, `/en/poi/${id}/`];
+});
+
 // Offline cache entry for a data file, versioned by its content: a data refresh gets a new
 // revision, so installed apps download it (revision null would mean "never changes")
 function dataFileEntry(file: string) {
@@ -50,6 +63,10 @@ export default defineNuxtConfig({
     // useRuntimeConfig from #imports (its rewrite to an explicit import misses the call in
     // runtime/shared/utils.js), and the build fails without them
     nitroAutoImports: true,
+    // No _payload.json beside each page (Nuxt 5's 'client' still writes them, for navigating in
+    // the app): their state is empty, the app loads its data itself, so with a page for every
+    // site they were 15,000 files of 69 bytes, and a request for one each time a site opened
+    payloadExtraction: false,
   },
 
   // Development only: axe-core accessibility checks, logged to the console and DevTools
@@ -168,6 +185,9 @@ export default defineNuxtConfig({
       // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly,
       // the UI's translations (fetched by @nuxtjs/i18n) with it
       globPatterns: ["**/*.{js,mjs,css,html,svg,ico,woff2}", "_i18n/**/messages.json"],
+      // Never the ~15,000 site pages (siteRoutes, for link previews): precached, they would be the
+      // whole download
+      globIgnores: ["**/node_modules/**", "poi/*/**", "en/poi/*/**"],
       // Any other address opened (a site's link, /en/poi/NUR3551/) gets the bare app shell, which
       // opens what the URL names. The default, the prerendered home page, carried the home's own
       // render: the app booted as the home and replaced a shared site's URL with the map's.
@@ -259,6 +279,7 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
+      routes: siteRoutes,
       // The index's preload link (app.head above) is a file from public/, copied as it is: not a
       // page for the crawler to render, where it would 404 and fail the build
       ignore: [`${baseURL}nurnet-index.json`],

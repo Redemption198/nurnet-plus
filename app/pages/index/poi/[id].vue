@@ -55,25 +55,14 @@ const descriptionText = computed(() =>
   translated.value ? poi.value?.translatedDescription : poi.value?.description,
 );
 watch(locale, reloadDetails);
-const category = computed(() => categoryOf(poi.value?.category_id));
 const status = computed(() => statusOf(poi.value?.stato));
 
 // Tab title and link previews: "Nuraghe Losa · NurNet+" (the site name comes from the title
-// template), "Nuraghe complesso ad Abbasanta…". The census's typology, in the UI's language
+// template), "Nuraghe complesso ad Abbasanta…" (utils/siteMeta, as the prerendered site pages)
 const term = useCensusTerm();
-const place = computed(() => [poi.value?.comune, poi.value?.regione].filter(Boolean).join(", "));
-const kind = computed(() => {
-  if (!poi.value) return "";
-  const typology = poi.value.typology;
-  return typology ? term("typology", typology) : t(`categories.${category.value.key}`);
-});
-const description = computed(() => {
-  if (!poi.value) return undefined;
-  if (!place.value) return t("site.meta", { kind: kind.value });
-  // "ad Abbasanta", "a Barumini"
-  const key = /^a/i.test(place.value) ? "site.metaInPlaceStartingWithA" : "site.metaInPlace";
-  return t(key, { kind: kind.value, place: place.value });
-});
+const place = computed(() => (poi.value ? sitePlace(poi.value) : ""));
+const kind = computed(() => (poi.value ? siteKind(poi.value, t, term) : ""));
+const description = computed(() => (poi.value ? siteDescription(poi.value, t, term) : undefined));
 useSeoMeta({
   title: () => poi.value?.name,
   ogTitle: () => poi.value?.name,

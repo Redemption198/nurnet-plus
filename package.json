@@ -8,6 +8,7 @@
     "generate": "NUXT_APP_BASE_URL=/nurnet-plus/ nuxt generate",
     "generate-pwa-assets": "vpx scripts/pwa-assets/build.ts",
     "og-image": "vpx scripts/og-image/build.ts",
+    "e2e-built": "playwright test -c playwright.built.config.ts",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
     "postinstall": "nuxt prepare",

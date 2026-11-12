@@ -28,12 +28,18 @@ useSeoMeta({ ogLocale: () => localeProperties.value.language?.replace("-", "_") 
 
 const asset = (file: string) => `${config.app.baseURL}pwa/${file}`;
 
-// iOS launch screens (utils/splashScreens.ts), one per device size and orientation
-const splashLinks = SPLASH_SCREENS.map(({ file, media }) => ({
-  rel: "apple-touch-startup-image" as const,
-  href: asset(file),
-  media,
-}));
+// iOS launch screens (utils/splashScreens.ts), one per device size and orientation. Not in the
+// ~15,000 pages prerendered for the sites (a third of each, for an app that starts from the home):
+// in the browser they're added there too, once the app starts
+const route = useRoute();
+const splashLinks =
+  import.meta.server && "id" in route.params
+    ? []
+    : SPLASH_SCREENS.map(({ file, media }) => ({
+        rel: "apple-touch-startup-image" as const,
+        href: asset(file),
+        media,
+      }));
 
 // The browser and status bars take the map's sand colour, light or dark. Following the system,
 // a pair by media query: right from the first paint of the prerendered page. With the visitor's

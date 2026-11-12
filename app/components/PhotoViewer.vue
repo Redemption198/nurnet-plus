@@ -23,8 +23,8 @@ const chrome = useTemplateRef("chrome");
 const loaded = ref(new Set<number>());
 const failed = ref(new Set<number>());
 
-// The Mediateca's originals: the URLs we have are WordPress thumbnails ("-300x300")
-const fullSize = (url: string) => url.replace(/-\d+x\d+(?=\.\w+$)/, "");
+// The Mediateca's originals at full size (utils/siteMeta)
+const fullSize = fullSizePhoto;
 
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const OPEN = { duration: 420, easing: "cubic-bezier(0.16, 1, 0.3, 1)" };
