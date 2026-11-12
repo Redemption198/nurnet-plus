@@ -168,7 +168,10 @@ onMounted(() => {
         [9.85, 41.3],
       ],
       fitBoundsOptions: { padding: toMapPadding(mapPadding.value.map((p) => p + 24)) },
-      maxPitch: 75,
+      // MapLibre draws no ground beyond 85° from straight down: above that it paints the sky, with
+      // the basemap's far labels (Corsica's towns) floating in it. The view reaches ~18° above
+      // its centre, so tilting past ~66° brought that horizon on screen, in any drawer position
+      maxPitch: 65,
       // A longer glide after a fling, closer to iOS maps (MapLibre's default deceleration is 2500)
       dragPan: { linearity: 0.3, maxSpeed: 2000, deceleration: 1800 },
       // Rotating and tilting with the mouse (right button or Control + drag) turn the map around
