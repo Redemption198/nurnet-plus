@@ -3,7 +3,7 @@ import { en, it } from "@nuxt/ui/locale";
 
 const config = useRuntimeConfig();
 
-const { locale, locales, localeProperties } = useI18n();
+const { t, locale, locales, localeProperties } = useI18n();
 
 // Nuxt UI's own words (a toast's close button, a modal's) in the UI's language
 const UI_LOCALES = { it, en };
@@ -24,22 +24,33 @@ const hreflangLinks = computed(() => [
   })),
   { rel: "alternate" as const, hreflang: "x-default", href: absoluteUrl(switchLocalePath("it")) },
 ]);
-useSeoMeta({ ogLocale: () => localeProperties.value.language?.replace("-", "_") });
+// One of the ~15,000 pages prerendered for the sites, whose head is the site's own
+// (plugins/site-head.server.ts)
+const route = useRoute();
+const sitePage = import.meta.server && "id" in route.params;
+
+useSeoMeta({
+  ogLocale: () => localeProperties.value.language?.replace("-", "_"),
+  // The share image's description in the page's language: Nuxt SEO takes it from
+  // public/og-image.alt.txt, one text for every language. A site's page describes its own
+  ...(!sitePage && {
+    ogImageAlt: () => t("app.shareImageAlt"),
+    twitterImageAlt: () => t("app.shareImageAlt"),
+  }),
+});
 
 const asset = (file: string) => `${config.app.baseURL}pwa/${file}`;
 
 // iOS launch screens (utils/splashScreens.ts), one per device size and orientation. Not in the
-// ~15,000 pages prerendered for the sites (a third of each, for an app that starts from the home):
-// in the browser they're added there too, once the app starts
-const route = useRoute();
-const splashLinks =
-  import.meta.server && "id" in route.params
-    ? []
-    : SPLASH_SCREENS.map(({ file, media }) => ({
-        rel: "apple-touch-startup-image" as const,
-        href: asset(file),
-        media,
-      }));
+// site pages (a third of each, for an app that starts from the home): in the browser they're
+// added there too, once the app starts
+const splashLinks = sitePage
+  ? []
+  : SPLASH_SCREENS.map(({ file, media }) => ({
+      rel: "apple-touch-startup-image" as const,
+      href: asset(file),
+      media,
+    }));
 
 // The browser and status bars take the map's sand colour, light or dark. Following the system,
 // a pair by media query: right from the first paint of the prerendered page. With the visitor's

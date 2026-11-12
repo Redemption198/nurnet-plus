@@ -22,6 +22,12 @@ test.describe("Link previews", () => {
     // own preview image, not beside it
     expect(html).not.toMatch(/og:image" content="[^"]*-\d+x\d+\.\w+"/);
     expect(html.match(/<meta property="og:image"/g)).toHaveLength(1);
+    // Described by the site's name, on X too
+    expect(html).toContain('<meta property="og:image:alt" content="Nuraghe Losa">');
+    expect(html).toContain('<meta name="twitter:image:alt" content="Nuraghe Losa">');
+    expect(html).toMatch(
+      /<meta name="twitter:image" content="https:\/\/www\.nurnet\.net\/[^"]+\.jpg">/,
+    );
     expect(html).toContain(
       '<link rel="alternate" hreflang="en" href="https://redemption198.github.io/nurnet-plus/en/poi/NUR3551/">',
     );
@@ -34,9 +40,27 @@ test.describe("Link previews", () => {
   });
 
   test("A site without photos keeps the app's preview image", async ({ request }) => {
-    const html = await (await request.get("/nurnet-plus/poi/NUR1000/")).text();
+    const html = await (await request.get("/nurnet-plus/en/poi/NUR1000/")).text();
     expect(html).toContain(
       '<meta property="og:image" content="https://redemption198.github.io/nurnet-plus/og-image.jpg">',
+    );
+    expect(html).toContain(
+      '<meta property="og:image:alt" content="NurNet+: explore over 7,500 sites of nuragic Sardinia">',
+    );
+  });
+
+  // public/og-image.alt.txt is Italian, for every language: each page says it in its own
+  test("The share image is described in the page's language", async ({ request }) => {
+    const italian = await (await request.get("/nurnet-plus/")).text();
+    const english = await (await request.get("/nurnet-plus/en/")).text();
+    expect(italian).toContain(
+      '<meta property="og:image:alt" content="NurNet+: esplora oltre 7.500 siti della Sardegna nuragica">',
+    );
+    expect(english).toContain(
+      '<meta property="og:image:alt" content="NurNet+: explore over 7,500 sites of nuragic Sardinia">',
+    );
+    expect(english).toContain(
+      '<meta name="twitter:image:alt" content="NurNet+: explore over 7,500 sites of nuragic Sardinia">',
     );
   });
 

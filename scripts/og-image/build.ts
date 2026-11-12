@@ -9,13 +9,13 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseIndex, type IndexFile } from "../../app/workers/nurnet-data.ts";
 
 const here = new URL(".", import.meta.url);
 const root = new URL("../../", import.meta.url);
 const read = (path: string, base = root) => readFileSync(new URL(path, base), "utf8");
 
-type Row = [string, string, string, string, string, string, number, number];
-const { rows } = JSON.parse(read("public/nurnet-index.json")) as { rows: Row[] };
+const sites = parseIndex(JSON.parse(read("public/nurnet-index.json")) as IndexFile);
 const coast = JSON.parse(read("sardinia.json", here)) as [number, number][];
 
 const W = 1200;
@@ -32,8 +32,8 @@ const circles = [
 // Equirectangular, longitude scaled by cos(40°): the island's true proportions at its latitude.
 // It sits inside the centre square, so the square crops of chat apps keep it whole
 const k = Math.cos((40 * Math.PI) / 180);
-const lons = [...coast.map((p) => p[0]), ...rows.map((r) => r[6])];
-const lats = [...coast.map((p) => p[1]), ...rows.map((r) => r[7])];
+const lons = [...coast.map((p) => p[0]), ...sites.map((site) => site.coordinates[0])];
+const lats = [...coast.map((p) => p[1]), ...sites.map((site) => site.coordinates[1])];
 const [minLon, maxLat] = [Math.min(...lons), Math.max(...lats)];
 const pad = 48;
 const scale = (H - 2 * pad) / (maxLat - Math.min(...lats));
@@ -43,7 +43,9 @@ const x = (lon: number) => (left + (lon - minLon) * k * scale).toFixed(1);
 const y = (lat: number) => (pad + (maxLat - lat) * scale).toFixed(1);
 
 const outline = `M${coast.map(([lon, lat]) => `${x(lon)} ${y(lat)}`).join("L")}Z`;
-const dots = rows.map((r) => `<circle cx="${x(r[6])}" cy="${y(r[7])}" r="2"/>`).join("");
+const dots = sites
+  .map(({ coordinates: [lon, lat] }) => `<circle cx="${x(lon)}" cy="${y(lat)}" r="2"/>`)
+  .join("");
 
 const font = new URL("fraunces-600-latin.woff2", here).href;
 const html = `<!doctype html><meta charset="utf-8"><style>
@@ -87,7 +89,7 @@ try {
   // JPEG: WhatsApp skips preview images much over 300 KB
   const out = new URL("public/og-image.jpg", root).pathname;
   execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", png, "-q:v", "3", out]);
-  console.log(`${rows.length} sites → ${out}`);
+  console.log(`${sites.length} sites → ${out}`);
 } finally {
   rmSync(work, { recursive: true, force: true });
 }

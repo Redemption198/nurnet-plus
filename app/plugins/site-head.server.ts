@@ -33,14 +33,20 @@ export default defineNuxtPlugin({
     const description = siteDescription({ ...site, typology }, i18n.t, (field, value) =>
       censusTerm(i18n, field, value),
     );
+    // The site's first photo, described by its name; without one, the app's share image (Nuxt SEO)
+    // with its description in the page's language (as app.vue gives it on the other pages)
+    const photo = photos[0] && fullSizePhoto(photos[0]);
+    const imageAlt = photo ? site.name : i18n.t("app.shareImageAlt");
     useSeoMeta({
       title: site.name,
       ogTitle: site.name,
       description,
       ogDescription: description,
-      ...(photos[0] && {
-        ogImage: fullSizePhoto(photos[0]),
-        ogImageAlt: site.name,
+      ogImageAlt: imageAlt,
+      twitterImageAlt: imageAlt,
+      ...(photo && {
+        ogImage: photo,
+        twitterImage: photo,
         twitterCard: "summary_large_image",
       }),
     });

@@ -21,6 +21,7 @@
     "loadingSites": "Loading the sites",
     "loadFailed": "The sites didn't load. Check your connection.",
     "brandButton": "NurNet+: settings and information",
+    "shareImageAlt": "NurNet+: explore over 7,500 sites of nuragic Sardinia",
     "notFound": {
       "title": "Page not found",
       "description": "That address isn't a page of NurNet+."
