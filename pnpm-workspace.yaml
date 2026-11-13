@@ -2,8 +2,12 @@ allowBuilds:
   esbuild: true
   vue-demi: true
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@1.5.0
-  vite-plus: 1.5.0
+  vite: npm:@voidzero-dev/vite-plus-core@1.6.0
+  vite-plus: 1.6.0
+minimumReleaseAgeExclude:
+  - "@vite-pwa/nuxt-core@2.0.1"
+  - "@vite-pwa/nuxt-vite@2.0.1"
+  - "@vite-pwa/nuxt@2.0.1"
 overrides:
   vite@*: "catalog:"
   # Dependabot GHSA-g7r4-m6w7-qqqr (esbuild dev server, Windows)

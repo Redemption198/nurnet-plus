@@ -181,7 +181,12 @@ export default defineNuxtConfig({
         },
       ],
     },
-    workbox: {
+    additionalManifestEntries: [
+      dataFileEntry("nurnet-index.json"),
+      dataFileEntry("nurnet-details.json"),
+      dataFileEntry("nurnet-visibility.json"),
+    ],
+    generateSW: {
       // @vite-pwa/nuxt replaces workbox's default patterns, so the app shell must be listed explicitly,
       // the UI's translations (fetched by @nuxtjs/i18n) with it
       globPatterns: ["**/*.{js,mjs,css,html,svg,ico,woff2}", "_i18n/**/messages.json"],
@@ -197,11 +202,9 @@ export default defineNuxtConfig({
       // No sourcemaps for the service worker, as for the app. vite-plugin-pwa follows the top-level
       // build.sourcemap, which with Vite's environment API (Nuxt 5) is the server build's
       sourcemap: false,
-      additionalManifestEntries: [
-        dataFileEntry("nurnet-index.json"),
-        dataFileEntry("nurnet-details.json"),
-        dataFileEntry("nurnet-visibility.json"),
-      ],
+      // The precache of an older Workbox (vite-plugin-pwa's, before @vite-pwa/nuxt 2) is deleted
+      // rather than left on the device with the ~6 MB of data files in it. On by default until 2
+      cleanupOutdatedCaches: true,
       // The translated descriptions aren't precached for everyone: a language's file is downloaded
       // the first time a visitor opens a site in it, then kept for offline use. Served from the
       // cache at once and refreshed behind, so a newer translation shows on the next visit
